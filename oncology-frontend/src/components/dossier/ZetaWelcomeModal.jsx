@@ -1,14 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Button, Modal, Paper, Divider, Chip } from '@mui/material';
+import { 
+  Box, 
+  Typography, 
+  Button, 
+  Modal, 
+  Paper, 
+  Divider, 
+  Chip,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  FormGroup,
+  FormControlLabel,
+  Checkbox,
+  Card,
+  CardContent
+} from '@mui/material';
 import { styled } from '@mui/material/styles';
 import {
   Close,
   Psychology,
   Science,
   Biotech,
-  Security,
-  Timeline,
-  Assessment
+  CheckCircle
 } from '@mui/icons-material';
 
 const StyledModal = styled(Modal)(({ theme }) => ({
@@ -19,52 +34,38 @@ const StyledModal = styled(Modal)(({ theme }) => ({
 }));
 
 const ModalContainer = styled(Paper)(({ theme }) => ({
-  maxWidth: '700px',
+  maxWidth: '900px',
   width: '100%',
-  maxHeight: '90vh',
+  maxHeight: '95vh',
   overflow: 'auto',
-  background: 'linear-gradient(135deg, rgba(15, 20, 25, 0.98), rgba(26, 35, 50, 0.98))',
+  background: 'linear-gradient(135deg, rgba(10, 15, 25, 0.98), rgba(20, 30, 45, 0.98))',
   backdropFilter: 'blur(20px)',
-  border: '1px solid rgba(96, 165, 250, 0.3)',
-  borderRadius: '16px',
-  boxShadow: '0 20px 60px rgba(0, 0, 0, 0.8)',
+  border: '3px solid rgba(96, 165, 250, 0.6)',
+  borderRadius: '20px',
+  boxShadow: '0 30px 80px rgba(0, 0, 0, 0.9)',
   color: 'white',
   outline: 'none',
 }));
 
 const HeaderSection = styled(Box)(({ theme }) => ({
-  background: 'linear-gradient(135deg, rgba(96, 165, 250, 0.2), rgba(96, 165, 250, 0.1))',
-  padding: '24px',
-  borderBottom: '1px solid rgba(96, 165, 250, 0.3)',
+  background: 'linear-gradient(135deg, rgba(96, 165, 250, 0.25), rgba(96, 165, 250, 0.15))',
+  padding: '50px 40px',
+  borderBottom: '3px solid rgba(96, 165, 250, 0.4)',
   position: 'relative',
-}));
-
-const FeatureCard = styled(Box)(({ theme }) => ({
-  padding: '16px',
-  margin: '8px 0',
-  background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04))',
-  border: '1px solid rgba(255, 255, 255, 0.1)',
-  borderRadius: '12px',
-  transition: 'all 0.3s ease',
-  '&:hover': {
-    background: 'linear-gradient(135deg, rgba(96, 165, 250, 0.15), rgba(96, 165, 250, 0.08))',
-    borderColor: 'rgba(96, 165, 250, 0.4)',
-    transform: 'translateY(-2px)',
-  },
 }));
 
 const CloseButton = styled(Button)(({ theme }) => ({
   position: 'absolute',
-  top: '16px',
-  right: '16px',
-  minWidth: '40px',
-  width: '40px',
-  height: '40px',
-  borderRadius: '8px',
-  background: 'rgba(255, 255, 255, 0.1)',
-  color: 'rgba(255, 255, 255, 0.7)',
+  top: '20px',
+  right: '20px',
+  minWidth: '44px',
+  width: '44px',
+  height: '44px',
+  borderRadius: '12px',
+  background: 'rgba(255, 255, 255, 0.15)',
+  color: 'rgba(255, 255, 255, 0.8)',
   '&:hover': {
-    background: 'rgba(255, 255, 255, 0.2)',
+    background: 'rgba(255, 255, 255, 0.25)',
     color: 'white',
   },
 }));
@@ -72,32 +73,49 @@ const CloseButton = styled(Button)(({ theme }) => ({
 const ActionButton = styled(Button)(({ theme }) => ({
   background: 'linear-gradient(135deg, #60a5fa, #3b82f6)',
   color: 'white',
-  fontWeight: 700,
-  padding: '12px 32px',
-  borderRadius: '8px',
+  fontWeight: 900,
+  padding: '20px 60px',
+  borderRadius: '16px',
   textTransform: 'none',
-  fontSize: '1rem',
+  fontSize: '1.4rem',
+  boxShadow: '0 8px 32px rgba(96, 165, 250, 0.4)',
   '&:hover': {
     background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
-    transform: 'translateY(-1px)',
+    transform: 'translateY(-3px)',
+    boxShadow: '0 12px 40px rgba(96, 165, 250, 0.6)',
   },
 }));
 
-const ZetaWelcomeModal = ({ isOpen, onClose, forceShow = false }) => {
+const ApiCard = styled(Card)(({ theme }) => ({
+  background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.08))',
+  border: '2px solid rgba(255, 255, 255, 0.2)',
+  borderRadius: '20px',
+  margin: '16px 0',
+  transition: 'all 0.3s ease',
+  '&:hover': {
+    background: 'linear-gradient(135deg, rgba(96, 165, 250, 0.25), rgba(96, 165, 250, 0.15))',
+    borderColor: 'rgba(96, 165, 250, 0.6)',
+    transform: 'translateY(-3px)',
+    boxShadow: '0 12px 32px rgba(96, 165, 250, 0.4)',
+  },
+}));
+
+const ZetaWelcomeModal = ({ isOpen, onClose, forceShow = false, onCommence }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [dontShowAgain, setDontShowAgain] = useState(false);
+  const [selectedApis, setSelectedApis] = useState({
+    oracle: true,
+    forge: true,
+    gauntlet: true
+  });
 
   useEffect(() => {
     if (forceShow) {
-      // If explicitly opened (e.g., from sidebar), always show
       setIsVisible(true);
       return;
     }
-
-    // Check if user has seen the Zeta welcome message before
     const hasSeenZetaWelcome = localStorage.getItem('zeta_welcome_seen');
     if (!hasSeenZetaWelcome) {
-      // Show welcome modal after a brief delay to let the app load
       const timer = setTimeout(() => {
         setIsVisible(true);
       }, 1200);
@@ -105,7 +123,6 @@ const ZetaWelcomeModal = ({ isOpen, onClose, forceShow = false }) => {
     }
   }, [forceShow]);
 
-  // Handle external control
   useEffect(() => {
     if (isOpen !== undefined) {
       setIsVisible(isOpen);
@@ -117,9 +134,7 @@ const ZetaWelcomeModal = ({ isOpen, onClose, forceShow = false }) => {
     if (dontShowAgain && !forceShow) {
       localStorage.setItem('zeta_welcome_seen', 'true');
     }
-    if (onClose) {
-      onClose();
-    }
+    if (onClose) onClose();
   };
 
   const handleCommenceOperation = () => {
@@ -127,39 +142,32 @@ const ZetaWelcomeModal = ({ isOpen, onClose, forceShow = false }) => {
     if (!forceShow) {
       localStorage.setItem('zeta_welcome_seen', 'true');
     }
-    if (onClose) {
-      onClose();
-    }
+    if (onCommence) onCommence(selectedApis);
+    if (onClose) onClose();
   };
 
-  const features = [
+  const apiOptions = [
     {
+      id: 'oracle',
       icon: Psychology,
-      title: 'Zeta Oracle',
-      description: 'Variant impact prediction with mathematical certainty',
-      capability: 'Target validation & threat assessment'
+      title: 'Target Validation',
+      description: 'Prove this mutation is worth targeting. Check if it damages the protein, if cancer depends on it, and if drugs can reach it.',
+      endpoints: ['Functional damage analysis', 'Cancer dependency check', 'Drug accessibility']
     },
     {
+      id: 'forge',
       icon: Science,
-      title: 'Zeta Forge',
-      description: 'Precision weapon generation and optimization',
-      capability: 'CRISPR guides & novel inhibitor design'
+      title: 'Therapeutic Design',
+      description: 'Design CRISPR tools and small molecules specifically for this mutation. Generate ready-to-test candidates.',
+      endpoints: ['CRISPR guide generation', 'Novel inhibitor design']
     },
     {
+      id: 'gauntlet',
       icon: Biotech,
-      title: 'Zeta Boltz',
-      description: 'In silico trials and structural validation',
-      capability: 'Combat effectiveness simulation'
+      title: 'Validation Testing',
+      description: 'Test our designs computationally. Predict if they will fold correctly and bind as intended.',
+      endpoints: ['Structure prediction', 'Binding validation']
     }
-  ];
-
-  const capabilities = [
-    '⚔️ Autonomous target validation in seconds',
-    '🎯 Precision therapeutic weapon generation',
-    '🧬 Full in silico clinical trial simulation',
-    '📋 IND-ready dossier compilation',
-    '💰 $47.2M+ cost avoidance vs traditional R&D',
-    '⏱️ 18 months vs 5-8 years timeline compression'
   ];
 
   return (
@@ -171,138 +179,228 @@ const ZetaWelcomeModal = ({ isOpen, onClose, forceShow = false }) => {
             <Close />
           </CloseButton>
           
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+          <Box sx={{ textAlign: 'center', mb: 5 }}>
             <Typography 
               variant="h1" 
-              sx={{ fontSize: '2rem', mr: 2, filter: 'drop-shadow(0 0 10px rgba(96, 165, 250, 0.8))' }}
+              sx={{ 
+                fontSize: '4rem', 
+                mb: 4, 
+                filter: 'drop-shadow(0 0 25px rgba(96, 165, 250, 1))',
+                fontWeight: 900
+              }}
             >
-              ⚔️
+              🧬
             </Typography>
-            <Box>
-              <Typography variant="h4" sx={{ fontWeight: 900, mb: 0.5 }}>
-              IND (Investigational New Drug) Conquest Dossier
-              </Typography>
-              <Typography variant="h6" sx={{ color: 'rgba(255,255,255,0.8)' }}>
-                Autonomous In Silico Therapeutic Conquest Platform
-              </Typography>
-            </Box>
+            <Typography variant="h1" sx={{ 
+              fontWeight: 900, 
+              mb: 3, 
+              fontSize: '3rem',
+              color: 'white',
+              textShadow: '0 2px 10px rgba(0,0,0,0.5)'
+            }}>
+              Validate Your Cancer Target
+            </Typography>
+            <Typography variant="h4" sx={{ 
+              color: 'white', 
+              fontWeight: 500,
+              fontSize: '1.8rem',
+              lineHeight: 1.4,
+              textShadow: '0 1px 5px rgba(0,0,0,0.3)'
+            }}>
+              Get mathematical proof before you spend millions
+            </Typography>
           </Box>
-          
-          <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.9)', lineHeight: 1.6 }}>
-            Experience the future of drug development. This operational platform executes complete 
-            in silico therapeutic conquest from target validation to IND-ready dossier in minutes, 
-            not years.
-          </Typography>
+
+          <Box sx={{ 
+            background: 'rgba(0, 0, 0, 0.3)', 
+            p: 5, 
+            borderRadius: '20px',
+            border: '2px solid rgba(255, 255, 255, 0.2)',
+            backdropFilter: 'blur(10px)'
+          }}>
+            <Typography variant="h4" sx={{ 
+              fontWeight: 800, 
+              mb: 4, 
+              color: '#fbbf24',
+              fontSize: '1.8rem',
+              textShadow: '0 2px 8px rgba(0,0,0,0.5)'
+            }}>
+              Your Research Problem
+            </Typography>
+            <Typography variant="h6" sx={{ 
+              color: 'white', 
+              lineHeight: 1.8,
+              fontSize: '1.3rem',
+              mb: 4,
+              fontWeight: 400,
+              textShadow: '0 1px 3px rgba(0,0,0,0.3)'
+            }}>
+              You have a promising cancer mutation. But before committing years and millions 
+              to development, you need proof: Is it actually harmful? Does cancer depend on it? 
+              Can you drug it effectively?
+            </Typography>
+            <Typography variant="h4" sx={{ 
+              fontWeight: 800, 
+              mb: 3, 
+              color: '#34d399',
+              fontSize: '1.8rem',
+              textShadow: '0 2px 8px rgba(0,0,0,0.5)'
+            }}>
+              Get Answers in Minutes
+            </Typography>
+            <Typography variant="h6" sx={{ 
+              color: 'white', 
+              lineHeight: 1.8,
+              fontSize: '1.3rem',
+              fontWeight: 400,
+              textShadow: '0 1px 3px rgba(0,0,0,0.3)'
+            }}>
+              Validate your target, design therapeutics, and test them computationally 
+              before any wet lab work. Get the confidence you need to move forward.
+            </Typography>
+          </Box>
         </HeaderSection>
 
         {/* Content */}
-        <Box sx={{ p: 3 }}>
-          {/* Engine Overview */}
-          {/* <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: '#60a5fa' }}>
-            🔥 TACTICAL ENGINES
-          </Typography> */}
-          
-          {/* {features.map((feature, index) => {
-            const IconComponent = feature.icon;
-            return (
-              <FeatureCard key={index}>
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
-                  <IconComponent sx={{ fontSize: 28, color: '#60a5fa', mt: 0.5 }} />
-                  <Box sx={{ flex: 1 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
-                      {feature.title}
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)', mb: 1 }}>
-                      {feature.description}
-                    </Typography>
-                    <Chip 
-                      label={feature.capability}
-                      size="small"
-                      sx={{ 
-                        backgroundColor: 'rgba(96, 165, 250, 0.2)',
-                        color: '#60a5fa',
-                        border: '1px solid rgba(96, 165, 250, 0.3)'
-                      }}
-                    />
-                  </Box>
-                </Box>
-              </FeatureCard>
-            );
-          })} */}
-
-          <Divider sx={{ my: 3, borderColor: 'rgba(255,255,255,0.1)' }} />
-
-          {/* Mission Capabilities */}
-          <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: '#34d399' }}>
-            🎯 MISSION CAPABILITIES
+        <Box sx={{ p: 5 }}>
+          {/* API Selection */}
+          <Typography variant="h3" sx={{ 
+            fontWeight: 900, 
+            mb: 5, 
+            color: 'white',
+            fontSize: '2.2rem',
+            textAlign: 'center',
+            textShadow: '0 2px 10px rgba(0,0,0,0.5)'
+          }}>
+            Choose Your Analysis
           </Typography>
-          
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 1 }}>
-            {capabilities.map((capability, index) => (
-              <Typography 
-                key={index}
-                variant="body2" 
-                sx={{ 
-                  color: 'rgba(255,255,255,0.9)', 
-                  py: 0.5,
-                  fontSize: '0.95rem'
-                }}
-              >
-                {capability}
-              </Typography>
-            ))}
+
+          <Box sx={{ display: 'grid', gap: 4, mb: 6 }}>
+            {apiOptions.map((api) => {
+              const IconComponent = api.icon;
+              return (
+                <ApiCard key={api.id}>
+                  <CardContent sx={{ p: 5 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 4 }}>
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={selectedApis[api.id]}
+                            onChange={(e) => setSelectedApis(prev => ({
+                              ...prev,
+                              [api.id]: e.target.checked
+                            }))}
+                            sx={{
+                              color: 'rgba(255,255,255,0.7)',
+                              '&.Mui-checked': { color: '#60a5fa' },
+                              transform: 'scale(1.4)'
+                            }}
+                          />
+                        }
+                        label=""
+                        sx={{ m: 0 }}
+                      />
+                      <IconComponent sx={{ fontSize: 48, color: '#60a5fa', mt: 1 }} />
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="h4" sx={{ 
+                          fontWeight: 900, 
+                          mb: 3,
+                          fontSize: '1.8rem',
+                          color: 'white',
+                          textShadow: '0 2px 8px rgba(0,0,0,0.5)'
+                        }}>
+                          {api.title}
+                        </Typography>
+                        <Typography variant="h6" sx={{ 
+                          color: 'white', 
+                          mb: 4,
+                          lineHeight: 1.8,
+                          fontSize: '1.2rem',
+                          fontWeight: 400,
+                          textShadow: '0 1px 3px rgba(0,0,0,0.3)'
+                        }}>
+                          {api.description}
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                          {api.endpoints.map((endpoint, idx) => (
+                            <Chip 
+                              key={idx}
+                              label={endpoint}
+                              sx={{ 
+                                backgroundColor: 'rgba(96, 165, 250, 0.3)',
+                                color: 'white',
+                                border: '2px solid rgba(96, 165, 250, 0.5)',
+                                fontSize: '1rem',
+                                fontWeight: 700,
+                                height: '36px',
+                                textShadow: '0 1px 2px rgba(0,0,0,0.3)'
+                              }}
+                            />
+                          ))}
+                        </Box>
+                      </Box>
+                    </Box>
+                  </CardContent>
+                </ApiCard>
+              );
+            })}
           </Box>
 
-          <Divider sx={{ my: 3, borderColor: 'rgba(255,255,255,0.1)' }} />
-
-          {/* Mission Brief */}
-          <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: '#fbbf24' }}>
-            📋 CURRENT MISSION: PIK3CA E542K
-          </Typography>
-          
-          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)', mb: 3, lineHeight: 1.6 }}>
-            Execute full therapeutic conquest of oncogenic mutation PIK3CA E542K. Deploy Oracle for 
-            target validation, Forge for weapon generation, and Boltz for combat simulation. 
-            Generate complete IND-ready dossier with mathematical certainty of success.
-          </Typography>
-
-          {/* Action Buttons */}
-          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'space-between', alignItems: 'center' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <input
-                type="checkbox"
+          {/* Actions */}
+          <Box sx={{ 
+            display: 'flex', 
+            gap: 5, 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            pt: 4,
+            borderTop: '3px solid rgba(255,255,255,0.2)'
+          }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Checkbox
                 id="dontShowAgain"
                 checked={dontShowAgain}
                 onChange={(e) => setDontShowAgain(e.target.checked)}
-                style={{ marginRight: '8px' }}
+                sx={{
+                  color: 'rgba(255,255,255,0.7)',
+                  '&.Mui-checked': { color: '#60a5fa' },
+                  transform: 'scale(1.2)'
+                }}
               />
-              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-                Don't show this mission brief again
+              <Typography variant="h6" sx={{ 
+                color: 'white',
+                fontSize: '1.2rem',
+                fontWeight: 500,
+                textShadow: '0 1px 3px rgba(0,0,0,0.3)'
+              }}>
+                Don't show this again
               </Typography>
             </Box>
             
             <ActionButton onClick={handleCommenceOperation}>
-              🚀 COMMENCE OPERATION
+              <CheckCircle sx={{ mr: 2, fontSize: 28 }} />
+              Run Analysis
             </ActionButton>
           </Box>
 
           {/* Disclaimer */}
           <Typography 
-            variant="caption" 
+            variant="h6" 
             sx={{ 
               display: 'block',
-              mt: 3, 
-              p: 2,
-              background: 'rgba(255, 193, 7, 0.1)',
-              border: '1px solid rgba(255, 193, 7, 0.3)',
-              borderRadius: '8px',
-              color: 'rgba(255,255,255,0.7)',
-              lineHeight: 1.4
+              mt: 5, 
+              p: 4,
+              background: 'rgba(255, 193, 7, 0.15)',
+              border: '2px solid rgba(255, 193, 7, 0.4)',
+              borderRadius: '16px',
+              color: 'white',
+              lineHeight: 1.7,
+              fontSize: '1.1rem',
+              textAlign: 'center',
+              fontWeight: 500,
+              textShadow: '0 1px 3px rgba(0,0,0,0.3)'
             }}
           >
-            <strong>OPERATIONAL NOTE:</strong> This platform demonstrates advanced AI-powered drug development 
-            capabilities using synthetic data and validated models. All molecular targets and therapeutic 
-            candidates are generated for demonstration purposes.
+            Demo uses synthetic data to show computational methods
           </Typography>
         </Box>
       </ModalContainer>

@@ -156,16 +156,40 @@ const ToolRunner = ({ toolConfig }) => {
   };
 
   const genericApiWorkflow = async (apiConfig) => {
+    // Build payload from form state placeholders
     const payload = Object.keys(apiConfig.payload).reduce((acc, key) => {
       const placeholder = apiConfig.payload[key];
       const formKey = placeholder.replace(/[{}]/g, '');
       acc[key] = formState[formKey];
       return acc;
     }, {});
+
+    // Special-case: Myeloma Digital Twin supports batch mutations[]
+    if (apiConfig.endpoint === '/api/predict/myeloma_drug_response') {
+      try {
+        const muts = (window.__mdt_mutations || []).filter(m => m && m.gene && m.variant_info && m.build);
+        if (muts.length > 0) {
+          payload.mutations = muts;
+          // ensure model_id accompanies the batch
+          if (formState.model_id) payload.model_id = formState.model_id;
+          // dual model comparison toggle
+          if (typeof window.__mdt_dual_compare !== 'undefined') {
+            payload.dual_compare = Boolean(window.__mdt_dual_compare);
+          }
+          // remove single-row fields if present
+          delete payload.gene; delete payload.hgvs_p; delete payload.variant_info; delete payload.build;
+        }
+      } catch (_) {}
+    }
     
     const result = await executeApiCall({ ...apiConfig, payload });
     if (result) {
-      setResults(prev => ({...prev, [apiConfig.endpoint]: result}));
+      // For components that expect the raw result (not nested by endpoint), pass through directly
+      if (toolConfig.resultsComponent === 'MyelomaResponseDisplay') {
+        setResults(result);
+      } else {
+        setResults(prev => ({...prev, [apiConfig.endpoint]: result}));
+      }
     }
   };
 
@@ -180,6 +204,9 @@ const ToolRunner = ({ toolConfig }) => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormState(prev => ({ ...prev, [name]: value }));
+    if (name === 'model_id') {
+      try { window.__mdt_model_id = value; } catch (_) {}
+    }
   };
   
   const executeApiCall = async ({ endpoint, payload }) => {
@@ -260,15 +287,17 @@ const ToolRunner = ({ toolConfig }) => {
                 fullWidth
               />
             ))}
-            <InteractiveButton
-              onClick={() => handleAction(section.action)}
-              isLoading={isLoading}
-              loadingText="Executing..."
-              disabled={isLoading}
-              sx={{ minWidth: 150, alignSelf: 'flex-start' }}
-            >
-              {section.action.buttonText}
-            </InteractiveButton>
+            {section.action && section.action.buttonText && (
+              <InteractiveButton
+                onClick={() => handleAction(section.action)}
+                isLoading={isLoading}
+                loadingText="Executing..."
+                disabled={isLoading}
+                sx={{ minWidth: 150, alignSelf: 'flex-start' }}
+              >
+                {section.action.buttonText}
+              </InteractiveButton>
+            )}
           </Box>
         </BaseCard>
       ))}

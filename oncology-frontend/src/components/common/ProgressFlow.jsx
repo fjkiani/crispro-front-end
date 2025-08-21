@@ -1,77 +1,92 @@
 import React from 'react';
-import { Box, Stepper, Step, StepLabel, Typography, Chip } from '@mui/material';
-import { Science, Search, Psychology, Timeline, Assessment, Build } from '@mui/icons-material';
+import { Box, Typography, Chip, Stack } from '@mui/material';
+import { Science, Search, Psychology, Timeline, Assessment, Build, Bolt } from '@mui/icons-material';
 
-const WORKFLOW_STEPS = [
-    { 
-        key: 'hypothesis', 
-        label: 'Hypothesis Formation', 
-        description: 'Research question & literature review',
-        icon: <Search />
-    },
-    { 
-        key: 'design', 
-        label: 'Experimental Design', 
-        description: 'Plan validation methodology',
-        icon: <Science />
-    },
-    { 
-        key: 'data', 
-        label: 'Data Collection', 
-        description: 'Gather target information',
-        icon: <Timeline />
-    },
-    { 
-        key: 'experiment', 
-        label: 'Experimentation', 
-        description: 'Run validation tests',
-        icon: <Psychology />
-    },
-    { 
-        key: 'results', 
-        label: 'Results Analysis', 
-        description: 'Interpret findings',
-        icon: <Assessment />
-    },
-    { 
-        key: 'action', 
-        label: 'Next Steps', 
-        description: 'Apply knowledge',
-        icon: <Build />
-    }
+// Fallback steps if none provided
+const DEFAULT_STEPS = [
+  { key: 'hypothesis', label: 'Hypothesis Formation', description: 'Research question & literature review' },
+  { key: 'design', label: 'Experimental Design', description: 'Plan validation methodology' },
+  { key: 'data', label: 'Data Collection', description: 'Gather target information' },
+  { key: 'experiment', label: 'Experimentation', description: 'Run validation tests' },
+  { key: 'results', label: 'Results Analysis', description: 'Interpret findings' },
+  { key: 'action', label: 'Next Steps', description: 'Apply knowledge' },
 ];
 
-const ProgressFlow = ({ currentStep, completedSteps = [], sx = {} }) => {
-    const currentStepIndex = WORKFLOW_STEPS.findIndex(step => step.key === currentStep);
-    const currentStepInfo = WORKFLOW_STEPS[currentStepIndex];
+const iconForKey = (k) => {
+  const key = String(k || '').toLowerCase();
+  if (key.includes('hypothesis') || key === 'input') return <Search fontSize="small" />;
+  if (key.includes('design')) return <Science fontSize="small" />;
+  if (key.includes('data')) return <Timeline fontSize="small" />;
+  if (key.includes('experiment') || key.includes('analysis')) return <Psychology fontSize="small" />;
+  if (key.includes('result')) return <Assessment fontSize="small" />;
+  if (key.includes('action') || key.includes('next')) return <Build fontSize="small" />;
+  return <Bolt fontSize="small" />;
+};
 
-    return (
-        <Box sx={{ width: '100%', mb: 3, ...sx }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                {currentStepInfo?.icon}
-                <Typography variant="h6" sx={{ ml: 1 }}>
-                    Current Phase: {currentStepInfo?.label}
-                </Typography>
-                <Chip 
-                    label={`Step ${currentStepIndex + 1} of ${WORKFLOW_STEPS.length}`} 
-                    size="small" 
-                    sx={{ ml: 2 }} 
+const toSteps = (stepsProp) => {
+  const raw = Array.isArray(stepsProp) && stepsProp.length > 0 ? stepsProp : DEFAULT_STEPS;
+  return raw.map((s, idx) => ({
+    key: s.key || s.id || `step-${idx}`,
+    label: s.label || s.title || `Step ${idx + 1}`,
+    description: s.description || '',
+    icon: iconForKey(s.key || s.id || ''),
+  }));
+};
+
+const ProgressFlow = ({ currentStep, completedSteps = [], steps: stepsProp, sx = {} }) => {
+  const steps = toSteps(stepsProp);
+  const currentIndex = Math.max(0, steps.findIndex(s => s.key === currentStep));
+  const currentInfo = steps[currentIndex] || steps[0];
+
+  return (
+    <Box sx={{ width: '100%', mb: 3, ...sx }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+        {currentInfo?.icon}
+        <Typography variant="h6" sx={{ ml: 1 }}>Current Phase: {currentInfo?.label}</Typography>
+        <Chip label={`Step ${currentIndex + 1} of ${steps.length}`} size="small" sx={{ ml: 2 }} />
+      </Box>
+      {currentInfo?.description && (
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{currentInfo.description}</Typography>
+      )}
+
+      {/* Modern horizontal timeline */}
+      <Stack direction="row" alignItems="center" spacing={1}>
+        {steps.map((s, idx) => {
+          const isCompleted = completedSteps.includes(s.key) || idx < currentIndex;
+          const isCurrent = idx === currentIndex;
+          const tone = isCompleted ? 'primary.main' : isCurrent ? 'secondary.main' : 'divider';
+          return (
+            <Stack key={s.key} direction="row" alignItems="center" sx={{ flex: 1, minWidth: 0 }}>
+              <Stack alignItems="center" sx={{ minWidth: 92 }}>
+                <Chip
+                  icon={s.icon}
+                  label={s.label}
+                  size="small"
+                  sx={{
+                    borderRadius: 999,
+                    bgcolor: isCurrent ? 'secondary.light' : isCompleted ? 'primary.light' : 'background.default',
+                    color: isCurrent || isCompleted ? 'text.primary' : 'text.secondary',
+                    border: '1px solid',
+                    borderColor: isCurrent ? 'secondary.main' : isCompleted ? 'primary.main' : 'divider',
+                    maxWidth: 180,
+                  }}
                 />
-            </Box>
-            
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                {currentStepInfo?.description}
-            </Typography>
-
-            <Stepper activeStep={currentStepIndex} alternativeLabel>
-                {WORKFLOW_STEPS.map((step, index) => (
-                    <Step key={step.key} completed={completedSteps.includes(step.key)}>
-                        <StepLabel>{step.label}</StepLabel>
-                    </Step>
-                ))}
-            </Stepper>
-        </Box>
-    );
+              </Stack>
+              {idx < steps.length - 1 && (
+                <Box sx={{
+                  flex: 1,
+                  height: 4,
+                  borderRadius: 2,
+                  mx: 1,
+                  bgcolor: isCompleted ? 'primary.main' : 'divider',
+                }} />
+              )}
+            </Stack>
+          );
+        })}
+      </Stack>
+    </Box>
+  );
 };
 
 export default ProgressFlow; 

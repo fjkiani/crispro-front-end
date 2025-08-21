@@ -109,25 +109,33 @@ export const myelomaTwinConfig = {
   ],
   inputSections: [
     {
+      id: 'settings',
+      title: 'Scoring Settings',
+      fields: [
+        { id: 'model_id', label: 'Evo2 Model', type: 'select', options: ['evo2_1b','evo2_7b','evo2_40b'], defaultValue: 'evo2_7b' },
+      ],
+      // no action here; action lives in mutations section
+    },
+    {
       id: 'mutations',
       title: 'Patient Mutation Input',
-      description: 'Add and define the somatic mutations for the patient.',
-      type: 'repeatable', // This indicates a dynamic list of inputs
+      description: 'Use the list above to add multiple mutations. Click Analyze to run them all at once.',
+      type: 'repeatable',
       fields: [
-        { id: 'gene', label: 'Gene Symbol', type: 'text', defaultValue: '' },
-        { id: 'hgvs_p', label: 'Protein Change (HGVS_p)', type: 'text', defaultValue: '' },
-        { id: 'variant_info', label: 'Genomic Coordinate (chr:pos REF>ALT)', type: 'text', defaultValue: '' },
-        { id: 'build', label: 'Build', type: 'select', options: ['hg38', 'hg19'], defaultValue: 'hg38' }
+        // Inputs handled by VariantInputList component
       ],
-      initialItems: [
-        { gene: 'KRAS', hgvs_p: 'p.Gly12Asp', variant_info: 'chr12:25245350 C>T', build: 'hg38' },
-      ],
+      initialItems: [],
       action: {
         buttonText: '🚀 Analyze Drug Response',
         apiCall: {
           endpoint: '/api/predict/myeloma_drug_response',
-          // The payload will be constructed from the repeatable fields by ToolRunner
-          payload: {},
+          payload: {
+            gene: '{gene}',
+            hgvs_p: '{hgvs_p}',
+            variant_info: '{variant_info}',
+            build: '{build}',
+            model_id: '{model_id}'
+          }
         }
       }
     }

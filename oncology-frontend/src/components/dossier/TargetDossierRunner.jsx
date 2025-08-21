@@ -43,79 +43,86 @@ const TargetDossierRunner = ({ toolConfig }) => {
 
   // Load dossier data when we reach the final step
   useEffect(() => {
-    if (currentStep === 6 && !results.dossier) {
-      console.log('Loading dossier data for final step:', pik3caTrinityCampaignConfig.therapeuticBlueprint);
+    if (conversation.length === 0) {
+      setConversation([{
+        type: 'assistant',
+        message: 'Zeta Forge Command interface online. Mission: Execute in-silico conquest of PIK3CA E542K. Awaiting your command to initiate target validation.'
+      }]);
+    }
+  }, [conversation]);
+
+  // Load dossier data when we reach the final step
+  useEffect(() => {
+    if (currentStep === 7 && !results.dossier) {
       setResults(prev => ({
         ...prev, 
         dossier: pik3caTrinityCampaignConfig.therapeuticBlueprint
       }));
       
-      // Log completion activity
       addActivity(ACTIVITY_TYPES.DOSSIER_COMPLETE, 'IND-ready dossier compiled', {
         result: 'MISSION COMPLETE',
         costAvoidance: '$47.2M',
         timeline: '5 minutes vs 36 months'
       });
     }
-  }, [currentStep, results.dossier, addActivity]);
+  }, [currentStep, results.dossier, addActivity, pik3caTrinityCampaignConfig]);
 
-  // Define the conversation steps for our R&D workflow with enhanced AI analysis
-  // Define the campaign steps according to our superior doctrine.
+  // The definitive, doctrinally-aligned campaign steps.
   const campaignSteps = [
     {
-      label: "Functional Impact",
+      label: "Threat Assessment",
       endpoint: {
-        // The user's command is direct and to the point.
-        userMessage: "First, I need a definitive verdict on the functional impact of PIK3CA E542K.",
-        // The narrative uses our proprietary metrics and weapon systems. No marketing bullshit.
-        narrative: "Executing Triumvirate Threat Assessment... The Zeta Oracle has analyzed the variant from first principles. The verdict is definitive: **Pathogenic**. The **Zeta Score of -18,245.7** indicates a catastrophic disruption of the protein's kinase domain, confirming it as a high-value therapeutic target."
+        userMessage: "Oracle, what is the functional impact of PIK3CA E542K? Give me a verdict.",
+        narrative: "Executing `/predict_variant_impact`. The verdict is **HIGH-CONFIDENCE PATHOGENIC**. The Delta Likelihood Score is **-1883.15**, indicating severe biological disruption. Our SAE analysis confirms a strong signal for 'Frameshift / Premature Stop' (f/24278). This target is a confirmed, high-value vulnerability."
       }
     },
     {
       label: "Dependency Analysis", 
       endpoint: {
-        userMessage: "A vulnerable target isn't enough. Prove it's a critical dependency for the cancer's survival.",
-        // We don't "cross-reference a database." We run a dynamic simulation.
-        narrative: "Deploying our `predict_gene_essentiality` workflow. The `in silico` simulation confirms that cancer cells harboring the E542K mutation are catastrophically dependent on the PI3K pathway for survival. This is a true Achilles' heel."
+        userMessage: "Confirm the cancer's dependency on this vulnerability.",
+        narrative: "Executing `/predict_gene_essentiality`. The simulation is complete. We have confirmed a critical dependency. The analysis predicts an **11.5x therapeutic window**, meaning the target is essential for cancer survival but disposable in healthy tissue. This exceeds the dependency scores of validated blockbuster targets like HER2."
       }
     },
     {
-      label: "Druggability Assessment",
+      label: "Accessibility Analysis",
       endpoint: {
-        userMessage: "Target is vulnerable and essential. Confirm it's druggable.",
-        narrative: "Executing druggability analysis. The target site is located in a region of high chromatin accessibility. Our structural analysis confirms multiple accessible binding pockets, creating ideal conditions for both CRISPR-based interception and small molecule assault. **The target is validated. We have a 'GO' on the mission.**"
+        userMessage: "Is the target accessible for therapeutic intervention?",
+        narrative: "Executing `/predict_chromatin_accessibility`. Analysis complete. The target locus shows a normalized accessibility score of **0.88** in an 'Active Enhancer' region. This confirms high feasibility for both CRISPR-based and small molecule therapeutic approaches."
       }
     },
     {
-      label: "Forge CRISPR Payload",
+      label: "Target Validation Decision",
+      endpoint: {
+        userMessage: "Based on all analysis, what is the final target validation decision?",
+        narrative: "**TARGET VALIDATION COMPLETE**. All metrics exceed thresholds: Functional damage confirmed, critical dependency established (**11.5x window**), and target accessibility validated (**0.88 score**). **The target is validated. We have a definitive 'GO' on this mission.**"
+      }
+    },
+    {
+      label: "Forge CRISPR Warhead",
       endpoint: {
         userMessage: "Target validation is complete. Forge a CRISPR-based weapon.",
-        // We don't use "optimization algorithms." We forge blueprints.
-        narrative: "Unleashing the **Zeta Forge**. We have forged a portfolio of high-precision gRNAs. The lead candidate has a predicted on-target efficacy score derived from the Zeta Oracle and zero high-priority off-targets identified by our genome-wide BLAST analysis. This is a complete **Precision Interception Blueprint**."
+        narrative: "Executing `/generate_optimized_guide_rna`. The Zeta Forge has engineered a portfolio of genetic warheads. The lead candidate has a predicted knockout efficacy of **94.5%**, with zero high-risk off-target sites identified. Its predicted efficacy exceeds that of FDA-approved CRISPR therapies like CTX001."
       }
     },
     {
       label: "Forge Novel Inhibitor",
       endpoint: {
-        userMessage: "We need a multi-modal assault. Forge a novel inhibitor.",
-        // We use our proprietary "Forge-and-Fire" protocol.
-        narrative: "Executing the **'Forge-and-Fire'** protocol. The **Zeta Forge** has generated 847 novel molecular structures. Our **Zeta Boltz** engine then ran `in silico` binding affinity simulations for each. The lead compound shows a predicted binding affinity of **-12.3 kcal/mol** for the E542K mutant, with high selectivity. This is a patent-worthy asset."
+        userMessage: "We need a multi-modal assault. Forge a novel small molecule inhibitor.",
+        narrative: "Executing `/generate_protein_inhibitor`. The Forge has generated a novel molecular structure. In-silico analysis predicts a binding affinity of **-12.3 kcal/mol**, significantly stronger than the FDA-approved drug Alpelisib (-8.9 kcal/mol). This is a patent-worthy, best-in-class composition of matter."
       }
     },
     {
-      label: "Run `In Silico` Trial",
+      label: "Execute In-Silico Trial",
       endpoint: {
-        userMessage: "The weapons are forged. What is the predicted clinical impact?",
-        // We don't just "validate efficacy." We run a full `in silico` clinical trial.
-        narrative: "Executing `in silico` clinical trial. Our Digital Twin platform simulates the therapeutic effect of our lead inhibitor across a virtual patient cohort. The models predict an **85% Target Inhibition Rate** with **94.5% CRISPR cutting efficiency** - translating to a projected **82% Objective Response Rate** in PIK3CA E542K-positive tumors, significantly higher than the standard of care. We have high confidence this weapon will succeed on the clinical battlefield."
+        userMessage: "The weapons are forged. Simulate the clinical impact.",
+        narrative: "Executing `/predict_protein_functionality_change` in a simulated trial. The simulation predicts our inhibitor will achieve an **85% target knockdown effect**, leading to a **76% loss in cancer cell viability**. The predicted selectivity of **56x** versus normal cells indicates a high probability of a successful clinical outcome with a superior safety profile."
       }
     },
     {
-      label: "Assemble Dossier",
+      label: "Compile Dossier",
       endpoint: {
-        userMessage: "Assemble the final dossier for our IND filing.",
-        // The final output is a de-risked asset with a clear ROI.
-        narrative: "Mission complete. The full **IND-Ready Dossier** has been compiled. We have moved from an unvalidated target to a portfolio of de-risked therapeutic assets with a **$47.2M cost avoidance** over traditional R&D. The `in silico` conquest is finished. Ready for the wet-lab."
+        userMessage: "Mission successful. Compile the final IND-ready dossier.",
+        narrative: "Dossier compiled. We have moved from an unvalidated target to a portfolio of de-risked, computationally validated therapeutic assets. The in-silico conquest is complete. This asset is ready for the next stage of development."
       }
     }
   ];
@@ -153,8 +160,68 @@ const TargetDossierRunner = ({ toolConfig }) => {
 
       await wait(1500); // Simulate API call
 
-      // Load Oracle data and show first analysis
-      setResults({ oracle: { data: pik3caTrinityCampaignConfig.acts[0].stages[0] }});
+      // Load Oracle data and show first analysis - Create data structure that matches our new conversation flow
+      const oracleData = {
+        id: 'target-validation-campaign',
+        label: 'Target Validation Campaign',
+        description: 'Complete target validation through functional, dependency, and accessibility analysis',
+        endpoints: [
+          {
+            id: 'predict_variant_impact',
+            endpoint_name: '/predict_variant_impact',
+            title: 'Functional Damage Assessment',
+            headline: 'CATASTROPHIC IMPACT CONFIRMED',
+            narrative: campaignSteps[0].endpoint.narrative,
+            demoData: { 
+              delta_likelihood_score: -1883.15, 
+              pathogenicity_prediction: 'HIGH-CONFIDENCE PATHOGENIC',
+              predicted_consequence: 'Severe biological disruption',
+              sae_signal: 'Frameshift / Premature Stop (f/24278)'
+            }
+          },
+          {
+            id: 'predict_gene_essentiality',
+            endpoint_name: '/predict_gene_essentiality',
+            title: 'Cancer Dependency Analysis',
+            headline: 'CRITICAL DEPENDENCY IDENTIFIED',
+            narrative: campaignSteps[1].endpoint.narrative,
+            demoData: { 
+              essentiality_score: 0.92, 
+              therapeutic_window: '11.5x',
+              essentiality_category: 'Essential for cancer survival',
+              comparison: 'Exceeds HER2 dependency scores'
+            }
+          },
+          {
+            id: 'predict_chromatin_accessibility',
+            endpoint_name: '/predict_chromatin_accessibility',
+            title: 'Target Accessibility Analysis',
+            headline: 'TARGET IS ACCESSIBLE',
+            narrative: campaignSteps[2].endpoint.narrative,
+            demoData: { 
+              accessibility_score: 0.88, 
+              accessibility_state: 'Active Enhancer',
+              druggability: 'High feasibility for CRISPR and small molecules'
+            }
+          },
+          {
+            id: 'target_validation_decision',
+            endpoint_name: '/target_validation_decision',
+            title: 'Target Validation Decision',
+            headline: 'MISSION GO - TARGET VALIDATED',
+            narrative: campaignSteps[3].endpoint.narrative,
+            demoData: { 
+              validation_status: 'GO',
+              functional_damage: 'CONFIRMED',
+              dependency_window: '11.5x',
+              accessibility_score: 0.88,
+              decision: 'TARGET VALIDATED FOR THERAPEUTIC INTERVENTION'
+            }
+          }
+        ]
+      };
+      
+      setResults({ oracle: { data: oracleData }});
       
       // Add the first analysis result
       setConversation(prev => [...prev, { 
@@ -201,14 +268,14 @@ const TargetDossierRunner = ({ toolConfig }) => {
     }
     
     // --- Update results based on which phase we're entering ---
-    if (nextStep <= 2) { // Oracle Phase (steps 0, 1, 2)
+    if (nextStep <= 3) { // Oracle Phase (steps 0, 1, 2, 3)
         // Oracle data already loaded
-    } else if (nextStep >= 3 && nextStep <= 4) { // Forge Phase (steps 3, 4)
+    } else if (nextStep >= 4 && nextStep <= 5) { // Forge Phase (steps 4, 5)
         if (!results.forge) setResults(prev => ({ ...prev, forge: { data: pik3caTrinityCampaignConfig.acts[1].stages[0] } }));
-    } else if (nextStep === 5) { // Gauntlet Phase (step 5)
+    } else if (nextStep === 6) { // Gauntlet Phase (step 6)
         if (!results.gauntlet) setResults(prev => ({ ...prev, gauntlet: { data: pik3caTrinityCampaignConfig.acts[2].stages[0] } }));
     }
-    // Dossier data will be loaded by useEffect when currentStep reaches 6
+    // Dossier data will be loaded by useEffect when currentStep reaches 7
 
     // --- Log activity for each step ---
     switch(nextStep) {
@@ -279,14 +346,16 @@ const TargetDossierRunner = ({ toolConfig }) => {
           : currentStep === 1
             ? 'Assess Target Accessibility'
             : currentStep === 2
-              ? 'Design CRISPR Guides'
+              ? 'Make GO/NO-GO Decision'
               : currentStep === 3
-                ? 'Generate Inhibitors'
+                ? 'Design CRISPR Guides'
                 : currentStep === 4
-                  ? 'Run In Silico Trial'
+                  ? 'Generate Inhibitors'
                   : currentStep === 5
-                    ? 'Generate Dossier'
-                    : 'Analysis Complete'
+                    ? 'Run In Silico Trial'
+                    : currentStep === 6
+                      ? 'Generate Dossier'
+                      : 'Analysis Complete'
   };
 
   return (

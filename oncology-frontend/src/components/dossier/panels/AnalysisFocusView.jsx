@@ -9,6 +9,7 @@ import ForgeTherapeuticsDisplay from '../canisters/ForgeTherapeuticsDisplay';
 import GauntletTrialsDisplay from '../canisters/GauntletTrialsDisplay';
 import TherapeuticBlueprint from '../canisters/TherapeuticBlueprint';
 import MissionDecisionDisplay from '../canisters/MissionDecisionDisplay';
+import EvidenceIntelligencePanel from '../canisters/EvidenceIntelligencePanel';
 
 const AnalysisFocusView = ({ results, currentStep }) => {
   const { oracle, forge, gauntlet, dossier } = results;
@@ -60,7 +61,7 @@ const AnalysisFocusView = ({ results, currentStep }) => {
         description: 'Computational validation of therapeutic efficacy and safety'
       };
     }
-    if (currentStep >= 7) {
+    if (currentStep === 7) {
       return {
         phase: 'DOSSIER',
         title: 'Mission Complete',
@@ -97,6 +98,13 @@ const AnalysisFocusView = ({ results, currentStep }) => {
       return <GauntletTrialsDisplay gauntletData={gauntlet} currentEndpointIndex={0} />;
     }
     if (currentStep === 6) {
+      // Step 6: Execute In-Silico Trial (still Gauntlet phase)
+      return <GauntletTrialsDisplay gauntletData={gauntlet} currentEndpointIndex={1} />;
+    }
+    if (currentStep === 7) {
+      // Step 7: Final Dossier
+      console.log('AnalysisFocusView - currentStep is 7, rendering TherapeuticBlueprint');
+      console.log('AnalysisFocusView - dossier data:', dossier);
       return <TherapeuticBlueprint blueprintData={dossier} />;
     }
     return (
