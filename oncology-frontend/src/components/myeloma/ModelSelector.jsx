@@ -11,9 +11,9 @@ const ModelSelector = ({ value, onChange }) => {
     <FormControl size="small" sx={{ minWidth: 160 }}>
       <InputLabel>Model</InputLabel>
       <Select label="Model" value={value} onChange={handle}>
-        <MenuItem value="evo2_1b">Evo2 1B</MenuItem>
-        <MenuItem value="evo2_7b">Evo2 7B</MenuItem>
-        <MenuItem value="evo2_40b">Evo2 40B</MenuItem>
+        <MenuItem value="evo2_1b">1B</MenuItem>
+        <MenuItem value="evo2_7b">7B</MenuItem>
+        <MenuItem value="evo2_40b">40B</MenuItem>
       </Select>
     </FormControl>
   );

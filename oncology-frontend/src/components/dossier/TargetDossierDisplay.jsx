@@ -405,7 +405,7 @@ export const TargetDossierDisplay = ({
                 />
               </Paper>
             </Grid>
-          </Grid>
+        </Grid>
 
           {/* Bottom Status Bar */}
           <Paper sx={{ 

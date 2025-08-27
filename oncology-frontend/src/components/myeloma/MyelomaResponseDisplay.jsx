@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Typography, Paper, Chip, Divider, Grid, Link as MuiLink, Button, Alert, Stack, Tooltip, Table, TableBody, TableCell, TableRow } from '@mui/material';
+import { Box, Typography, Paper, Chip, Divider, Grid, Link as MuiLink, Button, Alert, Stack, Tooltip, Table, TableBody, TableCell, TableRow, Drawer } from '@mui/material';
 import BaseCard from '../common/BaseCard';
 import { Link, useNavigate } from 'react-router-dom';
 import useAppStore from '../../store';
@@ -9,6 +9,7 @@ import useResultCache from '../../hooks/useResultCache';
 import DeltaProfileChart from './DeltaProfileChart';
 import SensitivityProbeTable from './SensitivityProbeTable';
 import DualModelAgreement from './DualModelAgreement';
+import DeepAnalysisPanel from './DeepAnalysisPanel';
 
 const API_BASE_URL = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 
@@ -26,7 +27,17 @@ const getVariantCall = (detail) => {
   const conf = detail?.evo2_result?.confidence_score;
   const zeta = detail?.evo2_result?.zeta_score;
   const impact = detail?.calculated_impact_level;
-  if (typeof conf !== 'number' || conf < 0.4) return { label: 'Unknown', color: 'default' };
+  const gating = detail?.evo2_result?.gating;
+  
+  if (typeof conf !== 'number' || conf < 0.4) {
+    // Check if this is specifically due to low sequence evidence
+    const isLowSequenceEvidence = gating?.magnitude_ok === false || 
+                                 (Math.abs(zeta || 0) < 0.01 && Math.abs(detail?.evo2_result?.min_delta || 0) < 0.1);
+    return { 
+      label: isLowSequenceEvidence ? 'Unknown (low sequence evidence)' : 'Unknown', 
+      color: 'default' 
+    };
+  }
   if (typeof impact === 'number' && impact >= 1.0 && typeof zeta === 'number' && zeta < 0) {
     return { label: 'Likely Disruptive', color: 'error' };
   }
@@ -40,6 +51,8 @@ const MyelomaResponseDisplay = ({ results }) => {
   const [probes, setProbes] = useState({});
   const [loadingIdx, setLoadingIdx] = useState(null);
   const [evidenceOpen, setEvidenceOpen] = useState(false);
+  const [deepIdx, setDeepIdx] = useState(null);
+  const [deepData, setDeepData] = useState(null);
 
   if (!results) {
     return <BaseCard title="Awaiting Analysis..."><Typography>Submit patient mutations to analyze drug response.</Typography></BaseCard>;
@@ -88,6 +101,66 @@ const MyelomaResponseDisplay = ({ results }) => {
       setProbes((p) => ({ ...p, [idx]: { error: String(e?.message || e) } }));
     } finally {
       setLoadingIdx(null);
+    }
+  };
+
+  const runDeep = async (idx, detail) => {
+    try {
+      setDeepIdx(idx);
+      setDeepData({ loading: true });
+      const vi = detail?.original_variant_data?.variant_info || '';
+      const parts = vi.split(/\s+/);
+      const alleles = parts[1] || '';
+      const [ref, alt] = alleles.split('>');
+      const payload = {
+        gene: detail.gene,
+        hgvs_p: (detail?.variant || '').split(' ')[1] || '',
+        assembly: 'GRCh38',
+        chrom: String(detail.chrom),
+        pos: Number(detail.pos),
+        ref: String(ref || '').toUpperCase(),
+        alt: String(alt || '').toUpperCase(),
+        our_interpretation: detail?.evo2_result?.interpretation,
+        our_confidence: detail?.evo2_result?.confidence_score,
+        clinvar_url: (detail?.variant && detail?.variant.includes('TP53')) ? undefined : undefined
+      };
+      const j = await api.post('/api/evidence/deep_analysis', payload);
+      // Attach meta for downstream explain/extract actions
+      j.meta = {
+        gene: detail.gene,
+        hgvs_p: (detail?.variant || '').split(' ')[1] || '',
+      };
+      // Trigger literature query in parallel based on gene/hgvs_p and myeloma context
+      try {
+        const lit = await api.post('/api/evidence/literature', {
+          gene: detail.gene,
+          hgvs_p: (detail?.variant || '').split(' ')[1] || '',
+          disease: 'multiple myeloma',
+          time_window: 'since 2015',
+          max_results: 5,
+          include_abstracts: true,
+          synthesize: Boolean(window?.__mdt_synthesize_lit || false),
+        });
+        j.literature = lit;
+      } catch (e) {
+        j.literature = { error: String(e?.message || e) };
+      }
+      // AI Explanation synthesis
+      try {
+        const explain = await api.post('/api/evidence/explain', {
+          gene: detail.gene,
+          hgvs_p: (detail?.variant || '').split(' ')[1] || '',
+          evo2_result: detail?.evo2_result || {},
+          clinvar: j?.clinvar || {},
+          literature: j?.literature || {},
+        });
+        j.ai_explanation = explain?.explanation || null;
+      } catch (e) {
+        j.ai_explanation = null;
+      }
+      setDeepData(j);
+    } catch (e) {
+      setDeepData({ error: String(e?.message || e) });
     }
   };
 
@@ -230,6 +303,7 @@ const MyelomaResponseDisplay = ({ results }) => {
               <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
                 <Button variant="outlined" size="small" disabled={loadingIdx===index} onClick={() => runProfile(index, detail)}>Run Delta Profile</Button>
                 <Button variant="outlined" size="small" disabled={loadingIdx===index} onClick={() => runProbe(index, detail)}>Run Sensitivity Probe</Button>
+                <Button variant="contained" size="small" onClick={() => runDeep(index, detail)}>Deeper analysis</Button>
               </Stack>
 
               {/* Profile render */}
@@ -292,6 +366,14 @@ const MyelomaResponseDisplay = ({ results }) => {
 
       {/* Dual Model Agreement */}
       <DualModelAgreement data={results} />
+
+      {/* Deep analysis drawer */}
+      <Drawer anchor="right" open={deepIdx !== null} onClose={() => { setDeepIdx(null); setDeepData(null); }} PaperProps={{ sx: { width: 400 } }}>
+        <Box sx={{ p: 2 }}>
+          <Typography variant="h6" sx={{ mb: 1 }}>Deeper Analysis</Typography>
+          <DeepAnalysisPanel data={deepData} api={api} runSignature={results?.run_signature} />
+        </Box>
+      </Drawer>
 
       <EvidencePanel
         open={evidenceOpen}

@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Route, Routes, useNavigate, Navigate } from "react-router-dom";
 import { Sidebar, Navbar } from "./components";
 import { Home, Profile, Onboarding } from "./pages";
@@ -15,6 +15,13 @@ import PatientTasksPage from "./pages/PatientTasksPage";
 import FollowUpTaskBoard from "./pages/FollowUpTaskBoard";
 import { useStateContext } from "./context";
 import { ActivityProvider } from "./context/ActivityContext";
+import { AnalysisHistoryProvider } from "./context/AnalysisHistoryContext";
+import { CoPilotProvider } from "./components/CoPilot/context";
+import { CoPilot } from "./components/CoPilot/index.js";
+import { Q2CRouterTest } from "./components/CoPilot/Q2CRouter/Q2CRouterTest";
+import Phase3ActionDemo from "./components/Phase3ActionDemo";
+import CoPilotSmokeTest from "./components/CoPilotSmokeTest";
+import CoPilotDoctrineGapAnalysis from "./components/CoPilotDoctrineGapAnalysis";
 import GlobalActivitySidebar from "./components/GlobalActivitySidebar";
 import InvestorSlideshow from './pages/InvestorSlideshow';
 import WelcomeModal from './components/WelcomeModal';
@@ -33,6 +40,8 @@ import TargetDossier from './pages/TargetDossier';
 import { pik3caTrinityCampaignConfig } from './config/campaigns/pik3ca_trinity_campaign_config';
 
 
+
+
 const App = () => {
   const { user, authenticated, ready, login, currentUser } = useStateContext();
   const navigate = useNavigate();
@@ -46,16 +55,18 @@ const App = () => {
   }, [user, authenticated, ready, login, currentUser, navigate]);
 
   return (
-    <ActivityProvider>
-    <div className="sm:-8 relative flex min-h-screen flex-row bg-white p-4">
-      <div className="relative mr-10 hidden sm:flex">
-        <Sidebar />
-      </div>
+    <CoPilotProvider>
+      <AnalysisHistoryProvider>
+        <ActivityProvider>
+          <div className="sm:-8 relative flex min-h-screen flex-row bg-white p-4">
+            <div className="relative mr-10 hidden sm:flex">
+              <Sidebar />
+            </div>
 
-      <div className="mx-auto max-w-[1280px] flex-1 max-sm:w-full sm:pr-5">
-        <Navbar />
+            <div className="mx-auto max-w-[1280px] flex-1 max-sm:w-full sm:pr-5">
+              <Navbar />
 
-        <Routes>
+              <Routes>
           {/* Root route shows the home page */}
           <Route path="/" element={<Home />} />
           <Route path="/dossier" element={<TargetDossier />} />
@@ -103,17 +114,30 @@ const App = () => {
             path="/campaigns/pik3ca-de-risking" 
             element={<CampaignRunner config={pik3caTrinityCampaignConfig} />} 
           />
+          {/* Q2C Router Test Route */}
+          <Route path="/q2c-test" element={<Q2CRouterTest />} />
+          {/* Phase 3 Action Integration Demo Route */}
+          <Route path="/phase3-demo" element={<Phase3ActionDemo />} />
+          {/* Co-Pilot Doctrine Smoke Test Route */}
+          <Route path="/copilot-smoke-test" element={<CoPilotSmokeTest />} />
+          {/* Co-Pilot Doctrine Gap Analysis Route */}
+          <Route path="/copilot-gap-analysis" element={<CoPilotDoctrineGapAnalysis />} />
           {/* <Route path="/dossier" element={<TargetDossier />} /> */}
-        </Routes>
-      </div>
-        
-        {/* Global Activity Sidebar - shows on all pages */}
-        <GlobalActivitySidebar />
-        
-        {/* Welcome Modal - shows on first visit */}
-        <WelcomeModal />
-    </div>
-    </ActivityProvider>
+            </Routes>
+          </div>
+
+          {/* Global Activity Sidebar - shows on all pages */}
+          <GlobalActivitySidebar />
+
+          {/* Welcome Modal - shows on first visit */}
+          <WelcomeModal />
+        </div>
+
+        {/* Clinical CoPilot - AI Assistant */}
+        <CoPilot />
+      </ActivityProvider>
+    </AnalysisHistoryProvider>
+    </CoPilotProvider>
   );
 };
 

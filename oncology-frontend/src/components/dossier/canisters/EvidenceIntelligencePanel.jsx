@@ -362,7 +362,15 @@ const BiotechContextSummary = ({ context, decision }) => (
 const EvidenceIntelligencePanel = ({ endpoint, currentAnalysis }) => {
   // Add state for IND Package dialog
   const [showINDPackage, setShowINDPackage] = useState(false);
-  
+  // IMPORTANT: Hooks must not be conditionally skipped across renders
+  const [viewMode, setViewMode] = useState('overview');
+  const [expandedSections, setExpandedSections] = useState({
+    analysis: true,
+    evidence: false,
+    comparison: false,
+    provenance: false
+  });
+
   // Early return if no endpoint provided
   if (!endpoint || !currentAnalysis) {
     return null;
@@ -395,13 +403,7 @@ const EvidenceIntelligencePanel = ({ endpoint, currentAnalysis }) => {
     );
   }
 
-  const [viewMode, setViewMode] = useState('overview');
-  const [expandedSections, setExpandedSections] = useState({
-    analysis: true,
-    evidence: false,
-    comparison: false,
-    provenance: false
-  });
+  // (moved viewMode/expandedSections hooks above to keep hook order stable)
 
   const toggleSection = (section) => {
     setExpandedSections(prev => ({
@@ -678,5 +680,9 @@ const EvidenceIntelligencePanel = ({ endpoint, currentAnalysis }) => {
     </Box>
   );
 };
+
+export default EvidenceIntelligencePanel; 
+
+export default EvidenceIntelligencePanel; 
 
 export default EvidenceIntelligencePanel; 

@@ -136,8 +136,8 @@ const EndpointBreakdown = ({ endpoint, jsonData, compact = false }) => {
               </Typography>
             </Box>
           </Box>
-          <Button
-            onClick={() => setExpanded(!expanded)}
+      <Button
+        onClick={() => setExpanded(!expanded)}
             sx={{ 
               color: context.color || '#60a5fa',
               fontWeight: 700,
@@ -150,7 +150,7 @@ const EndpointBreakdown = ({ endpoint, jsonData, compact = false }) => {
             endIcon={expanded ? <ExpandLess /> : <ExpandMore />}
           >
             {expanded ? 'HIDE' : 'DETAILS'}
-          </Button>
+      </Button>
         </Box>
       </Box>
 
@@ -253,7 +253,7 @@ const EndpointBreakdown = ({ endpoint, jsonData, compact = false }) => {
           </Box>
         </Box>
       )}
-    </Paper>
+        </Paper>
   );
 };
 
