@@ -37,7 +37,9 @@ import StructurePredictor from './pages/StructurePredictor';
 import DemoSummarizer from './pages/DemoSummarizer';
 import CampaignRunner from './pages/CampaignRunner';
 import TargetDossier from './pages/TargetDossier';
+import MetastasisDashboard from './pages/MetastasisDashboard';
 import { pik3caTrinityCampaignConfig } from './config/campaigns/pik3ca_trinity_campaign_config';
+import SyntheticLethalityDetective from './components/SyntheticLethalityDetective';
 
 
 
@@ -105,7 +107,9 @@ const App = () => {
           <Route path="/threat-assessor" element={<ThreatAssessor />} />
           <Route path="/radonc-co-pilot" element={<RadOncCoPilot />} />
           <Route path="/tools" element={<Armory />} />
+          <Route path="/metastasis" element={<MetastasisDashboard />} />
           <Route path="/myeloma-digital-twin" element={<MyelomaDigitalTwin />} />
+          <Route path="/synthetic-lethality" element={<SyntheticLethalityDetective />} />
           <Route path="/crispr-designer" element={<CrisprDesigner />} />
           <Route path="/protein-synthesis" element={<ProteinSynthesis />} />
           <Route path="/structure-predictor" element={<StructurePredictor />} />

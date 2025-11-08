@@ -98,6 +98,20 @@ export const radOncConfig = {
   resultsComponent: 'ThreatAssessmentDisplay',
 };
 
+export const syntheticLethalityConfig = {
+  toolId: 'synthetic-lethality',
+  title: '🔬 Synthetic Lethality Detective',
+  subtitle: 'Solving Dr. Lustberg\'s Challenge: Post-T-DXd Therapy Selection',
+  progressSteps: [
+    { id: 'damage', label: 'Detect Damage' },
+    { id: 'pathway', label: 'Map Pathways' },
+    { id: 'lethality', label: 'Find Vulnerability' },
+    { id: 'therapy', label: 'Recommend Therapy' }
+  ],
+  inputSections: [],
+  resultsComponent: 'SyntheticLethalityDetective',
+};
+
 export const myelomaTwinConfig = {
   toolId: 'myeloma-digital-twin',
   title: '🔬 Myeloma Digital Twin',
