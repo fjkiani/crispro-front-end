@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Route, Routes, useNavigate, Navigate } from "react-router-dom";
 import { Sidebar, Navbar } from "./components";
 import { Home, Profile, Onboarding } from "./pages";
+import ErrorBoundary from "./components/ErrorBoundary";
 import MedicalRecords from "./pages/records/index";
 import ScreeningSchedule from "./pages/ScreeningSchedule";
 import SingleRecordDetails from "./pages/records/single-record-details";
@@ -16,7 +17,9 @@ import FollowUpTaskBoard from "./pages/FollowUpTaskBoard";
 import { useStateContext } from "./context";
 import { ActivityProvider } from "./context/ActivityContext";
 import { AnalysisHistoryProvider } from "./context/AnalysisHistoryContext";
+import { AuthProvider } from "./context/AuthContext";
 import { CoPilotProvider } from "./components/CoPilot/context";
+import { SporadicProvider } from "./context/SporadicContext";
 import { CoPilot } from "./components/CoPilot/index.js";
 import { Q2CRouterTest } from "./components/CoPilot/Q2CRouter/Q2CRouterTest";
 import Phase3ActionDemo from "./components/Phase3ActionDemo";
@@ -39,8 +42,17 @@ import CampaignRunner from './pages/CampaignRunner';
 import TargetDossier from './pages/TargetDossier';
 import MetastasisDashboard from './pages/MetastasisDashboard';
 import { pik3caTrinityCampaignConfig } from './config/campaigns/pik3ca_trinity_campaign_config';
-import SyntheticLethalityDetective from './components/SyntheticLethalityDetective';
-
+import ClinicalGenomicsCommandCenter from './components/ClinicalGenomicsCommandCenter/ClinicalGenomicsCommandCenter';
+import FoodValidatorAB from './pages/FoodValidatorAB';
+import BatchFoodValidator from './pages/BatchFoodValidator';
+import AyeshaTwinDemo from './pages/AyeshaTwinDemo';
+import AyeshaCompleteCare from './pages/AyeshaCompleteCare';
+import Login from './pages/auth/Login';
+import Signup from './pages/auth/Signup';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import AdminDashboard from './pages/admin/Dashboard';
+import AdminUsers from './pages/admin/Users';
+import SporadicCancerPage from './pages/SporadicCancerPage';
 
 
 
@@ -57,18 +69,29 @@ const App = () => {
   }, [user, authenticated, ready, login, currentUser, navigate]);
 
   return (
-    <CoPilotProvider>
-      <AnalysisHistoryProvider>
-        <ActivityProvider>
-          <div className="sm:-8 relative flex min-h-screen flex-row bg-white p-4">
-            <div className="relative mr-10 hidden sm:flex">
-              <Sidebar />
-            </div>
+    <ErrorBoundary showReloadOption={true}>
+      <AuthProvider>
+        <SporadicProvider>
+          <CoPilotProvider>
+            <AnalysisHistoryProvider>
+              <ActivityProvider>
+            <div className="sm:-8 relative flex min-h-screen flex-row bg-white p-4">
+              <div className="relative mr-10 hidden sm:flex">
+                <Sidebar />
+              </div>
 
-            <div className="mx-auto max-w-[1280px] flex-1 max-sm:w-full sm:pr-5">
-              <Navbar />
+              <div className="mx-auto max-w-[1280px] flex-1 max-sm:w-full sm:pr-5">
+                <Navbar />
 
-              <Routes>
+                <Routes>
+          {/* Auth routes - public */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          
+          {/* Admin routes - protected */}
+          <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin/users" element={<ProtectedRoute><AdminUsers /></ProtectedRoute>} />
+          
           {/* Root route shows the home page */}
           <Route path="/" element={<Home />} />
           <Route path="/dossier" element={<TargetDossier />} />
@@ -104,12 +127,17 @@ const App = () => {
           <Route path="/investor-slideshow" element={<InvestorSlideshow />} />
           <Route path="/genomic-analysis/:patientId" element={<GenomicAnalysis />} />
           <Route path="/validate" element={<HypothesisValidator />} />
+          <Route path="/food-validator" element={<FoodValidatorAB />} />
+          <Route path="/batch-food-validator" element={<BatchFoodValidator />} />
+          <Route path="/ayesha-twin-demo" element={<AyeshaTwinDemo />} />
+          <Route path="/ayesha-complete-care" element={<AyeshaCompleteCare />} />
+          <Route path="/sporadic-cancer" element={<SporadicCancerPage />} />
           <Route path="/threat-assessor" element={<ThreatAssessor />} />
           <Route path="/radonc-co-pilot" element={<RadOncCoPilot />} />
           <Route path="/tools" element={<Armory />} />
           <Route path="/metastasis" element={<MetastasisDashboard />} />
           <Route path="/myeloma-digital-twin" element={<MyelomaDigitalTwin />} />
-          <Route path="/synthetic-lethality" element={<SyntheticLethalityDetective />} />
+          <Route path="/clinical-genomics" element={<ClinicalGenomicsCommandCenter />} />
           <Route path="/crispr-designer" element={<CrisprDesigner />} />
           <Route path="/protein-synthesis" element={<ProteinSynthesis />} />
           <Route path="/structure-predictor" element={<StructurePredictor />} />
@@ -142,6 +170,9 @@ const App = () => {
       </ActivityProvider>
     </AnalysisHistoryProvider>
     </CoPilotProvider>
+    </SporadicProvider>
+    </AuthProvider>
+    </ErrorBoundary>
   );
 };
 

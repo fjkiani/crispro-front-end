@@ -80,6 +80,11 @@ export const navlinks = [
     link: '/tools',
   },
   {
+    name: 'metastasis',
+    imgUrl: dna, // DNA icon for metastasis cascade
+    link: '/metastasis',
+  },
+  {
     name: "profile",
     imgUrl: user,
     link: "/profile",
@@ -93,6 +98,31 @@ export const navlinks = [
     name: 'Hypothesis Validator',
     imgUrl: research,
     link: '/validate',
+  },
+  {
+    name: 'ayesha-care',
+    imgUrl: research,
+    link: '/ayesha-complete-care',
+  },
+  {
+    name: 'sporadic-cancer',
+    imgUrl: dna,
+    link: '/sporadic-cancer',
+  },
+  {
+    name: 'food-validator',
+    imgUrl: research,
+    link: '/food-validator',
+  },
+  {
+    name: 'hypothesis-tester',
+    imgUrl: research,
+    link: '/holistic-hypothesis-tester',
+  },
+  {
+    name: 'ayesha-demo',
+    imgUrl: research,
+    link: '/ayesha-twin-demo',
   },
   // {
   //   name: 'Investor Slideshow',
