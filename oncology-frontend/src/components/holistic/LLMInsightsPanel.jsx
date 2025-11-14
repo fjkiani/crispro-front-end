@@ -1,0 +1,164 @@
+import React from 'react';
+import {
+  Box,
+  Typography,
+  Paper,
+  Stack,
+  Chip,
+  Divider,
+  alpha,
+  Fade
+} from '@mui/material';
+import {
+  AutoAwesome as AutoAwesomeIcon,
+  Psychology as PsychologyIcon,
+  Insights as InsightsIcon,
+  CheckCircle as CheckCircleIcon,
+  Warning as WarningIcon
+} from '@mui/icons-material';
+
+/**
+ * LLMInsightsPanel Component
+ * 
+ * Displays AI-generated insights that are GROUNDED in our validation results.
+ * LLM synthesizes our actual data, not hallucinating.
+ */
+export default function LLMInsightsPanel({ insights, results }) {
+  if (!insights || Object.keys(insights).length === 0) {
+    return null;
+  }
+
+  return (
+    <Fade in timeout={500}>
+      <Paper
+        sx={{
+          p: 4,
+          borderRadius: 3,
+          background: 'linear-gradient(135deg, #667eea15 0%, #764ba215 100%)',
+          border: '2px solid',
+          borderColor: alpha('#667eea', 0.3),
+          boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+        }}
+      >
+        <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 3 }}>
+          <AutoAwesomeIcon sx={{ fontSize: 32, color: 'primary.main' }} />
+          <Box>
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              AI-Generated Insights
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Grounded in your validation results • Research Use Only
+            </Typography>
+          </Box>
+        </Stack>
+
+        {/* Overall Summary */}
+        {insights.overall_summary && (
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <InsightsIcon fontSize="small" />
+              Overall Summary
+            </Typography>
+            <Paper
+              sx={{
+                p: 2,
+                bgcolor: 'white',
+                borderRadius: 2,
+                border: `1px solid ${alpha('#667eea', 0.2)}`
+              }}
+            >
+              <Typography variant="body1">
+                {insights.overall_summary}
+              </Typography>
+            </Paper>
+          </Box>
+        )}
+
+        {/* Key Findings */}
+        {insights.key_findings && insights.key_findings.length > 0 && (
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <CheckCircleIcon fontSize="small" />
+              Key Findings
+            </Typography>
+            <Stack spacing={1}>
+              {insights.key_findings.map((finding, index) => (
+                <Paper
+                  key={index}
+                  sx={{
+                    p: 2,
+                    bgcolor: 'white',
+                    borderRadius: 2,
+                    border: `1px solid ${alpha('#667eea', 0.1)}`
+                  }}
+                >
+                  <Typography variant="body2">
+                    {finding}
+                  </Typography>
+                </Paper>
+              ))}
+            </Stack>
+          </Box>
+        )}
+
+        {/* Top Performers */}
+        {insights.top_performers && insights.top_performers.length > 0 && (
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
+              Top Performers
+            </Typography>
+            <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
+              {insights.top_performers.map((performer, index) => (
+                <Chip
+                  key={index}
+                  label={performer}
+                  color="success"
+                  sx={{ fontWeight: 600 }}
+                />
+              ))}
+            </Stack>
+          </Box>
+        )}
+
+        {/* Recommendations */}
+        {insights.recommendations && insights.recommendations.length > 0 && (
+          <Box>
+            <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <WarningIcon fontSize="small" />
+              Recommendations
+            </Typography>
+            <Stack spacing={1}>
+              {insights.recommendations.map((recommendation, index) => (
+                <Paper
+                  key={index}
+                  sx={{
+                    p: 2,
+                    bgcolor: alpha('#ff9800', 0.1),
+                    borderRadius: 2,
+                    border: `1px solid ${alpha('#ff9800', 0.3)}`
+                  }}
+                >
+                  <Typography variant="body2">
+                    {recommendation}
+                  </Typography>
+                </Paper>
+              ))}
+            </Stack>
+          </Box>
+        )}
+
+        {/* Disclaimer */}
+        <Divider sx={{ my: 3 }} />
+        <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+          These insights are generated by AI based on your validation results. They are grounded in our actual data and should be used for research purposes only.
+        </Typography>
+      </Paper>
+    </Fade>
+  );
+}
+
+
+
+
+
+

@@ -8,5 +8,3 @@ export const useEfficacyApi = (modelId) => {
   const explain = async (payload) => api.post('/api/efficacy/explain', payload);
   return { getConfig, getCalibrationStatus, predict, explain };
 }; 
-}; 
-}; 

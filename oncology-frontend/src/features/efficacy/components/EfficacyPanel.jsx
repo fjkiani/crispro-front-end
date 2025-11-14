@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, FormControl, FormLabel, RadioGroup, FormControlLabel, Radio, Alert, Chip, Stack } from '@mui/material';
+import { Box, Typography, FormControl, FormLabel, RadioGroup, FormControlLabel, Radio, Alert, Chip, Stack, Switch } from '@mui/material';
 import useEfficacy from '../useEfficacy';
 import EfficacyCard from './EfficacyCard';
 import EfficacyLegend from './EfficacyLegend';
@@ -10,6 +10,8 @@ export default function EfficacyPanel({ modelId, mutations, onEfficacyData }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [scoringMode, setScoringMode] = useState('standard'); // standard, massive_real, massive_impact
+  const [profileMode, setProfileMode] = useState('SPE'); // SP (Baseline) or SPE (Full)
+  const [enableFusion, setEnableFusion] = useState(false); // Fusion only when eligible
   const [config, setConfig] = useState(null);
   const [calib, setCalib] = useState(null);
 
@@ -74,6 +76,10 @@ export default function EfficacyPanel({ modelId, mutations, onEfficacyData }) {
         } else if (scoringMode === 'massive_impact') {
           options.massive_impact = true;
         }
+
+        // Profile flags (S/P/E) and Fusion eligibility
+        options.ablation_mode = profileMode; // 'SP' or 'SPE'
+        options.enable_fusion = !!enableFusion;
         
         const result = await predict({ model_id: modelId, mutations: backendMuts, options });
         setData(result);
@@ -84,7 +90,7 @@ export default function EfficacyPanel({ modelId, mutations, onEfficacyData }) {
       }
     };
     run();
-  }, [modelId, JSON.stringify(mutations), scoringMode]); // Added scoringMode dependency
+  }, [modelId, JSON.stringify(mutations), scoringMode, profileMode, enableFusion]); // re-run on profile changes
 
   // Send efficacy data to parent when it changes
   useEffect(() => {
@@ -101,6 +107,11 @@ export default function EfficacyPanel({ modelId, mutations, onEfficacyData }) {
           sensitive: (data.drugs || []).filter(d => d.evidence_tier === 'supported' || d.meets_evidence_gate).length,
           lowBenefit: (data.drugs || []).filter(d => (d.evidence_tier === 'insufficient') || (typeof d.efficacy_score === 'number' && d.efficacy_score < 0.1)).length
         },
+        // Provenance for parent-level ProvenanceBar
+        run_id: data.run_id,
+        profile: profileMode,
+        fusion_enabled: !!enableFusion,
+        provenance: data.provenance || {},
         timestamp: new Date().toISOString(),
         modelId
       };
@@ -152,6 +163,12 @@ export default function EfficacyPanel({ modelId, mutations, onEfficacyData }) {
         {calib?.status && (
           <Chip size="small" label={`Calibration: ${calib.status}`} />
         )}
+        {/* Provenance & Profile Chips */}
+        {data?.run_id && (
+          <Chip size="small" label={`Run: ${String(data.run_id).slice(0,8)}`} />
+        )}
+        <Chip size="small" label={`Profile: ${profileMode}`} />
+        <Chip size="small" label={`Fusion: ${enableFusion ? 'on' : 'off'}`} color={enableFusion ? 'info' : 'default'} />
       </Stack>
       
       {/* Scoring Mode Toggle */}
@@ -200,6 +217,28 @@ export default function EfficacyPanel({ modelId, mutations, onEfficacyData }) {
             </Typography>
           </Alert>
         )}
+      </Box>
+
+      {/* Profile & Fusion Toggles */}
+      <Box sx={{ mb: 2, p: 2, bgcolor: 'background.paper', borderRadius: 1 }}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
+          <FormControl component="fieldset">
+            <FormLabel component="legend">Profile</FormLabel>
+            <RadioGroup
+              row
+              value={profileMode}
+              onChange={(e) => setProfileMode(e.target.value)}
+              sx={{ mt: 1 }}
+            >
+              <FormControlLabel value="SP" control={<Radio />} label="Baseline (SP)" />
+              <FormControlLabel value="SPE" control={<Radio />} label="Full (SPE)" />
+            </RadioGroup>
+          </FormControl>
+          <FormControlLabel
+            control={<Switch checked={enableFusion} onChange={(e)=>setEnableFusion(e.target.checked)} />}
+            label="Enable Fusion (when eligible)"
+          />
+        </Stack>
       </Box>
    {/* Drug Cards */}
    {data.drugs?.map((d) => (
@@ -270,40 +309,6 @@ export default function EfficacyPanel({ modelId, mutations, onEfficacyData }) {
                   <EfficacyCard key={`mid-${d.name}`} drug={d} scoringMode={data.scoring_mode} seqDetail={(data.sequence_details||[])[0]} pathwayScores={data.pathway_scores} explainFn={explain} resultData={data} />
                 ))}
               </Box>
-            )}
-            {low.length > 0 && (
-              <Box>
-                <Typography variant="subtitle1" sx={{ mb: 1 }}>Resistant / Low Likelihood of Benefit</Typography>
-                {low.map((d) => (
-                  <EfficacyCard key={`low-${d.name}`} drug={d} scoringMode={data.scoring_mode} seqDetail={(data.sequence_details||[])[0]} pathwayScores={data.pathway_scores} explainFn={explain} resultData={data} />
-                ))}
-              </Box>
-            )}
-          </Stack>
-        );
-      })()}
-      
-      <EfficacyLegend />
-    </Box>
-  );
-} 
-            )}
-            {low.length > 0 && (
-              <Box>
-                <Typography variant="subtitle1" sx={{ mb: 1 }}>Resistant / Low Likelihood of Benefit</Typography>
-                {low.map((d) => (
-                  <EfficacyCard key={`low-${d.name}`} drug={d} scoringMode={data.scoring_mode} seqDetail={(data.sequence_details||[])[0]} pathwayScores={data.pathway_scores} explainFn={explain} resultData={data} />
-                ))}
-              </Box>
-            )}
-          </Stack>
-        );
-      })()}
-      
-      <EfficacyLegend />
-    </Box>
-  );
-} 
             )}
             {low.length > 0 && (
               <Box>

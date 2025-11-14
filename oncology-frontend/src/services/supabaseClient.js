@@ -36,7 +36,7 @@ export class AnalysisHistoryService {
           results: JSON.stringify(analysisData.results),
           timestamp: analysisData.timestamp,
           metadata: JSON.stringify(analysisData.metadata),
-          user_id: null, // For now, no user auth
+          user_id: userId, // Use authenticated user ID
         }])
         .select();
 
@@ -82,18 +82,28 @@ export class AnalysisHistoryService {
     }
   }
 
-  async loadAllAnalyses(limit = 20) {
+  async loadAllAnalyses(limit = 20, userId = null) {
     if (!this.enabled) {
       console.warn('Supabase not configured, cannot load analyses');
       return [];
     }
 
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from(ANALYSIS_HISTORY_TABLE)
         .select('*')
         .order('timestamp', { ascending: false })
         .limit(limit);
+      
+      // Filter by user_id if authenticated
+      if (userId) {
+        query = query.eq('user_id', userId);
+      } else {
+        // Anonymous users only see their own (null user_id)
+        query = query.is('user_id', null);
+      }
+      
+      const { data, error } = await query;
 
       if (error) throw error;
 

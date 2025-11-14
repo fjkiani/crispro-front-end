@@ -9,7 +9,9 @@ export const useCoPilotIntegration = (pageConfig) => {
     setCurrentPage,
     setCurrentVariant,
     setCurrentDisease,
-    setUnreadCount
+    setUnreadCount,
+    // ⚔️ TREATMENT LINE INTEGRATION - Add treatment history setter
+    setTreatmentHistory
   } = useCoPilot();
 
   useEffect(() => {
@@ -28,10 +30,15 @@ export const useCoPilotIntegration = (pageConfig) => {
       setCurrentDisease(pageConfig.disease);
     }
 
+    // ⚔️ TREATMENT LINE INTEGRATION - Set treatment history context
+    if (pageConfig.treatmentHistory !== undefined) {
+      setTreatmentHistory(pageConfig.treatmentHistory);
+    }
+
     // Reset unread count when page changes
     setUnreadCount(0);
 
-  }, [pageConfig, setCurrentPage, setCurrentVariant, setCurrentDisease, setUnreadCount]);
+  }, [pageConfig, setCurrentPage, setCurrentVariant, setCurrentDisease, setUnreadCount, setTreatmentHistory]);
 
   return {
     // Helper functions for specific actions

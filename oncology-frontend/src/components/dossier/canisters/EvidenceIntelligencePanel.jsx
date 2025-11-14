@@ -682,7 +682,3 @@ const EvidenceIntelligencePanel = ({ endpoint, currentAnalysis }) => {
 };
 
 export default EvidenceIntelligencePanel; 
-
-export default EvidenceIntelligencePanel; 
-
-export default EvidenceIntelligencePanel; 

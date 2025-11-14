@@ -1,18 +1,21 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useActivity, ACTIVITY_TYPES } from '../context/ActivityContext'; // <-- Import Activity Context
-// import { DNALoader } from '../components/Loaders'; // Assuming a cool loader component
-import Loader from '../components/Loader'; // Use existing Loader
+import { useActivity, ACTIVITY_TYPES } from '../context/ActivityContext';
+import Loader from '../components/Loader';
+
+// Import new VUS components
+import VUSHeader from '../components/vus/VUSHeader';
+import ResearchModeBanner from '../components/vus/ResearchModeBanner';
+import WorkflowStepper from '../components/vus/WorkflowStepper';
+import MutationTable from '../components/vus/MutationTable';
+import GenomicQueryPanel from '../components/vus/GenomicQueryPanel';
+import AnalysisResults from '../components/vus/AnalysisResults';
+import CrisprRecommendations from '../components/vus/CrisprRecommendations';
+import { WORKFLOW_STEPS, WORKFLOW_STEPS_CONFIG, MUTATION_TABS, MESSAGES, EXTERNAL_URLS } from '../components/vus/constants.jsx';
 
 const mockPatientIds = ["PAT12345", "PAT67890"]; // Removed PAT11223 which doesn't exist in the backend
 
-// Workflow Steps Constants
-const WORKFLOW_STEPS = {
-  IDLE: 'idle',
-  MUTATION_SELECTION: 'mutation_selection', // Step 1 active: Show mutations list & query input
-  ANALYSIS_VIEW: 'analysis_view', // Step 2 active: Show query input & analysis results (or loader)
-  CRISPR_VIEW: 'crispr_view' // Step 3 active: Show CRISPR recommendations
-};
+// Using imported constants from constants.js
 
 // Pre-defined query templates for suggested queries feature
 const suggestedQueryTemplates = {
@@ -113,7 +116,7 @@ const MutationExplorer = () => {
             const response = await fetch(`${API_ROOT}/api/patients/${selectedPatientId}`);
             if (!response.ok) {
                 if (response.status === 404) {
-                    throw new Error(`Patient ID ${selectedPatientId} not found in the database.`);
+                    throw new Error(MESSAGES.errors.patientNotFound(selectedPatientId));
                 }
                 const errData = await response.json().catch(() => ({}));
                 throw new Error(errData.detail || `HTTP error! status: ${response.status}`);
@@ -133,7 +136,7 @@ const MutationExplorer = () => {
             }
         } catch (err) {
             console.error("Error fetching patient data:", err);
-            setError(err.message || "Failed to load patient data.");
+            setError(err.message || MESSAGES.errors.loadFailed);
             setPatientMutations([]);
         } finally {
             setIsLoadingPatient(false);
@@ -227,7 +230,7 @@ const MutationExplorer = () => {
             setTimeout(() => scrollToSection(analysisResultsRef), 100); 
         } catch (err) {
             console.error("Genomic analysis error:", err);
-            setError(err.message || "Failed genomic analysis.");
+            setError(err.message || MESSAGES.errors.analysisFailed);
             setAnalysisResult(null);
             setAnalysisStatusForWorkflow('error'); 
 
@@ -265,7 +268,7 @@ const MutationExplorer = () => {
             );
 
             // THEN open the new tab
-            const targetUrl = `http://localhost:8501?gene=${mutation.hugo_gene_symbol}&variant=${mutation.protein_change}&genomic_coord=${mutation.genomic_coordinate_hg38}&assembly=hg38`;
+            const targetUrl = `${EXTERNAL_URLS.CRISPR_DESIGNER}?gene=${mutation.hugo_gene_symbol}&variant=${mutation.protein_change}&genomic_coord=${mutation.genomic_coordinate_hg38}&assembly=hg38`;
             window.open(targetUrl, '_blank', 'noopener,noreferrer'); // Added noopener,noreferrer for security
             
             // Scroll after potential state update and opening tab
@@ -338,7 +341,7 @@ const MutationExplorer = () => {
     };
 
     // Placeholder for mutation tab categories - replace with actual logic later
-    const mutationTabs = ['All', 'Somatic', 'Germline']; // Example tabs
+    const mutationTabs = MUTATION_TABS; // Example tabs
     const filteredMutations = patientMutations; // Replace with actual filtering based on activeMutationTab
 
     // Helper to get styling for workflow steps
@@ -875,7 +878,7 @@ const MutationExplorer = () => {
                 <button onClick={() => navigate(-1)} className="bg-gray-700 hover:bg-gray-600 text-gray-200 font-bold py-2 px-4 rounded transition-colors">
                     &larr; Back
                 </button>
-                <h1 className="text-3xl font-bold text-center text-purple-400 flex-grow">Mutation Explorer</h1>
+                <h1 className="text-3xl font-bold text-center text-purple-400 flex-grow">VUS Explorer (research‑mode)</h1>
                 <div> {/* Placeholder for right-aligned buttons if any, or to balance the flex layout */}
                     {patientId && (
                         <button onClick={() => navigate(`/medical-records/${patientId}`)} className="ml-2 bg-gray-700 hover:bg-gray-600 text-gray-200 font-bold py-2 px-4 rounded transition-colors">
@@ -923,6 +926,18 @@ const MutationExplorer = () => {
                         </div>
                     }
                 </div>
+            </div>
+            {/* Research-mode helper banner */}
+            <div className="mb-4 p-4 bg-gray-900 rounded-lg border border-gray-700">
+                <p className="text-sm text-gray-300">
+                    Focus: resolve unknown variants with transparent signals and clear next actions.
+                </p>
+                <ul className="mt-2 text-xs text-gray-400 list-disc list-inside space-y-1">
+                    <li>Run insights to see Functionality / Regulatory / Essentiality / Chromatin chips</li>
+                    <li>Check prior coverage (ClinVar, AM) and provenance (run ID, profile)</li>
+                    <li>Actions: Send to Dossier · Run WIWFM · Open CRISPR Designer (when coords exist)</li>
+                </ul>
+                <p className="mt-2 text-[11px] text-gray-500 italic">Results are research‑mode and cohort‑dependent.</p>
             </div>
         </div>
     );

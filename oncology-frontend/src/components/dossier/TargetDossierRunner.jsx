@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Box } from '@mui/material';
 import { TargetDossierDisplay } from './TargetDossierDisplay';
 import { pik3caTrinityCampaignConfig } from '../../config/campaigns/pik3ca_trinity_campaign_config';
+import { useInsightsBundle } from '../../hooks/useInsights.js';
 import { useActivity, ACTIVITY_TYPES } from '../../context/ActivityContext';
+import RUOLabel from '../common/RUOLabel';
 
 const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -27,6 +29,34 @@ const TargetDossierRunner = ({ toolConfig }) => {
   const [currentStep, setCurrentStep] = useState(-1); // Start with -1 (no analysis started)
   const [completedSteps, setCompletedSteps] = useState([]);
   const [conversation, setConversation] = useState([]);
+  const [currentVariant, setCurrentVariant] = useState({
+    gene: 'PIK3CA',
+    hgvs_p: 'E542K',
+    chrom: null,
+    pos: null,
+    ref: null,
+    alt: null,
+  });
+
+  // Live insights for steps 0–3
+  const insights = useInsightsBundle({
+    gene: currentVariant.gene,
+    hgvs_p: currentVariant.hgvs_p,
+    coords: currentVariant.chrom && currentVariant.pos && currentVariant.ref && currentVariant.alt ? {
+      chrom: currentVariant.chrom,
+      pos: currentVariant.pos,
+      ref: currentVariant.ref,
+      alt: currentVariant.alt,
+    } : null,
+    variants: currentVariant.chrom && currentVariant.pos && currentVariant.ref && currentVariant.alt ? [{
+      gene: currentVariant.gene,
+      chrom: currentVariant.chrom,
+      pos: currentVariant.pos,
+      ref: currentVariant.ref,
+      alt: currentVariant.alt,
+      consequence: 'missense_variant'
+    }] : null,
+  });
   
   // Use activity context for logging
   const { addActivity } = useActivity();
@@ -160,7 +190,7 @@ const TargetDossierRunner = ({ toolConfig }) => {
 
       await wait(1500); // Simulate API call
 
-      // Load Oracle data and show first analysis - Create data structure that matches our new conversation flow
+      // Load Oracle data and show first analysis - now with live insights where available
       const oracleData = {
         id: 'target-validation-campaign',
         label: 'Target Validation Campaign',
@@ -171,51 +201,40 @@ const TargetDossierRunner = ({ toolConfig }) => {
             endpoint_name: '/predict_variant_impact',
             title: 'Functional Damage Assessment',
             headline: 'CATASTROPHIC IMPACT CONFIRMED',
-            narrative: campaignSteps[0].endpoint.narrative,
-            demoData: { 
-              delta_likelihood_score: -1883.15, 
-              pathogenicity_prediction: 'HIGH-CONFIDENCE PATHOGENIC',
-              predicted_consequence: 'Severe biological disruption',
-              sae_signal: 'Frameshift / Premature Stop (f/24278)'
-            }
+            narrative: `Functionality change score: ${typeof insights.functionality?.score === 'number' ? insights.functionality.score.toFixed(2) : '—'}`,
+            demoData: { functionality_change_score: insights.functionality?.score }
           },
           {
             id: 'predict_gene_essentiality',
             endpoint_name: '/predict_gene_essentiality',
             title: 'Cancer Dependency Analysis',
             headline: 'CRITICAL DEPENDENCY IDENTIFIED',
-            narrative: campaignSteps[1].endpoint.narrative,
-            demoData: { 
-              essentiality_score: 0.92, 
-              therapeutic_window: '11.5x',
-              essentiality_category: 'Essential for cancer survival',
-              comparison: 'Exceeds HER2 dependency scores'
-            }
+            narrative: `Essentiality score: ${typeof insights.essentiality?.score === 'number' ? insights.essentiality.score.toFixed(2) : '—'}`,
+            demoData: { essentiality_score: insights.essentiality?.score, calibration: insights.essentiality?.calibration }
           },
           {
             id: 'predict_chromatin_accessibility',
             endpoint_name: '/predict_chromatin_accessibility',
             title: 'Target Accessibility Analysis',
             headline: 'TARGET IS ACCESSIBLE',
-            narrative: campaignSteps[2].endpoint.narrative,
-            demoData: { 
-              accessibility_score: 0.88, 
-              accessibility_state: 'Active Enhancer',
-              druggability: 'High feasibility for CRISPR and small molecules'
-            }
+            narrative: `Chromatin accessibility: ${typeof insights.chromatin?.score === 'number' ? insights.chromatin.score.toFixed(2) : '—'}`,
+            demoData: { accessibility_score: insights.chromatin?.score, provenance: insights.chromatin?.provenance }
           },
           {
             id: 'target_validation_decision',
             endpoint_name: '/target_validation_decision',
             title: 'Target Validation Decision',
             headline: 'MISSION GO - TARGET VALIDATED',
-            narrative: campaignSteps[3].endpoint.narrative,
+            narrative: `Decision based on live insights — Functionality ${fmtNum(insights.functionality?.score)}, Essentiality ${fmtNum(insights.essentiality?.score)}, Chromatin ${fmtNum(insights.chromatin?.score)}, Regulatory ${fmtNum(insights.regulatory?.score)}`,
             demoData: { 
               validation_status: 'GO',
-              functional_damage: 'CONFIRMED',
-              dependency_window: '11.5x',
-              accessibility_score: 0.88,
-              decision: 'TARGET VALIDATED FOR THERAPEUTIC INTERVENTION'
+              decision: 'TARGET VALIDATED (Research-mode)',
+              insights: {
+                functionality: insights.functionality?.score,
+                essentiality: insights.essentiality?.score,
+                chromatin: insights.chromatin?.score,
+                regulatory: insights.regulatory?.score,
+              }
             }
           }
         ]
@@ -382,6 +401,9 @@ const TargetDossierRunner = ({ toolConfig }) => {
         currentAction={currentAction}
         conversation={conversation}
       />
+      
+      {/* RUO Label - Fixed position */}
+      <RUOLabel position="fixed" />
     </Box>
   );
 };

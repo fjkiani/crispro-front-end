@@ -199,3 +199,5 @@ export default function SporadicProvenanceCard({ drugName, provenance }) {
   );
 }
 
+
+

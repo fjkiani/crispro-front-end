@@ -47,12 +47,14 @@ import FoodValidatorAB from './pages/FoodValidatorAB';
 import BatchFoodValidator from './pages/BatchFoodValidator';
 import AyeshaTwinDemo from './pages/AyeshaTwinDemo';
 import AyeshaCompleteCare from './pages/AyeshaCompleteCare';
+import AyeshaTrialExplorer from './pages/AyeshaTrialExplorer';
 import Login from './pages/auth/Login';
 import Signup from './pages/auth/Signup';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminUsers from './pages/admin/Users';
 import SporadicCancerPage from './pages/SporadicCancerPage';
+import RunxConquest from './pages/RunxConquest';
 
 
 
@@ -131,6 +133,7 @@ const App = () => {
           <Route path="/batch-food-validator" element={<BatchFoodValidator />} />
           <Route path="/ayesha-twin-demo" element={<AyeshaTwinDemo />} />
           <Route path="/ayesha-complete-care" element={<AyeshaCompleteCare />} />
+          <Route path="/ayesha-trials" element={<AyeshaTrialExplorer />} />
           <Route path="/sporadic-cancer" element={<SporadicCancerPage />} />
           <Route path="/threat-assessor" element={<ThreatAssessor />} />
           <Route path="/radonc-co-pilot" element={<RadOncCoPilot />} />
@@ -146,6 +149,9 @@ const App = () => {
             path="/campaigns/pik3ca-de-risking" 
             element={<CampaignRunner config={pik3caTrinityCampaignConfig} />} 
           />
+          {/* Modular Demo Routes - Route-based demo selection */}
+          <Route path="/runx-conquest/:demoId" element={<RunxConquest />} />
+          <Route path="/runx-conquest" element={<RunxConquest />} />
           {/* Q2C Router Test Route */}
           <Route path="/q2c-test" element={<Q2CRouterTest />} />
           {/* Phase 3 Action Integration Demo Route */}

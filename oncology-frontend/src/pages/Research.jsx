@@ -6,6 +6,7 @@ import SearchBar from '../components/research/SearchBar';
 import ResultsDisplay from '../components/research/ResultsDisplay';
 import PatientTrialMatchView from '../components/research/PatientTrialMatchView';
 import ActionSuggestionsModal from '../components/research/ActionSuggestionsModal';
+import CohortLab from '../components/research/CohortLab.jsx';
 
 // Placeholder data structure anticipating agent outputs
 const placeholderTrial = {
@@ -397,6 +398,9 @@ const Research = () => {
             </div>
         )}
 
+        {/* Cohort Lab */}
+        <CohortLab />
+
         {isSuggestionsModalOpen && (
             <ActionSuggestionsModal
                 isOpen={isSuggestionsModalOpen}
@@ -408,5 +412,6 @@ const Research = () => {
     </div>
   );
 };
+
 
 export default Research; 

@@ -41,19 +41,3 @@ export default function useEfficacy(modelId) {
 
   return useMemo(() => ({ getConfig, getCalibrationStatus, predict, explain }), []);
 } 
-    if (cacheRef.current.has(k)) return cacheRef.current.get(k);
-    const res = await api.explain(payload);
-    cacheRef.current.set(k, res);
-    return res;
-  };
-
-  return useMemo(() => ({ getConfig, getCalibrationStatus, predict, explain }), []);
-} 
-    if (cacheRef.current.has(k)) return cacheRef.current.get(k);
-    const res = await api.explain(payload);
-    cacheRef.current.set(k, res);
-    return res;
-  };
-
-  return useMemo(() => ({ getConfig, getCalibrationStatus, predict, explain }), []);
-} 

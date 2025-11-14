@@ -13,6 +13,8 @@ export const CoPilotProvider = ({ children }) => {
   const [chatHistory, setChatHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  // ⚔️ TREATMENT LINE INTEGRATION - Add treatment history to context
+  const [treatmentHistory, setTreatmentHistory] = useState(null);
 
   const value = {
     isOpen,
@@ -29,6 +31,9 @@ export const CoPilotProvider = ({ children }) => {
     setIsLoading,
     unreadCount,
     setUnreadCount,
+    // ⚔️ TREATMENT LINE INTEGRATION
+    treatmentHistory,
+    setTreatmentHistory,
   };
 
   return (

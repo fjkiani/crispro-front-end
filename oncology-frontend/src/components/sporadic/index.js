@@ -11,4 +11,6 @@ export { default as TumorNGSUpload } from './TumorNGSUpload';
 export { default as SporadicWorkflow } from './SporadicWorkflow';
 export { default as SporadicProvenanceCard } from './SporadicProvenanceCard';
 export { default as TrialBiomarkerBadge } from './TrialBiomarkerBadge';
+export { default as BiomarkerSummaryWidget } from './BiomarkerSummaryWidget';
+export { default as BiomarkerMatchBadge } from './BiomarkerMatchBadge';
 

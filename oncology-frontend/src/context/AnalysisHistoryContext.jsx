@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { analysisHistoryService } from '../services/supabaseClient';
+import { useAuth } from './AuthContext';
 
 // Analysis History Context
 const AnalysisHistoryContext = createContext();
@@ -7,6 +8,7 @@ const AnalysisHistoryContext = createContext();
 const MAX_SAVED_ANALYSES = 20; // Limit to prevent database bloat
 
 export const AnalysisHistoryProvider = ({ children }) => {
+  const { user, authenticated } = useAuth();
   const [savedAnalyses, setSavedAnalyses] = useState([]);
   const [currentAnalysis, setCurrentAnalysis] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -18,7 +20,8 @@ export const AnalysisHistoryProvider = ({ children }) => {
         setIsLoading(true);
         if (analysisHistoryService.enabled) {
           console.log('Loading analyses from Supabase...');
-          const analyses = await analysisHistoryService.loadAllAnalyses(MAX_SAVED_ANALYSES);
+          const userId = authenticated && user ? user.id : null;
+          const analyses = await analysisHistoryService.loadAllAnalyses(MAX_SAVED_ANALYSES, userId);
           console.log('Loaded analyses from Supabase:', analyses);
           setSavedAnalyses(analyses);
         } else {
@@ -47,7 +50,7 @@ export const AnalysisHistoryProvider = ({ children }) => {
     };
 
     loadAnalyses();
-  }, []);
+  }, [authenticated, user]);
 
   // Generate a unique key for an analysis based on its parameters
   const generateAnalysisKey = (modelId, mutations, options = {}) => {
@@ -85,13 +88,14 @@ export const AnalysisHistoryProvider = ({ children }) => {
         mutationCount: mutations.length,
         hasResults: !!results,
         useCase: options.use_case_id || 'myeloma'
-      }
+      },
+      userId: authenticated && user ? user.id : null // Add authenticated user ID
     };
 
     try {
       if (analysisHistoryService.enabled) {
-        // Save to Supabase
-        await analysisHistoryService.saveAnalysis(newAnalysis);
+        // Save to Supabase with user ID
+        await analysisHistoryService.saveAnalysis(newAnalysis, authenticated && user ? user.id : null);
         console.log('Analysis saved to Supabase:', key);
       } else {
         // Fallback to localStorage

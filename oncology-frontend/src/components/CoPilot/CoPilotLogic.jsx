@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Q2C_ROUTER } from './Q2CRouter';
 import { processEvidenceData } from './utils';
 import { useCoPilot } from './context';
+import { useSporadic } from '../../context/SporadicContext'; // ⚔️ NEW: Sporadic Cancer Integration
 import { CoPilotUtils } from './utils/CoPilotUtils';
 
 /**
@@ -33,8 +34,13 @@ export const useCoPilotLogic = () => {
     chatHistory,
     setChatHistory,
     unreadCount,
-    setUnreadCount
+    setUnreadCount,
+    // ⚔️ TREATMENT LINE INTEGRATION - Get treatment history from context
+    treatmentHistory
   } = useCoPilot();
+  
+  // ⚔️ SPORADIC CANCER INTEGRATION - Get sporadic context
+  const { germlineStatus, tumorContext } = useSporadic();
 
   // API Root configuration
   const API_ROOT = import.meta.env.VITE_API_ROOT || '';
@@ -107,12 +113,16 @@ export const useCoPilotLogic = () => {
     try {
       // Phase 1: Q2C Router - Classify intent and route to appropriate endpoint
       const intent = Q2C_ROUTER.classifyIntent(messageText);
+      // ⚔️ TREATMENT LINE INTEGRATION - Include treatment history in context
       const context = {
         variant: currentVariant,
         disease: currentDisease,
         page: currentPage,
         question: messageText,
-        analysisResults: null
+        analysisResults: null,
+        treatmentHistory: treatmentHistory,  // ⚔️ Treatment line support
+        germlineStatus: germlineStatus,      // ⚔️ NEW: Sporadic cancer support
+        tumorContext: tumorContext           // ⚔️ NEW: Sporadic cancer support
       };
 
       let payload, endpoint, suggestedActions;

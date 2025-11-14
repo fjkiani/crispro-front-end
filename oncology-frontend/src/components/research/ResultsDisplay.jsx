@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { CheckCircleIcon, XCircleIcon, QuestionMarkCircleIcon, InformationCircleIcon, ExclamationTriangleIcon, EnvelopeIcon, FlagIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/solid'; // Added Chevrons
 import { useSnackbar } from 'notistack';
+import LocationCard from './LocationCard';
+import { Alert, Box, Typography, Chip } from '@mui/material';
+import { BiomarkerMatchBadge } from '../sporadic';
 
 // Placeholder action handler
 const handleDraftInquiry = (trialId, patientContext, contactInfo) => {
@@ -295,6 +298,81 @@ const InterpretedTrialResult = ({
               <span> Status: {item.status ? item.status.replace(/\n.*/, '').trim() : 'N/A'}</span> |
               <span> Phase: {item.phase || 'N/A'}</span>
             </div>
+            {/* Location Display - NEW */}
+            {(() => {
+              try {
+                const locations = item.locations_data 
+                  ? (typeof item.locations_data === 'string' 
+                      ? JSON.parse(item.locations_data) 
+                      : item.locations_data)
+                  : [];
+                if (locations && locations.length > 0) {
+                  return (
+                    <div style={{ marginTop: '10px' }}>
+                      <strong className="text-sm">📍 Locations ({locations.length}):</strong>
+                      <div style={{ marginTop: '5px' }}>
+                        {locations.slice(0, 2).map((loc, idx) => (
+                          <LocationCard key={idx} location={loc} />
+                        ))}
+                        {locations.length > 2 && (
+                          <div style={{ marginTop: '5px', fontSize: '12px', color: '#666' }}>
+                            + {locations.length - 2} more locations
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                }
+              } catch (e) {
+                console.error('Error parsing locations_data:', e);
+              }
+              return null;
+            })()}
+            {/* Live Refresh Indicator */}
+            {item.live_refreshed && (
+              <Alert severity="success" sx={{ mt: 1, fontSize: '0.75rem', py: 0.5 }}>
+                ✅ Live status refreshed
+              </Alert>
+            )}
+            
+            {/* Biomarker Matches (Sporadic Integration - Zo) */}
+            {item.biomarker_matches && item.biomarker_matches.length > 0 && (
+              <Box sx={{ 
+                mt: 2, 
+                p: 1.5, 
+                bgcolor: 'rgba(76, 175, 80, 0.1)', 
+                borderRadius: 1,
+                border: '1px solid rgba(76, 175, 80, 0.3)'
+              }}>
+                <Typography variant="caption" sx={{ 
+                  fontWeight: 700, 
+                  color: '#4caf50', 
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.5,
+                  display: 'block',
+                  mb: 1
+                }}>
+                  🎯 Tumor Biomarker Matches
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+                  {item.biomarker_matches.map((biomarker, idx) => (
+                    <BiomarkerMatchBadge
+                      key={idx}
+                      biomarker={biomarker}
+                    />
+                  ))}
+                  {item.biomarker_boost_factor && item.biomarker_boost_factor > 1.0 && (
+                    <Chip 
+                      label={`Prioritized ${item.biomarker_boost_factor}x`}
+                      size="small"
+                      color="success"
+                      variant="filled"
+                      sx={{ fontWeight: 600 }}
+                    />
+                  )}
+                </Box>
+              </Box>
+            )}
         </div>
         {/* Right side: Status Badge and Expand/Collapse Button */}        
         <div className="flex items-center flex-shrink-0">
@@ -341,6 +419,33 @@ const InterpretedTrialResult = ({
                  <p><strong>Status:</strong> {item.status || 'N/A'}</p>
                  <p><strong>Phase:</strong> {item.phase || 'N/A'}</p>
                </div>
+               {/* Full Locations in Expanded View */}
+               {(() => {
+                 try {
+                   const locations = item.locations_data 
+                     ? (typeof item.locations_data === 'string' 
+                         ? JSON.parse(item.locations_data) 
+                         : item.locations_data)
+                     : [];
+                   if (locations && locations.length > 0) {
+                     return (
+                       <div className="mt-3">
+                         <h5 className="text-sm font-semibold mb-2 text-gray-700 border-b pb-1">
+                           All Locations ({locations.length})
+                         </h5>
+                         <div className="space-y-2">
+                           {locations.map((loc, idx) => (
+                             <LocationCard key={idx} location={loc} />
+                           ))}
+                         </div>
+                       </div>
+                     );
+                   }
+                 } catch (e) {
+                   console.error('Error parsing locations_data:', e);
+                 }
+                 return null;
+               })()}
             </div>
 
             {/* --- Panel 2: Eligibility Deep Dive --- */}       

@@ -56,6 +56,14 @@ const Sidebar = () => {
       setIsActive("agentStudio");
     } else if (path.includes("/profile")) {
       setIsActive("profile");
+    } else if (path.includes("/food-validator")) {
+      setIsActive("food-validator");
+    } else if (path.includes("/holistic-hypothesis-tester")) {
+      setIsActive("hypothesis-tester");
+    } else if (path.includes("/ayesha-complete-care")) {
+      setIsActive("ayesha-care");
+    } else if (path.includes("/ayesha-twin-demo")) {
+      setIsActive("ayesha-demo");
       } else {
         setIsActive("");
       }

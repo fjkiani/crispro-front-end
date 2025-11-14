@@ -124,6 +124,11 @@ export const navlinks = [
     imgUrl: research,
     link: '/ayesha-twin-demo',
   },
+  {
+    name: 'ayesha-trials',
+    imgUrl: research,
+    link: '/ayesha-trials',
+  },
   // {
   //   name: 'Investor Slideshow',
   //   icon: Presentation,

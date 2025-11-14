@@ -12,11 +12,16 @@ import { useAnalysisHistory } from '../context/AnalysisHistoryContext';
 import { useCoPilotIntegration } from '../components/CoPilot/hooks';
 import { MyelomaDigitalTwinIntegration } from '../components/CoPilot/integrations';
 
+// ⚔️ TREATMENT LINE INTEGRATION - Ayesha's Hereditary Pathway
+import TreatmentHistoryForm from '../../../.cursor/ayesha/treatment_lines/frontend/components/TreatmentHistoryForm';
+import TreatmentLineProvenance from '../../../.cursor/ayesha/treatment_lines/frontend/components/TreatmentLineProvenance';
+import SAETreatmentLineChips from '../../../.cursor/ayesha/treatment_lines/frontend/components/SAETreatmentLineChips';
+
 const API_BASE_URL = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 
 const MyelomaDigitalTwin = () => {
   const [mutations, setMutations] = useState([]); // [{gene,hgvs_p,variant_info,build}]
-  const [modelId, setModelId] = useState('evo2_7b');
+  const [modelId, setModelId] = useState('evo2_1b'); // ⚔️ FIXED: Use 1B model (not 7B)
   const [dualCompare, setDualCompare] = useState(false);
   const [results, setResults] = useState(null);
   const [jobStatus, setJobStatus] = useState(null); // { run_signature, state, events, summary }
@@ -26,6 +31,10 @@ const MyelomaDigitalTwin = () => {
   const [showSavedAnalyses, setShowSavedAnalyses] = useState(false);
   const [analysisName, setAnalysisName] = useState('');
   const [efficacyData, setEfficacyData] = useState(null);
+  
+  // ⚔️ TREATMENT LINE INTEGRATION - State management (modularized for all diseases)
+  const [treatmentHistory, setTreatmentHistory] = useState(null);
+  const [disease, setDisease] = useState(null); // ⚔️ FIXED: Let TreatmentHistoryForm set disease dynamically
 
   // Analysis history integration
   const {
@@ -42,10 +51,12 @@ const MyelomaDigitalTwin = () => {
     variant_info: validMutations[0].variant_info
   } : null;
 
+  // ⚔️ FIXED: Use dynamic disease + TREATMENT LINE INTEGRATION
   useCoPilotIntegration({
     page: 'myeloma-digital-twin',
     variant: currentVariant,
-    disease: 'multiple myeloma'
+    disease: disease || 'multiple_myeloma',
+    treatmentHistory: treatmentHistory  // ⚔️ NEW: Pass treatment history to CoPilot
   });
 
   useEffect(() => {
@@ -89,11 +100,14 @@ const MyelomaDigitalTwin = () => {
     }
 
     try {
+      // ⚔️ FIXED: Remove hardcoded use_case_id, make disease-agnostic
       const payload = {
-        use_case_id: 'myeloma',
         model_id: modelId,
         mutations: validMutations,
-        options
+        options,
+        // ⚔️ TREATMENT LINE INTEGRATION - Pass treatment history to backend
+        disease: disease,
+        treatment_history: treatmentHistory
       };
       const r = await fetch(`${API_BASE_URL}/api/predict`, {
         method: 'POST',
@@ -187,7 +201,8 @@ const MyelomaDigitalTwin = () => {
       console.log('Final processed mutations:', processedMutations);
 
       // Update state
-      setModelId(analysis.modelId || 'evo2_7b');
+      // ⚔️ FIXED: Use 1B model fallback (not 7B)
+      setModelId(analysis.modelId || 'evo2_1b');
       setMutations(processedMutations);
       setDualCompare(analysis.options?.dual_compare || false);
       setUsePriors(analysis.options?.use_priors !== false);
@@ -405,6 +420,15 @@ const MyelomaDigitalTwin = () => {
 
       <LiveJobBanner />
 
+      {/* ⚔️ TREATMENT LINE INTEGRATION - Treatment History Form */}
+      <Box sx={{ mb: 3 }}>
+        <TreatmentHistoryForm
+          disease={disease}
+          onDiseaseChange={setDisease}
+          onHistoryChange={setTreatmentHistory}
+        />
+      </Box>
+
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mb: 2 }}>
         <Box sx={{ flex: 1 }}>
           <VariantInputList value={mutations} onChange={setMutations} />
@@ -421,16 +445,36 @@ const MyelomaDigitalTwin = () => {
       />
 
       {/* CoPilot Integration - AI Clinical Assistant */}
+      {/* ⚔️ FIXED: Use dynamic disease instead of hardcoded */}
       {currentVariant && (
         <MyelomaDigitalTwinIntegration
           variant={currentVariant}
-          disease="multiple myeloma"
+          disease={disease || 'multiple_myeloma'}
           analysisResults={results}
         />
       )}
 
       {results && (
-        <MyelomaResponseDisplay results={results} />
+        <>
+          {/* ⚔️ TREATMENT LINE INTEGRATION - Display Provenance & SAE Features */}
+          {results.drugs && results.drugs.length > 0 && results.drugs[0].treatment_line_provenance && (
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                ⚔️ Treatment Line Context
+              </Typography>
+              
+              {/* SAE Feature Chips */}
+              <Box sx={{ mb: 2 }}>
+                <SAETreatmentLineChips features={results.drugs[0].treatment_line_provenance} />
+              </Box>
+              
+              {/* Detailed Provenance */}
+              <TreatmentLineProvenance provenance={results.drugs[0].treatment_line_provenance} />
+            </Box>
+          )}
+          
+          <MyelomaResponseDisplay results={results} />
+        </>
       )}
 
       {/* Saved Analyses Dialog */}
