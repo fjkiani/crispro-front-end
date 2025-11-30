@@ -1,139 +1,435 @@
-import React, { createContext, useContext, useReducer, useEffect } from 'react';
+/**
+ * AgentContext - Global agent state management
+ * 
+ * Provides:
+ * - Agent list (all user agents)
+ * - Agent creation/update/delete
+ * - Agent execution (manual triggers)
+ * - Agent results and alerts
+ * - Real-time status updates
+ */
 
-// Initial state for agent context
-const initialState = {
-  agents: [],
-  isLoading: false,
-  error: null
-};
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useAuth } from './AuthContext';
 
-// Actions
-const ACTIONS = {
-  SET_AGENTS: 'SET_AGENTS',
-  ADD_AGENT: 'ADD_AGENT',
-  UPDATE_AGENT: 'UPDATE_AGENT',
-  DELETE_AGENT: 'DELETE_AGENT',
-  SET_LOADING: 'SET_LOADING',
-  SET_ERROR: 'SET_ERROR'
-};
-
-// Reducer function
-const agentReducer = (state, action) => {
-  switch (action.type) {
-    case ACTIONS.SET_AGENTS:
-      return { ...state, agents: action.payload };
-    case ACTIONS.ADD_AGENT:
-      return { ...state, agents: [...state.agents, action.payload] };
-    case ACTIONS.UPDATE_AGENT:
-      return {
-        ...state,
-        agents: state.agents.map(agent => 
-          agent.id === action.payload.id ? action.payload : agent
-        )
-      };
-    case ACTIONS.DELETE_AGENT:
-      return {
-        ...state,
-        agents: state.agents.filter(agent => agent.id !== action.payload)
-      };
-    case ACTIONS.SET_LOADING:
-      return { ...state, isLoading: action.payload };
-    case ACTIONS.SET_ERROR:
-      return { ...state, error: action.payload };
-    default:
-      return state;
-  }
-};
-
-// Create context
 const AgentContext = createContext();
 
-// Provider component
-export const AgentProvider = ({ children }) => {
-  const [state, dispatch] = useReducer(agentReducer, initialState);
-
-  // Load agents from localStorage on initial render
-  useEffect(() => {
-    const loadAgents = () => {
-      try {
-        dispatch({ type: ACTIONS.SET_LOADING, payload: true });
-        const storedAgents = localStorage.getItem('agentDefinitions');
-        
-        if (storedAgents) {
-          dispatch({ 
-            type: ACTIONS.SET_AGENTS, 
-            payload: JSON.parse(storedAgents) 
-          });
-        }
-      } catch (error) {
-        dispatch({ 
-          type: ACTIONS.SET_ERROR, 
-          payload: 'Failed to load saved agents' 
-        });
-      } finally {
-        dispatch({ type: ACTIONS.SET_LOADING, payload: false });
-      }
-    };
-
-    loadAgents();
-  }, []);
-
-  // Save agents to localStorage whenever they change
-  useEffect(() => {
-    if (state.agents.length > 0) {
-      localStorage.setItem('agentDefinitions', JSON.stringify(state.agents));
-    }
-  }, [state.agents]);
-
-  // Actions
-  const addAgent = (agent) => {
-    const newAgent = {
-      ...agent,
-      id: `agent-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      status: 'active'
-    };
-    
-    dispatch({ type: ACTIONS.ADD_AGENT, payload: newAgent });
-    return newAgent;
-  };
-
-  const updateAgent = (agent) => {
-    const updatedAgent = {
-      ...agent,
-      updatedAt: new Date().toISOString()
-    };
-    
-    dispatch({ type: ACTIONS.UPDATE_AGENT, payload: updatedAgent });
-    return updatedAgent;
-  };
-
-  const deleteAgent = (agentId) => {
-    dispatch({ type: ACTIONS.DELETE_AGENT, payload: agentId });
-  };
-
-  const value = {
-    agents: state.agents,
-    isLoading: state.isLoading,
-    error: state.error,
-    addAgent,
-    updateAgent,
-    deleteAgent
-  };
-
-  return (
-    <AgentContext.Provider value={value}>
-      {children}
-    </AgentContext.Provider>
-  );
-};
-
-// Custom hook for using the context
 export const useAgents = () => {
   const context = useContext(AgentContext);
   if (!context) {
-    throw new Error('useAgents must be used within an AgentProvider');
+    throw new Error('useAgents must be used within AgentProvider');
   }
   return context;
-}; 
+};
+
+export const AgentProvider = ({ children }) => {
+  const { user } = useAuth();
+  const [agents, setAgents] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [alerts, setAlerts] = useState([]);
+  const [unreadAlertsCount, setUnreadAlertsCount] = useState(0);
+
+  const API_BASE = import.meta.env.VITE_API_ROOT || 'http://127.0.0.1:8000';
+
+  // Fetch all agents for current user
+  const fetchAgents = useCallback(async () => {
+    if (!user) {
+      setAgents([]);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const token = localStorage.getItem('supabase_auth_token');
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${API_BASE}/api/agents`, {
+        headers,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch agents: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      setAgents(data.agents || []);
+    } catch (err) {
+      console.error('Error fetching agents:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [user, API_BASE]);
+
+  // Fetch alerts for current user
+  const fetchAlerts = useCallback(async () => {
+    if (!user) {
+      setAlerts([]);
+      setUnreadAlertsCount(0);
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('supabase_auth_token');
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${API_BASE}/api/agents/alerts?unread_only=true&limit=50`, {
+        headers,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch alerts: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      setAlerts(data.alerts || []);
+      setUnreadAlertsCount(data.alerts?.filter(a => !a.is_read).length || 0);
+    } catch (err) {
+      console.error('Error fetching alerts:', err);
+    }
+  }, [user, API_BASE]);
+
+  // Create new agent
+  const createAgent = async (agentData) => {
+    if (!user) {
+      throw new Error('User must be authenticated');
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const token = localStorage.getItem('supabase_auth_token');
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${API_BASE}/api/agents`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(agentData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || `Failed to create agent: ${response.statusText}`);
+      }
+
+      const newAgent = await response.json();
+      setAgents(prev => [newAgent, ...prev]);
+      return newAgent;
+    } catch (err) {
+      console.error('Error creating agent:', err);
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Update agent
+  const updateAgent = async (agentId, updates) => {
+    if (!user) {
+      throw new Error('User must be authenticated');
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const token = localStorage.getItem('supabase_auth_token');
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${API_BASE}/api/agents/${agentId}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(updates),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || `Failed to update agent: ${response.statusText}`);
+      }
+
+      const updatedAgent = await response.json();
+      setAgents(prev => prev.map(a => a.id === agentId ? updatedAgent : a));
+      return updatedAgent;
+    } catch (err) {
+      console.error('Error updating agent:', err);
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Delete agent
+  const deleteAgent = async (agentId) => {
+    if (!user) {
+      throw new Error('User must be authenticated');
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const token = localStorage.getItem('supabase_auth_token');
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${API_BASE}/api/agents/${agentId}`, {
+        method: 'DELETE',
+        headers,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || `Failed to delete agent: ${response.statusText}`);
+      }
+
+      setAgents(prev => prev.filter(a => a.id !== agentId));
+    } catch (err) {
+      console.error('Error deleting agent:', err);
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Pause agent
+  const pauseAgent = async (agentId) => {
+    return updateAgent(agentId, { status: 'paused' });
+  };
+
+  // Resume agent
+  const resumeAgent = async (agentId) => {
+    const token = localStorage.getItem('supabase_auth_token');
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE}/api/agents/${agentId}/resume`, {
+      method: 'POST',
+      headers,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to resume agent: ${response.statusText}`);
+    }
+
+    const updatedAgent = await response.json();
+    setAgents(prev => prev.map(a => a.id === agentId ? updatedAgent : a));
+    return updatedAgent;
+  };
+
+  // Trigger manual agent run
+  const runAgent = async (agentId) => {
+    if (!user) {
+      throw new Error('User must be authenticated');
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const token = localStorage.getItem('supabase_auth_token');
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${API_BASE}/api/agents/${agentId}/run`, {
+        method: 'POST',
+        headers,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || `Failed to run agent: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      
+      // Refresh agents to get updated last_run_at
+      await fetchAgents();
+      
+      // Refresh alerts (new results may have generated alerts)
+      await fetchAlerts();
+      
+      return result;
+    } catch (err) {
+      console.error('Error running agent:', err);
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Mark alert as read
+  const markAlertRead = async (alertId) => {
+    if (!user) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('supabase_auth_token');
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${API_BASE}/api/agents/alerts/${alertId}/read`, {
+        method: 'POST',
+        headers,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to mark alert as read: ${response.statusText}`);
+      }
+
+      // Update local state
+      setAlerts(prev => prev.map(a => a.id === alertId ? { ...a, is_read: true } : a));
+      setUnreadAlertsCount(prev => Math.max(0, prev - 1));
+    } catch (err) {
+      console.error('Error marking alert as read:', err);
+    }
+  };
+
+  // Fetch agent runs
+  const fetchAgentRuns = async (agentId, limit = 20) => {
+    if (!user) {
+      return [];
+    }
+
+    try {
+      const token = localStorage.getItem('supabase_auth_token');
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${API_BASE}/api/agents/${agentId}/runs?limit=${limit}`, {
+        headers,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch agent runs: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data.runs || [];
+    } catch (err) {
+      console.error('Error fetching agent runs:', err);
+      return [];
+    }
+  };
+
+  // Fetch agent results
+  const fetchAgentResults = async (agentId, unreadOnly = false, limit = 50) => {
+    if (!user) {
+      return [];
+    }
+
+    try {
+      const token = localStorage.getItem('supabase_auth_token');
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(
+        `${API_BASE}/api/agents/${agentId}/results?unread_only=${unreadOnly}&limit=${limit}`,
+        { headers }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch agent results: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data.results || [];
+    } catch (err) {
+      console.error('Error fetching agent results:', err);
+      return [];
+    }
+  };
+
+  // Initial fetch on mount and when user changes
+  useEffect(() => {
+    if (user) {
+      fetchAgents();
+      fetchAlerts();
+    }
+  }, [user, fetchAgents, fetchAlerts]);
+
+  // Poll for updates every 30 seconds
+  useEffect(() => {
+    if (!user) return;
+
+    const interval = setInterval(() => {
+      fetchAgents();
+      fetchAlerts();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [user, fetchAgents, fetchAlerts]);
+
+  const value = {
+    agents,
+    alerts,
+    unreadAlertsCount,
+    loading,
+    error,
+    fetchAgents,
+    fetchAlerts,
+    createAgent,
+    updateAgent,
+    deleteAgent,
+    pauseAgent,
+    resumeAgent,
+    runAgent,
+    markAlertRead,
+    fetchAgentRuns,
+    fetchAgentResults,
+  };
+
+  return <AgentContext.Provider value={value}>{children}</AgentContext.Provider>;
+};

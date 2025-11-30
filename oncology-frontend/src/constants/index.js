@@ -26,6 +26,11 @@ export const navlinks = [
   {
     name: "agents",
     imgUrl: aiAgent,
+    link: "/agents",
+  },
+  {
+    name: "agentDashboard",
+    imgUrl: aiAgent,
     link: "/agent-dashboard",
   },
   {
@@ -128,6 +133,21 @@ export const navlinks = [
     name: 'ayesha-trials',
     imgUrl: research,
     link: '/ayesha-trials',
+  },
+  {
+    name: 'ayesha-dossiers',
+    imgUrl: research,
+    link: '/ayesha-dossiers',
+  },
+  {
+    name: 'universal-dossiers',
+    imgUrl: research,
+    link: '/universal-dossiers',
+  },
+  {
+    name: 'universal-trial-intelligence',
+    imgUrl: research,
+    link: '/universal-trial-intelligence',
   },
   // {
   //   name: 'Investor Slideshow',

@@ -100,8 +100,3 @@ export const KGContextCard = ({ result }) => {
     </Paper>
   );
 };
-
-      </Typography>
-    </Paper>
-  );
-};

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { HeroMetrics, ResponseCharts, OverlapAnalysis, ValidationStatus, PatientTable } from './platinum';
 
 const API_ROOT = import.meta.env.VITE_API_ROOT || '';
 
@@ -10,6 +11,10 @@ const Field = ({ label, children }) => (
 );
 
 const CohortLab = () => {
+  // Tab state
+  const [activeTab, setActiveTab] = useState('cbioportal'); // 'cbioportal' or 'platinum'
+  
+  // cBioPortal state
   const [studyId, setStudyId] = useState('ov_tcga');
   const [genes, setGenes] = useState('BRCA1,BRCA2');
   const [limit, setLimit] = useState(200);
@@ -19,6 +24,14 @@ const CohortLab = () => {
   const [error, setError] = useState(null);
   const [rows, setRows] = useState([]);
   const [metrics, setMetrics] = useState(null);
+  
+  // Platinum Response state
+  const [platinumLoading, setPlatinumLoading] = useState(false);
+  const [platinumError, setPlatinumError] = useState(null);
+  const [platinumStats, setPlatinumStats] = useState(null);
+  const [platinumOverlap, setPlatinumOverlap] = useState(null);
+  const [platinumData, setPlatinumData] = useState(null);
+  const [mergedData, setMergedData] = useState([]);
 
   const run = async () => {
     setLoading(true);
@@ -49,10 +62,85 @@ const CohortLab = () => {
     }
   };
 
+  // Load platinum response data
+  const loadPlatinumData = async () => {
+    setPlatinumLoading(true);
+    setPlatinumError(null);
+    try {
+      // Fetch platinum response data
+      const platinumRes = await fetch(`${API_ROOT}/api/datasets/platinum_response?limit=1000`);
+      if (!platinumRes.ok) throw new Error(`HTTP ${platinumRes.status}`);
+      const platinumJson = await platinumRes.json();
+      setPlatinumData(platinumJson);
+      
+      // Fetch overlap analysis
+      const overlapRes = await fetch(`${API_ROOT}/api/datasets/platinum_response/overlap`);
+      if (!overlapRes.ok) throw new Error(`HTTP ${overlapRes.status}`);
+      const overlapJson = await overlapRes.json();
+      setPlatinumOverlap(overlapJson);
+      
+      // Compute stats
+      const stats = {
+        jr2_total_patients: platinumJson.total || 0,
+        zo_total_patients: overlapJson.zo_total || 0,
+        overlap_patients: overlapJson.overlap_count || 0,
+        zo_patients_with_mutations: overlapJson.zo_total || 0, // Approximation
+        jr2_response_distribution: platinumJson.metadata?.response_distribution || {},
+      };
+      setPlatinumStats(stats);
+      
+      // Merge data for patient table (if available)
+      if (platinumJson.patients && Array.isArray(platinumJson.patients)) {
+        // For now, just use platinum data - full merge would require Zo's mutation data endpoint
+        setMergedData(platinumJson.patients);
+      }
+    } catch (e) {
+      setPlatinumError(e?.message || String(e));
+    } finally {
+      setPlatinumLoading(false);
+    }
+  };
+
+  // Auto-load platinum data when tab is active
+  useEffect(() => {
+    if (activeTab === 'platinum' && !platinumStats && !platinumLoading) {
+      loadPlatinumData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+
   return (
     <div className="mt-8 p-4 rounded-lg border border-gray-700 bg-gray-800">
-      <h2 className="text-xl font-semibold text-green-300 mb-2">cBio Data Lab (Cohort)</h2>
-      <p className="text-sm text-gray-400 mb-4">Extract a small cohort and run a minimal benchmark in research-mode.</p>
+      <h2 className="text-xl font-semibold text-green-300 mb-2">Cohort Lab</h2>
+      <p className="text-sm text-gray-400 mb-4">Extract cohorts, query platinum response data, and run benchmarks in research-mode.</p>
+      
+      {/* Tab Navigation */}
+      <div className="flex gap-2 mb-4 border-b border-gray-700">
+        <button
+          onClick={() => setActiveTab('cbioportal')}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            activeTab === 'cbioportal'
+              ? 'text-green-400 border-b-2 border-green-400'
+              : 'text-gray-400 hover:text-gray-300'
+          }`}
+        >
+          cBio Data Lab
+        </button>
+        <button
+          onClick={() => setActiveTab('platinum')}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            activeTab === 'platinum'
+              ? 'text-green-400 border-b-2 border-green-400'
+              : 'text-gray-400 hover:text-gray-300'
+          }`}
+        >
+          ⚔️ Platinum Response
+        </button>
+      </div>
+      
+      {/* Tab Content */}
+      {activeTab === 'cbioportal' && (
+        <div>
 
       <div className="grid grid-cols-1 md:grid-cols-5 gap-3 mb-3">
         <Field label="Study ID">
@@ -140,6 +228,47 @@ const CohortLab = () => {
           </table>
           {rows.length > 100 && (
             <div className="mt-2 text-xs text-gray-400">Showing first 100 rows</div>
+          )}
+        </div>
+      )}
+        </div>
+      )}
+      
+      {activeTab === 'platinum' && (
+        <div>
+          <div className="mb-4 flex items-center justify-between">
+            <p className="text-sm text-gray-400">
+              Platinum response data extracted from TCGA-OV (Jr2's dataset) with overlap analysis against Zo's mutation dataset.
+            </p>
+            <button
+              onClick={loadPlatinumData}
+              disabled={platinumLoading}
+              className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 text-sm"
+            >
+              {platinumLoading ? 'Loading…' : 'Refresh Data'}
+            </button>
+          </div>
+          
+          {platinumError && (
+            <div className="mb-4 p-3 rounded bg-red-900/30 border border-red-700 text-sm text-red-300">
+              Error: {platinumError}
+            </div>
+          )}
+          
+          {platinumLoading && !platinumStats && (
+            <div className="text-center py-8 text-gray-400">Loading platinum response data...</div>
+          )}
+          
+          {platinumStats && (
+            <>
+              <HeroMetrics stats={platinumStats} />
+              <ResponseCharts stats={platinumStats} jr2Data={platinumData} />
+              <OverlapAnalysis overlapData={platinumOverlap} />
+              <ValidationStatus stats={platinumStats} overlapData={platinumOverlap} />
+              {mergedData.length > 0 && (
+                <PatientTable mergedData={mergedData} />
+              )}
+            </>
           )}
         </div>
       )}

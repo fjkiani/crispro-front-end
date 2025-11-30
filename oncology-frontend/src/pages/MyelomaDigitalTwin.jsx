@@ -13,9 +13,9 @@ import { useCoPilotIntegration } from '../components/CoPilot/hooks';
 import { MyelomaDigitalTwinIntegration } from '../components/CoPilot/integrations';
 
 // ⚔️ TREATMENT LINE INTEGRATION - Ayesha's Hereditary Pathway
-import TreatmentHistoryForm from '../../../.cursor/ayesha/treatment_lines/frontend/components/TreatmentHistoryForm';
-import TreatmentLineProvenance from '../../../.cursor/ayesha/treatment_lines/frontend/components/TreatmentLineProvenance';
-import SAETreatmentLineChips from '../../../.cursor/ayesha/treatment_lines/frontend/components/SAETreatmentLineChips';
+import TreatmentHistoryForm from '../components/TreatmentHistoryForm';
+import TreatmentLineProvenance from '../components/TreatmentLineProvenance';
+import SAETreatmentLineChips from '../components/SAETreatmentLineChips';
 
 const API_BASE_URL = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 

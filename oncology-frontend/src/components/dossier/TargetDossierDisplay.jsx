@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Box, Typography, Paper, Grid, Container, Fab, Tooltip } from '@mui/material';
-import { Help, Info, Assignment } from '@mui/icons-material';
+import { Box, Typography, Paper, Grid, Container, Fab, Tooltip, IconButton, Slide } from '@mui/material';
+import { Help, Info, Assignment, ChevronLeft, ChevronRight, Assessment } from '@mui/icons-material';
 import { useSpring, animated } from 'react-spring';
 
 // Import the existing premium components
@@ -27,6 +27,7 @@ export const TargetDossierDisplay = ({
   const { oracle, forge, gauntlet, dossier } = results;
   const [missionBriefOpen, setMissionBriefOpen] = useState(true);
   const [hasCommenced, setHasCommenced] = useState(false);
+  const [evidencePanelOpen, setEvidencePanelOpen] = useState(true);
 
   const headerAnimation = useSpring({
     from: { opacity: 0, transform: 'translateY(-20px)' },
@@ -199,163 +200,196 @@ export const TargetDossierDisplay = ({
         ] : null}
       />
 
-      {/* Evidence Intelligence Sidebar - Right */}
-      <Box sx={{
-        position: 'fixed',
-        right: 0,
-        top: 0,
-        width: '500px',
-        height: '100vh',
-        background: 'linear-gradient(135deg, rgba(96, 165, 250, 0.15), rgba(96, 165, 250, 0.08))',
-        backdropFilter: 'blur(20px)',
-        border: '2px solid rgba(96, 165, 250, 0.4)',
-        borderRight: 'none',
-        borderRadius: '16px 0 0 16px',
-        zIndex: 1000,
-        overflowY: 'auto',
-        boxShadow: '0 20px 60px rgba(96, 165, 250, 0.3)',
-        '&::-webkit-scrollbar': {
-          width: '8px',
-        },
-        '&::-webkit-scrollbar-track': {
-          background: 'rgba(96, 165, 250, 0.1)',
-        },
-        '&::-webkit-scrollbar-thumb': {
-          background: 'rgba(96, 165, 250, 0.5)',
-          borderRadius: '4px',
-        }
-      }}>
-        {(() => {
-          const hasStarted = Boolean(
-            (oracle && oracle.data && oracle.data.endpoints && oracle.data.endpoints.length > 0) ||
-            (forge && forge.data && forge.data.endpoints && forge.data.endpoints.length > 0) ||
-            (gauntlet && gauntlet.data && gauntlet.data.endpoints && gauntlet.data.endpoints.length > 0) ||
-            dossier
-          );
-          if (!hasStarted) {
-            return (
-              <Box sx={{ p: 4, textAlign: 'center' }}>
-                <Typography variant="h6" sx={{ fontWeight: 800, color: 'white', mb: 1 }}>
-                  Evidence Intelligence
-                </Typography>
-                <Typography sx={{ color: 'rgba(255,255,255,0.8)' }}>
-                  Standby. Evidence will appear after the first analysis runs.
-                </Typography>
-              </Box>
-            );
+      {/* Evidence Intelligence Sidebar - Toggleable */}
+      <Slide direction="left" in={evidencePanelOpen} mountOnEnter unmountOnExit>
+        <Box sx={{
+          position: 'fixed',
+          right: 0,
+          top: 0,
+          width: '500px',
+          height: '100vh',
+          background: 'linear-gradient(135deg, rgba(96, 165, 250, 0.15), rgba(96, 165, 250, 0.08))',
+          backdropFilter: 'blur(20px)',
+          border: '2px solid rgba(96, 165, 250, 0.4)',
+          borderRight: 'none',
+          borderRadius: '16px 0 0 16px',
+          zIndex: 1000,
+          overflowY: 'auto',
+          boxShadow: '0 20px 60px rgba(96, 165, 250, 0.3)',
+          transition: 'transform 0.3s ease-in-out',
+          '&::-webkit-scrollbar': {
+            width: '8px',
+          },
+          '&::-webkit-scrollbar-track': {
+            background: 'rgba(96, 165, 250, 0.1)',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            background: 'rgba(96, 165, 250, 0.5)',
+            borderRadius: '4px',
           }
-          return (
-            <EvidenceIntelligencePanel 
-              endpoint={(() => {
-                console.log('Evidence mapping - currentStep:', currentStep);
-                console.log('Evidence mapping - oracle:', oracle);
-                console.log('Evidence mapping - forge:', forge);
-                console.log('Evidence mapping - gauntlet:', gauntlet);
-                
-                // Oracle Phase: Steps 0-3
-                if (currentStep <= 3 && oracle?.data?.endpoints?.[currentStep]) {
-                  const endpoint = oracle.data.endpoints[currentStep].endpoint_name?.replace('/', '');
-                  console.log('Using Oracle endpoint:', endpoint);
-                  return endpoint;
-                }
-                
-                // Forge Phase: Steps 4-5
-                if (currentStep >= 4 && currentStep <= 5) {
-                  // Step 4: CRISPR Forge (generate_optimized_guide_rna)
-                  // Step 5: Inhibitor Forge (generate_protein_inhibitor)
-                  if (currentStep === 4) {
-                    console.log('Using Forge endpoint: generate_optimized_guide_rna');
-                    return 'generate_optimized_guide_rna';
-                  } else if (currentStep === 5) {
-                    console.log('Using Forge endpoint: generate_protein_inhibitor');
-                    return 'generate_protein_inhibitor';
+        }}>
+          {(() => {
+            const hasStarted = Boolean(
+              (oracle && oracle.data && oracle.data.endpoints && oracle.data.endpoints.length > 0) ||
+              (forge && forge.data && forge.data.endpoints && forge.data.endpoints.length > 0) ||
+              (gauntlet && gauntlet.data && gauntlet.data.endpoints && gauntlet.data.endpoints.length > 0) ||
+              dossier
+            );
+            if (!hasStarted) {
+              return (
+                <Box sx={{ p: 4, textAlign: 'center' }}>
+                  <Typography variant="h6" sx={{ fontWeight: 800, color: 'white', mb: 1 }}>
+                    Evidence Intelligence
+                  </Typography>
+                  <Typography sx={{ color: 'rgba(255,255,255,0.8)' }}>
+                    Standby. Evidence will appear after the first analysis runs.
+                  </Typography>
+                </Box>
+              );
+            }
+            return (
+              <EvidenceIntelligencePanel 
+                endpoint={(() => {
+                  console.log('Evidence mapping - currentStep:', currentStep);
+                  console.log('Evidence mapping - oracle:', oracle);
+                  console.log('Evidence mapping - forge:', forge);
+                  console.log('Evidence mapping - gauntlet:', gauntlet);
+                  
+                  // Oracle Phase: Steps 0-3
+                  if (currentStep <= 3 && oracle?.data?.endpoints?.[currentStep]) {
+                    const endpoint = oracle.data.endpoints[currentStep].endpoint_name?.replace('/', '');
+                    console.log('Using Oracle endpoint:', endpoint);
+                    return endpoint;
                   }
-                }
-                
-                // Gauntlet Phase: Step 6
-                if (currentStep === 6) {
-                  console.log('Using Gauntlet endpoint: predict_protein_functionality_change');
-                  return 'predict_protein_functionality_change';
-                }
-                
-                // Dossier Phase: Step 7
-                if (currentStep === 7) {
-                  console.log('Using Dossier endpoint: ind_package');
-                  return 'ind_package';
-                }
-                
-                console.log('Fallback to default endpoint');
-                return 'predict_variant_impact';
-              })()}
-              currentAnalysis={(() => {
-                // Oracle Phase: Steps 0-3
-                if (currentStep <= 3 && oracle?.data?.endpoints?.[currentStep]) {
-                  return oracle.data.endpoints[currentStep];
-                }
-                
-                // Forge Phase: Steps 4-5
-                if (currentStep >= 4 && currentStep <= 5) {
-                  // Create synthetic analysis data for Forge endpoints
-                  if (currentStep === 4) {
+                  
+                  // Forge Phase: Steps 4-5
+                  if (currentStep >= 4 && currentStep <= 5) {
+                    // Step 4: CRISPR Forge (generate_optimized_guide_rna)
+                    // Step 5: Inhibitor Forge (generate_protein_inhibitor)
+                    if (currentStep === 4) {
+                      console.log('Using Forge endpoint: generate_optimized_guide_rna');
+                      return 'generate_optimized_guide_rna';
+                    } else if (currentStep === 5) {
+                      console.log('Using Forge endpoint: generate_protein_inhibitor');
+                      return 'generate_protein_inhibitor';
+                    }
+                  }
+                  
+                  // Gauntlet Phase: Step 6
+                  if (currentStep === 6) {
+                    console.log('Using Gauntlet endpoint: predict_protein_functionality_change');
+                    return 'predict_protein_functionality_change';
+                  }
+                  
+                  // Dossier Phase: Step 7
+                  if (currentStep === 7) {
+                    console.log('Using Dossier endpoint: ind_package');
+                    return 'ind_package';
+                  }
+                  
+                  console.log('Fallback to default endpoint');
+                  return 'predict_variant_impact';
+                })()}
+                currentAnalysis={(() => {
+                  // Oracle Phase: Steps 0-3
+                  if (currentStep <= 3 && oracle?.data?.endpoints?.[currentStep]) {
+                    return oracle.data.endpoints[currentStep];
+                  }
+                  
+                  // Forge Phase: Steps 4-5
+                  if (currentStep >= 4 && currentStep <= 5) {
+                    // Create synthetic analysis data for Forge endpoints
+                    if (currentStep === 4) {
+                      return {
+                        endpoint_name: '/generate_optimized_guide_rna',
+                        demoData: {
+                          predicted_efficacy: 94.5,
+                          candidate_1: { sequence: 'GACCCAGAACCGATACGAGG', predicted_efficacy: 94.5 },
+                          candidate_2: { sequence: 'CTACGAGGACCCAGAACCGA', predicted_efficacy: 92.8 },
+                          candidate_3: { sequence: 'AACCGATACGAGGACCCAGA', predicted_efficacy: 91.2 }
+                        }
+                      };
+                    } else if (currentStep === 5) {
+                      return {
+                        endpoint_name: '/generate_protein_inhibitor',
+                        demoData: {
+                          binding_affinity: -12.3,
+                          compound_id: 'ZF-PIK3CA-001',
+                          molecular_weight: 456.78,
+                          predicted_selectivity: 'Best-in-class vs Alpelisib'
+                        }
+                      };
+                    }
+                  }
+                  
+                  // Gauntlet Phase: Step 6
+                  if (currentStep === 6) {
                     return {
-                      endpoint_name: '/generate_optimized_guide_rna',
+                      endpoint_name: '/predict_protein_functionality_change',
                       demoData: {
-                        predicted_efficacy: 94.5,
-                        candidate_1: { sequence: 'GACCCAGAACCGATACGAGG', predicted_efficacy: 94.5 },
-                        candidate_2: { sequence: 'CTACGAGGACCCAGAACCGA', predicted_efficacy: 92.8 },
-                        candidate_3: { sequence: 'AACCGATACGAGGACCCAGA', predicted_efficacy: 91.2 }
+                        target_knockdown: 85,
+                        cancer_cell_viability_loss: 76,
+                        selectivity_ratio: 56,
+                        predicted_outcome: 'High probability clinical success'
                       }
                     };
-                  } else if (currentStep === 5) {
+                  }
+                  
+                  // Dossier Phase: Step 7
+                  if (currentStep === 7 && dossier) {
                     return {
-                      endpoint_name: '/generate_protein_inhibitor',
                       demoData: {
-                        binding_affinity: -12.3,
-                        compound_id: 'ZF-PIK3CA-001',
-                        molecular_weight: 456.78,
-                        predicted_selectivity: 'Best-in-class vs Alpelisib'
+                        deliverables: [
+                          '3 CRISPR guides (94%+ efficacy)',
+                          '1 novel inhibitor',
+                          'Complete IND package',
+                          '$47.2M cost avoidance'
+                        ]
                       }
                     };
                   }
-                }
-                
-                // Gauntlet Phase: Step 6
-                if (currentStep === 6) {
-                  return {
-                    endpoint_name: '/predict_protein_functionality_change',
-                    demoData: {
-                      target_knockdown: 85,
-                      cancer_cell_viability_loss: 76,
-                      selectivity_ratio: 56,
-                      predicted_outcome: 'High probability clinical success'
-                    }
-                  };
-                }
-                
-                // Dossier Phase: Step 7
-                if (currentStep === 7 && dossier) {
-                  return {
-                    demoData: {
-                      deliverables: [
-                        '3 CRISPR guides (94%+ efficacy)',
-                        '1 novel inhibitor',
-                        'Complete IND package',
-                        '$47.2M cost avoidance'
-                      ]
-                    }
-                  };
-                }
-                
-                return oracle?.data?.endpoints?.[0] || {};
-              })()}
-            />
-          );
-        })()}
-      </Box>
+                  
+                  return oracle?.data?.endpoints?.[0] || {};
+                })()}
+              />
+            );
+          })()}
+        </Box>
+      </Slide>
+
+      {/* Toggle Button for Evidence Intelligence - Sticks out when collapsed */}
+      <IconButton
+        onClick={() => setEvidencePanelOpen(!evidencePanelOpen)}
+        sx={{
+          position: 'fixed',
+          right: evidencePanelOpen ? '500px' : 0,
+          top: '50%',
+          transform: 'translateY(-50%)',
+          zIndex: 1001,
+          background: 'linear-gradient(135deg, rgba(96, 165, 250, 0.9), rgba(96, 165, 250, 0.7))',
+          backdropFilter: 'blur(10px)',
+          border: '2px solid rgba(96, 165, 250, 0.5)',
+          borderRight: evidencePanelOpen ? '2px solid rgba(96, 165, 250, 0.5)' : 'none',
+          borderLeft: evidencePanelOpen ? 'none' : '2px solid rgba(96, 165, 250, 0.5)',
+          borderRadius: evidencePanelOpen ? '0 8px 8px 0' : '8px 0 0 8px',
+          color: 'white',
+          width: 48,
+          height: 80,
+          transition: 'all 0.3s ease-in-out',
+          '&:hover': {
+            background: 'linear-gradient(135deg, rgba(96, 165, 250, 1), rgba(96, 165, 250, 0.9))',
+            transform: 'translateY(-50%) scale(1.1)',
+            boxShadow: '0 8px 24px rgba(96, 165, 250, 0.5)',
+          },
+          boxShadow: '0 4px 12px rgba(96, 165, 250, 0.3)',
+        }}
+      >
+        {evidencePanelOpen ? <ChevronRight /> : <ChevronLeft />}
+      </IconButton>
 
       {/* Conditionally render main content only after commence */}
       {hasCommenced && (
-        <Container maxWidth="xl" sx={{ py: 4, ml: '360px', mr: '470px' }}>
+        <Container maxWidth="xl" sx={{ py: 4, ml: '360px', mr: evidencePanelOpen ? '520px' : '20px', transition: 'margin-right 0.3s ease-in-out' }}>
           {/* Hero Metrics Section */}
           <HeroMetricsSection 
             oracleData={oracle}
@@ -446,8 +480,9 @@ export const TargetDossierDisplay = ({
           sx={{ 
             position: 'fixed',
             bottom: 24,
-            right: 380, // Moved left to avoid overlap with mission status sidebar
+            right: evidencePanelOpen ? 380 : 20,
             background: 'linear-gradient(135deg, #60a5fa, #3b82f6)',
+            transition: 'right 0.3s ease-in-out',
             '&:hover': {
               background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
               transform: 'scale(1.1)',

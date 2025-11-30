@@ -125,3 +125,4 @@ const GenomicQueryPanel = ({
     );
 };
 
+export default GenomicQueryPanel;

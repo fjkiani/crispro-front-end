@@ -1,13 +1,4 @@
-/**
- * Trial Match Card Component
- * 
- * Displays a single trial match with:
- * - Match score and ranking
- * - Eligibility checklist
- * - Reasoning sections (why eligible, why good fit, conditional, red flags)
- * - Location badges
- * - Confidence gates
- */
+
 import React, { useState } from 'react';
 import {
   Card,
@@ -27,7 +18,7 @@ import {
   XCircleIcon,
   ExclamationTriangleIcon,
   ChevronDownIcon,
-  LocationMarkerIcon,
+  MapPinIcon,
 } from '@heroicons/react/24/solid';
 
 const TrialMatchCard = ({ trial, rank }) => {

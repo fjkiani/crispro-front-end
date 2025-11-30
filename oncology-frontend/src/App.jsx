@@ -48,6 +48,12 @@ import BatchFoodValidator from './pages/BatchFoodValidator';
 import AyeshaTwinDemo from './pages/AyeshaTwinDemo';
 import AyeshaCompleteCare from './pages/AyeshaCompleteCare';
 import AyeshaTrialExplorer from './pages/AyeshaTrialExplorer';
+import AyeshaDossierBrowser from './pages/AyeshaDossierBrowser';
+import AyeshaDossierDetail from './pages/AyeshaDossierDetail';
+import UniversalDossierBrowser from './pages/UniversalDossierBrowser';
+import UniversalDossierDetail from './pages/UniversalDossierDetail';
+import UniversalTrialIntelligence from './pages/UniversalTrialIntelligence';
+import ClinicalDossierTest from './pages/ClinicalDossierTest';
 import Login from './pages/auth/Login';
 import Signup from './pages/auth/Signup';
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -55,6 +61,8 @@ import AdminDashboard from './pages/admin/Dashboard';
 import AdminUsers from './pages/admin/Users';
 import SporadicCancerPage from './pages/SporadicCancerPage';
 import RunxConquest from './pages/RunxConquest';
+import { AgentsPage } from './pages/AgentsPage';
+import { AgentProvider } from './context/AgentContext';
 
 
 
@@ -73,10 +81,11 @@ const App = () => {
   return (
     <ErrorBoundary showReloadOption={true}>
       <AuthProvider>
-        <SporadicProvider>
-          <CoPilotProvider>
-            <AnalysisHistoryProvider>
-              <ActivityProvider>
+        <AgentProvider>
+          <SporadicProvider>
+            <CoPilotProvider>
+              <AnalysisHistoryProvider>
+                <ActivityProvider>
             <div className="sm:-8 relative flex min-h-screen flex-row bg-white p-4">
               <div className="relative mr-10 hidden sm:flex">
                 <Sidebar />
@@ -124,6 +133,7 @@ const App = () => {
           <Route path="/mutation-explorer/:patientId" element={<MutationExplorer />} />
           <Route path="/agent-dashboard" element={<AgentDashboard />} />
           <Route path="/agent-dashboard/:patientId" element={<AgentDashboard />} />
+          <Route path="/agents" element={<AgentsPage />} />
           <Route path="/agent-demo/:agentId" element={<AgentDemo />} />
           <Route path="/agent-studio" element={<AgentStudio />} />
           <Route path="/investor-slideshow" element={<InvestorSlideshow />} />
@@ -134,6 +144,11 @@ const App = () => {
           <Route path="/ayesha-twin-demo" element={<AyeshaTwinDemo />} />
           <Route path="/ayesha-complete-care" element={<AyeshaCompleteCare />} />
           <Route path="/ayesha-trials" element={<AyeshaTrialExplorer />} />
+          <Route path="/ayesha-dossiers" element={<AyeshaDossierBrowser />} />
+          <Route path="/ayesha-dossiers/:nct_id" element={<AyeshaDossierDetail />} />
+          <Route path="/universal-dossiers" element={<UniversalDossierBrowser />} />
+          <Route path="/universal-dossiers/:patientId/:nct_id" element={<UniversalDossierDetail />} />
+          <Route path="/universal-trial-intelligence" element={<UniversalTrialIntelligence />} />
           <Route path="/sporadic-cancer" element={<SporadicCancerPage />} />
           <Route path="/threat-assessor" element={<ThreatAssessor />} />
           <Route path="/radonc-co-pilot" element={<RadOncCoPilot />} />
@@ -141,6 +156,7 @@ const App = () => {
           <Route path="/metastasis" element={<MetastasisDashboard />} />
           <Route path="/myeloma-digital-twin" element={<MyelomaDigitalTwin />} />
           <Route path="/clinical-genomics" element={<ClinicalGenomicsCommandCenter />} />
+          <Route path="/clinical-dossier-test" element={<ClinicalDossierTest />} />
           <Route path="/crispr-designer" element={<CrisprDesigner />} />
           <Route path="/protein-synthesis" element={<ProteinSynthesis />} />
           <Route path="/structure-predictor" element={<StructurePredictor />} />
@@ -168,7 +184,7 @@ const App = () => {
           <GlobalActivitySidebar />
 
           {/* Welcome Modal - shows on first visit */}
-          <WelcomeModal />
+          {/* <WelcomeModal /> */}
         </div>
 
         {/* Clinical CoPilot - AI Assistant */}
@@ -177,6 +193,7 @@ const App = () => {
     </AnalysisHistoryProvider>
     </CoPilotProvider>
     </SporadicProvider>
+    </AgentProvider>
     </AuthProvider>
     </ErrorBoundary>
   );

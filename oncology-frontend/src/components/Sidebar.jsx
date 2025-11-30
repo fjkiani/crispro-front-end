@@ -64,6 +64,10 @@ const Sidebar = () => {
       setIsActive("ayesha-care");
     } else if (path.includes("/ayesha-twin-demo")) {
       setIsActive("ayesha-demo");
+    } else if (path.includes("/universal-dossiers")) {
+      setIsActive("universal-dossiers");
+    } else if (path.includes("/universal-trial-intelligence")) {
+      setIsActive("universal-trial-intelligence");
       } else {
         setIsActive("");
       }

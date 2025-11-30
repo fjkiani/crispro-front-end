@@ -5,10 +5,14 @@
  * Displays top 10 ranked trials with transparent reasoning.
  */
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Alert, CircularProgress, Paper } from '@mui/material';
+import { Box, Typography, Alert, CircularProgress, Paper, Grid } from '@mui/material';
 import TrialMatchCard from '../components/trials/TrialMatchCard';
 import CA125Tracker from '../components/ayesha/CA125Tracker';
 import SOCRecommendationCard from '../components/ayesha/SOCRecommendationCard';
+import NextTestCard from '../components/ayesha/NextTestCard';
+import HintTilesPanel from '../components/ayesha/HintTilesPanel';
+import MechanismChips from '../components/ayesha/MechanismChips';
+import ResistanceAlertBanner from '../components/ayesha/ResistanceAlertBanner';  // ⚔️ P1.2
 
 const API_ROOT = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 
@@ -16,6 +20,10 @@ const AyeshaTrialExplorer = () => {
   const [trials, setTrials] = useState([]);
   const [ca125Intelligence, setCa125Intelligence] = useState(null);
   const [socRecommendation, setSocRecommendation] = useState(null);
+  const [nextTestRecommender, setNextTestRecommender] = useState(null);
+  const [hintTiles, setHintTiles] = useState([]);
+  const [mechanismMap, setMechanismMap] = useState(null);
+  const [resistanceAlert, setResistanceAlert] = useState(null);  // ⚔️ P1.2: SAE resistance detection
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [provenance, setProvenance] = useState(null);
@@ -29,7 +37,8 @@ const AyeshaTrialExplorer = () => {
     setError(null);
 
     try {
-      const response = await fetch(`${API_ROOT}/api/ayesha/trials/search`, {
+      // Use unified complete_care_v2 endpoint (includes SAE Phase 3 services)
+      const response = await fetch(`${API_ROOT}/api/ayesha/complete_care_v2`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -45,13 +54,20 @@ const AyeshaTrialExplorer = () => {
 
       const data = await response.json();
       
-      setTrials(data.trials || []);
+      // Extract all sections from unified response
+      // Note: trials is nested in data.trials.trials
+      setTrials(data.trials?.trials || []);
       setCa125Intelligence(data.ca125_intelligence);
-      setSocRecommendation(data.soc_recommendation || null);  // ✅ FIXED: Use API response instead of hardcoded
+      setSocRecommendation(data.soc_recommendation || null);
+      setNextTestRecommender(data.next_test_recommender || null);
+      // hint_tiles is nested: data.hint_tiles.hint_tiles
+      setHintTiles(data.hint_tiles?.hint_tiles || []);
+      setMechanismMap(data.mechanism_map || null);
+      setResistanceAlert(data.resistance_alert || null);  // ⚔️ P1.2: SAE resistance detection
       setProvenance(data.provenance);
 
     } catch (err) {
-      console.error('Failed to load trials:', err);
+      console.error('Failed to load complete care:', err);
       setError(err.message);
     } finally {
       setIsLoading(false);
@@ -123,6 +139,38 @@ const AyeshaTrialExplorer = () => {
             resistance_rule={ca125Intelligence.resistance_signals}
             monitoring_strategy={ca125Intelligence.monitoring_strategy}
           />
+        </Box>
+      )}
+
+      {/* ⚔️ P1.2: Resistance Alert Banner (if triggered) */}
+      {resistanceAlert && resistanceAlert.alert_triggered && (
+        <Box mb={3}>
+          <ResistanceAlertBanner resistance_alert={resistanceAlert} />
+        </Box>
+      )}
+
+      {/* SAE Phase 3: Next Test Recommender + Hint Tiles + Mechanism Map */}
+      <Grid container spacing={3} mb={3}>
+        {/* Next Test Recommender */}
+        <Grid item xs={12} md={4}>
+          <NextTestCard recommendations={nextTestRecommender?.recommendations || []} />
+        </Grid>
+
+        {/* Hint Tiles Panel */}
+        <Grid item xs={12} md={8}>
+          <HintTilesPanel tiles={hintTiles} />
+        </Grid>
+      </Grid>
+
+      {/* Mechanism Map Chips */}
+      {mechanismMap && (
+        <Box mb={3}>
+          <Paper sx={{ p: 2 }}>
+            <Typography variant="h6" gutterBottom>
+              🧬 Pathway Mechanism Map
+            </Typography>
+            <MechanismChips mechanism_map={mechanismMap} />
+          </Paper>
         </Box>
       )}
 

@@ -22,6 +22,14 @@ const runGauntletWorkflow = async (setResults, setCompletedSteps) => {
   setCompletedSteps(prev => [...prev, 'gauntlet']);
 };
 
+// Helper function to format numbers
+const fmtNum = (value) => {
+  if (typeof value === 'number') {
+    return value.toFixed(2);
+  }
+  return '—';
+};
+
 const TargetDossierRunner = ({ toolConfig }) => {
   const [results, setResults] = useState({});
   const [isLoading, setIsLoading] = useState(false);
@@ -61,17 +69,7 @@ const TargetDossierRunner = ({ toolConfig }) => {
   // Use activity context for logging
   const { addActivity } = useActivity();
 
-  // Initial conversation setup
-  useEffect(() => {
-    if (conversation.length === 0) {
-      setConversation([{
-        type: 'assistant',
-        message: 'Command Center online. Mission: Execute `in silico` conquest of PIK3CA E542K. Awaiting your command to initiate target validation.'
-      }]);
-    }
-  }, []);
-
-  // Load dossier data when we reach the final step
+  // Initial conversation setup - SINGLE useEffect to prevent infinite loop
   useEffect(() => {
     if (conversation.length === 0) {
       setConversation([{
@@ -79,7 +77,7 @@ const TargetDossierRunner = ({ toolConfig }) => {
         message: 'Zeta Forge Command interface online. Mission: Execute in-silico conquest of PIK3CA E542K. Awaiting your command to initiate target validation.'
       }]);
     }
-  }, [conversation]);
+  }, []); // Empty dependency array - only run once on mount
 
   // Load dossier data when we reach the final step
   useEffect(() => {
