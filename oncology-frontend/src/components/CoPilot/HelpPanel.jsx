@@ -90,6 +90,31 @@ export const HelpPanel = ({ copilotConfig, onSuggestionClick }) => {
         </Box>
       )}
 
+      <Accordion>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Typography variant="subtitle2">🔬 Research Intelligence</Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Typography variant="body2">
+            Use Research Intelligence for deep research questions. It performs full-text parsing,
+            LLM synthesis, and MOAT analysis to provide comprehensive research insights.
+          </Typography>
+          <Box sx={{ mt: 2 }}>
+            <Chip
+              size="small"
+              label="Open Research Intelligence"
+              color="primary"
+              onClick={() => {
+                if (window.location.pathname !== '/research-intelligence') {
+                  window.location.href = '/research-intelligence';
+                }
+              }}
+              sx={{ cursor: 'pointer' }}
+            />
+          </Box>
+        </AccordionDetails>
+      </Accordion>
+
       <Box sx={{ mt: 3 }}>
         <Typography variant="subtitle2" sx={{ mb: 1 }}>
           Popular Topics:

@@ -12,6 +12,8 @@ import {
   Chip,
   Divider,
 } from '@mui/material';
+import ScienceIcon from '@mui/icons-material/Science';
+import { useNavigate } from 'react-router-dom';
 import { useSporadic } from '../context/SporadicContext';
 import { BiomarkerSummaryWidget, SporadicProvenanceCard } from '../components/sporadic';
 
@@ -29,6 +31,8 @@ const API_BASE_URL = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
  * - Full transparency on PARP penalties, IO boosts, confidence capping
  */
 const HypothesisValidator = () => {
+  const navigate = useNavigate();
+  
   // SporadicContext integration
   const {
     germlineStatus,
@@ -173,14 +177,33 @@ const HypothesisValidator = () => {
             disabled={isLoading}
             sx={{ mb: 2 }}
           />
-          <Button
-            variant="contained"
-            onClick={handlePredict}
-            disabled={isLoading || parsedMutations.length === 0}
-            sx={{ minWidth: 150 }}
-          >
-            {isLoading ? <CircularProgress size={20} /> : 'Predict Efficacy'}
-          </Button>
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+            <Button
+              variant="contained"
+              onClick={handlePredict}
+              disabled={isLoading || parsedMutations.length === 0}
+              sx={{ minWidth: 150 }}
+            >
+              {isLoading ? <CircularProgress size={20} /> : 'Predict Efficacy'}
+            </Button>
+            
+            {/* Phase 4: Research Intelligence Quick Action */}
+            {parsedMutations.length > 0 && (
+              <Button
+                variant="outlined"
+                startIcon={<ScienceIcon />}
+                onClick={() => {
+                  const genes = parsedMutations.map(m => m.gene).filter(Boolean).join(', ');
+                  const question = `What are the latest research findings on ${genes} mutations in cancer treatment?`;
+                  navigate(`/research-intelligence?question=${encodeURIComponent(question)}`);
+                }}
+                disabled={isLoading}
+              >
+                Research Intelligence
+              </Button>
+            )}
+          </Box>
+          
           {parsedMutations.length > 0 && (
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
               {parsedMutations.length} mutation{parsedMutations.length > 1 ? 's' : ''} parsed

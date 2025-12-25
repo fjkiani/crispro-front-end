@@ -17,6 +17,9 @@ import TreatmentHistoryForm from '../components/TreatmentHistoryForm';
 import TreatmentLineProvenance from '../components/TreatmentLineProvenance';
 import SAETreatmentLineChips from '../components/SAETreatmentLineChips';
 
+// 🧬 RESISTANCE PREDICTION - MM Resistance Analysis
+import ResistancePanel from '../components/myeloma/ResistancePanel';
+
 const API_BASE_URL = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 
 const MyelomaDigitalTwin = () => {
@@ -443,6 +446,24 @@ const MyelomaDigitalTwin = () => {
         mutations={mutations}
         onEfficacyData={handleEfficacyData}
       />
+
+      {/* 🧬 RESISTANCE PREDICTION - MM Resistance Analysis */}
+      {validMutations.length > 0 && (
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            🧬 Resistance Analysis
+          </Typography>
+          <ResistancePanel
+            mutations={validMutations}
+            disease={disease || 'myeloma'}
+            treatmentLine={treatmentHistory?.treatment_line || 1}
+            priorTherapies={treatmentHistory?.prior_therapies}
+            drugClass={treatmentHistory?.current_drug_class}
+            currentRegimen={treatmentHistory?.current_regimen}
+            autoFetch={true}
+          />
+        </Box>
+      )}
 
       {/* CoPilot Integration - AI Clinical Assistant */}
       {/* ⚔️ FIXED: Use dynamic disease instead of hardcoded */}

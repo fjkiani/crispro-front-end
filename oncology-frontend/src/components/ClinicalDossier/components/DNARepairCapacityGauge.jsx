@@ -230,3 +230,22 @@ const DNARepairCapacityGauge = ({ capacity = 0, formula = null }) => {
 
 export default DNARepairCapacityGauge;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -23,7 +23,7 @@ import {
 } from '@mui/material';
 import {
   ExpandMore,
-  ClinicalNotes,
+  Description as ClinicalNotes,
   CheckCircle,
   Warning,
   Info,
@@ -31,6 +31,7 @@ import {
   FilterList,
   Sort
 } from '@mui/icons-material';
+import SAESourceIndicator from '../../trials/SAESourceIndicator';
 
 /**
  * ClinicalTrialMatchingSection Component
@@ -242,6 +243,28 @@ const ClinicalTrialMatchingSection = ({ trials = [] }) => {
                   )}
                 </Box>
 
+                {/* Mechanism Fit Badges */}
+                {mechanismFitScore !== undefined && (
+                  <Box sx={{ mb: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    {trial.mechanism_boost_applied && (
+                      <Chip
+                        label="Mechanism-Aligned"
+                        size="small"
+                        color="success"
+                        icon={<CheckCircle />}
+                      />
+                    )}
+                    {trial.low_mechanism_fit_warning && (
+                      <Chip
+                        label="Low Mechanism Fit"
+                        size="small"
+                        color="warning"
+                        icon={<Warning />}
+                      />
+                    )}
+                  </Box>
+                )}
+
                 {/* Scores */}
                 <Grid container spacing={2} sx={{ mb: 2 }}>
                   <Grid item xs={12} sm={4}>
@@ -260,9 +283,11 @@ const ClinicalTrialMatchingSection = ({ trials = [] }) => {
                         color={getScoreColor(combinedScore)}
                         sx={{ height: 6, borderRadius: 1 }}
                       />
-                      <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-                        0.7 × Eligibility + 0.3 × Mechanism Fit
-                      </Typography>
+                      <Tooltip title="Combined score formula: 0.7 × Eligibility + 0.3 × Mechanism Fit">
+                        <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block', cursor: 'help' }}>
+                          0.7 × Eligibility + 0.3 × Mechanism Fit
+                        </Typography>
+                      </Tooltip>
                     </Box>
                   </Grid>
                   <Grid item xs={12} sm={4}>
@@ -302,6 +327,49 @@ const ClinicalTrialMatchingSection = ({ trials = [] }) => {
                     </Box>
                   </Grid>
                 </Grid>
+
+                {/* Mechanism Alignment Breakdown */}
+                {trial.mechanism_alignment && Object.keys(trial.mechanism_alignment).length > 0 && (
+                  <Box sx={{ mb: 2, p: 1.5, bgcolor: 'grey.50', borderRadius: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                      <Typography variant="subtitle2">
+                        Pathway Alignment Breakdown
+                      </Typography>
+                      {trial.sae_source && (
+                        <SAESourceIndicator source={trial.sae_source} size="small" />
+                      )}
+                    </Box>
+                    <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                      {Object.entries(trial.mechanism_alignment).map(([pathway, score]) => {
+                        const isDDR = pathway.toLowerCase().includes('ddr');
+                        const showDDRBin = isDDR && trial.sae_source === "true_sae" && trial.ddr_bin_score !== undefined;
+                        
+                        return (
+                          <Tooltip
+                            key={pathway}
+                            title={
+                              showDDRBin
+                                ? `DDR pathway alignment: ${(score * 100).toFixed(0)}%\nDDR_bin score: ${(trial.ddr_bin_score * 100).toFixed(0)}% (TRUE SAE)`
+                                : `${pathway}: ${(score * 100).toFixed(0)}%`
+                            }
+                            arrow
+                          >
+                            <Chip
+                              label={
+                                showDDRBin
+                                  ? `DDR: ${(score * 100).toFixed(0)}% (DDR_bin: ${(trial.ddr_bin_score * 100).toFixed(0)}%)`
+                                  : `${pathway}: ${(score * 100).toFixed(0)}%`
+                              }
+                              size="small"
+                              color={score >= 0.5 ? 'success' : score >= 0.3 ? 'warning' : 'default'}
+                              variant={showDDRBin ? 'filled' : 'outlined'}
+                            />
+                          </Tooltip>
+                        );
+                      })}
+                    </Box>
+                  </Box>
+                )}
 
                 {/* Match Reasoning (Expandable) */}
                 {(trial.match_reasons || trial.reasoning || trial.eligibility_summary) && (
@@ -404,4 +472,11 @@ const ClinicalTrialMatchingSection = ({ trials = [] }) => {
 };
 
 export default ClinicalTrialMatchingSection;
+
+
+
+
+
+
+
 

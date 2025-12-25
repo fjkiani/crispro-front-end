@@ -8,6 +8,7 @@ import {
   Chip,
   LinearProgress,
   Alert,
+  AlertTitle,
   Divider,
   Grid,
   Accordion,
@@ -37,10 +38,13 @@ import MonitorHeartIcon from '@mui/icons-material/MonitorHeart';
 import PercentileBar from '../components/food/PercentileBar';
 import EvidenceQualityChips from '../components/food/EvidenceQualityChips';
 import MechanismPanel from '../components/food/MechanismPanel';
+import ResearchIntelligenceResults from '../components/research/ResearchIntelligenceResults';
+import { useNavigate } from 'react-router-dom';
 
 const API_ROOT = import.meta.env.VITE_API_ROOT || 'http://127.0.0.1:8000';
 
 export default function DynamicFoodValidator() {
+  const navigate = useNavigate();
   const [compound, setCompound] = useState('');
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -209,6 +213,22 @@ export default function DynamicFoodValidator() {
             </Grid>
           </Card>
 
+          {/* Research Intelligence Badge */}
+          {result.provenance?.sources?.includes('research_intelligence') && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              <AlertTitle>🔬 Enhanced with Research Intelligence</AlertTitle>
+              <Typography variant="body2">
+                This result was enhanced using full-text parsing and LLM synthesis.
+                {result.provenance?.research_intelligence?.mechanisms_added && (
+                  <> Added {result.provenance.research_intelligence.mechanisms_added} mechanisms from research.</>
+                )}
+                {result.provenance?.research_intelligence?.pathways_added && (
+                  <> Added {result.provenance.research_intelligence.pathways_added} pathways from research.</>
+                )}
+              </Typography>
+            </Alert>
+          )}
+
           {/* PHASE 2: Calibrated Percentile Display */}
           {result.spe_percentile !== null && result.spe_percentile !== undefined && (
             <Box sx={{ mb: 3 }}>
@@ -277,6 +297,9 @@ export default function DynamicFoodValidator() {
                 mechanismScores={result.mechanism_scores || {}}
                 tcgaWeights={result.provenance?.tcga_weights?.pathway_weights || result.provenance?.tcga_weights?.pathways || {}}
                 disease={result.provenance?.disease_name || result.provenance?.disease || ''}
+                riDerivedTargets={result.provenance?.research_intelligence?.targets_added || []}
+                riDerivedPathways={result.provenance?.research_intelligence?.pathways_added || []}
+                riDerivedMechanisms={result.provenance?.research_intelligence?.mechanisms_added || []}
               />
             </Box>
           )}
@@ -672,6 +695,39 @@ export default function DynamicFoodValidator() {
                 </Alert>
               )}
             </Card>
+          )}
+
+          {/* Research Intelligence Section */}
+          {result.provenance?.research_intelligence && (
+            <Accordion sx={{ mt: 2, mb: 2 }}>
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography variant="h6">
+                  🔬 Research Intelligence Details
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <ResearchIntelligenceResults
+                  result={result.provenance.research_intelligence}
+                  context={{
+                    disease: result.provenance?.disease || result.provenance?.disease_name || '',
+                    treatment_line: result.provenance?.treatment_line || '',
+                    biomarkers: result.provenance?.biomarkers || {}
+                  }}
+                  compact={true}
+                />
+                <Button
+                  variant="outlined"
+                  sx={{ mt: 2 }}
+                  onClick={() => {
+                    const question = result.provenance.research_intelligence.question || 
+                                   `How does ${result.compound} help with ${result.provenance?.disease || result.provenance?.disease_name || 'cancer'}?`;
+                    navigate(`/research-intelligence?question=${encodeURIComponent(question)}`);
+                  }}
+                >
+                  View Full Research Intelligence
+                </Button>
+              </AccordionDetails>
+            </Accordion>
           )}
 
           {/* Provenance */}

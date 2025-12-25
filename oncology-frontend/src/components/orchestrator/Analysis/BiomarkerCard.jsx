@@ -147,3 +147,4 @@ export const BiomarkerCard = ({ biomarkerProfile, loading = false }) => {
   );
 };
 
+

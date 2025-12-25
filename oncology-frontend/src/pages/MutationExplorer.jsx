@@ -570,135 +570,15 @@ const MutationExplorer = () => {
                         </button>
                     </div>
 
-                        {isLoadingAnalysis || analysisStatusForWorkflow === 'loading' ? (
-                            <div ref={analysisResultsRef} className="p-4 bg-gray-800 rounded-lg shadow-xl border border-gray-700 flex justify-center items-center">
-                            <Loader /> 
-                                <p className="ml-3 text-gray-300">Analyzing, please wait...</p>
-                        </div>
-                        ) : error && analysisStatusForWorkflow === 'error' ? (
-                             <div ref={analysisResultsRef} className="p-3 bg-red-800 text-red-100 rounded-md shadow-md border border-red-700">
-                                <p className="font-semibold">Analysis Error:</p>
-                                <p>{error}</p>
-                            </div>
-                        ) : analysisResult && analysisStatusForWorkflow === 'complete' ? (
-                            <div id="analysis-results-section" ref={analysisResultsRef} className="p-4 bg-gray-800 rounded-lg shadow-xl border border-gray-700 space-y-4">
-                                <h2 className="text-2xl font-semibold text-purple-300">Analysis Results</h2>
-                                <div className="p-3 bg-gray-700 rounded-md border border-gray-600">
-                                <p className="text-lg font-medium">Overall Query Status: 
-                                        <span className={`ml-1 font-bold ${getStatusColor(analysisResult.status)}`}>{analysisResult.status || 'N/A'}</span>
-                                </p>
-                                    {analysisResult.summary && <p className="mt-1 text-sm text-gray-300">{analysisResult.summary}</p>}
-                                    <p className="mt-1 text-xs text-gray-500">VEP is based on a MOCK EVO2 SIMULATION.</p>
-                            </div>
-                            {analysisResult.clinical_significance_context && (
-                                    <div className="p-3 bg-indigo-900 bg-opacity-60 border border-indigo-700 rounded">
-                                     <h3 className="text-lg font-semibold mb-1 text-indigo-300">Clinical Context & Significance:</h3>
-                                         <div className="prose prose-sm prose-invert max-w-none text-gray-300" dangerouslySetInnerHTML={{ __html: analysisResult.clinical_significance_context.replace(/\n/g, '<br />') }} />
-                                </div>
-                            )}
-                            {analysisResult.gene_summary_statuses && Object.keys(analysisResult.gene_summary_statuses).length > 0 && (
-                                <div className="mb-4">
-                                    <h3 className="text-xl font-semibold mb-2 text-gray-300">Gene Summary Statuses:</h3>
-                                    <ul className="list-disc list-inside pl-2 space-y-1 bg-gray-700 p-3 rounded">
-                                        {Object.entries(analysisResult.gene_summary_statuses).map(([gene, status]) => (
-                                            <li key={gene} className="text-gray-200">
-                                                <span className="font-semibold">{gene}:</span> {typeof status === 'string' ? status : status.status}
-                                                {typeof status !== 'string' && status.details && (
-                                                    <span className="text-xs block ml-6 mt-1 text-gray-400">{status.details}</span>
-                                                )}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
-                            {analysisResult.simulated_vep_details && analysisResult.simulated_vep_details.length > 0 && (
-                                    <div className="space-y-3">
-                                        <h3 className="text-xl font-semibold text-gray-200">Simulated VEP Details:</h3>
-                                        <div className="overflow-x-auto rounded-md border border-gray-700">
-                                            <table className="min-w-full divide-y divide-gray-700">
-                                                <thead className="bg-gray-750">
-                                                    <tr>
-                                                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase">Gene</th>
-                                                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase">Variant</th>
-                                                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase">Classification</th>
-                                                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase">Consequence</th>
-                                                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase">Pred. Scores</th>
-                                                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase">Knowledge Bases</th>
-                                                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase">Evo2 Prediction</th>
-                                                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase">Delta Score</th>
-                                                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase">Evo2 Confidence</th>
-                                                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase">Reasoning</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="bg-gray-800 divide-y divide-gray-700">
-                                                {analysisResult.simulated_vep_details.map((detail, index) => (
-                                                        <tr key={index} className="hover:bg-gray-750">
-                                                            <td className="px-3 py-2 text-sm">{detail.gene_symbol || 'N/A'}</td>
-                                                            <td className="px-3 py-2 text-sm">{detail.canonical_variant_id || detail.protein_change || detail.input_variant_query} {(detail.variant_type_from_input ? `(${detail.variant_type_from_input})` : '')}</td>
-                                                            <td className="px-3 py-2 text-sm">{detail.simulated_classification}</td>
-                                                            <td className="px-3 py-2 text-sm">{detail.predicted_consequence || 'N/A'}</td>
-                                                            <td className="px-3 py-2 text-sm">
-                                                                {detail.simulated_tools ? (<><div>SIFT: {detail.simulated_tools.sift || 'N/A'}</div><div>PolyPhen: {detail.simulated_tools.polyphen || 'N/A'}</div></>) : 'N/A'}
-                                                        </td>
-                                                            <td className="px-3 py-2 text-sm">
-                                                                {detail.mock_knowledgebases ? (<><div>ClinVar: {detail.mock_knowledgebases.clinvar_significance || 'N/A'}</div><div>OncoKB: {detail.mock_knowledgebases.oncokb_level || 'N/A'}</div></>) : 'N/A'}
-                                                        </td>
-                                                            <td className={`px-3 py-2 text-sm font-medium ${
-                                                                detail.evo2_prediction?.toLowerCase().includes('pathogenic') || detail.evo2_prediction?.toLowerCase().includes('activating') || detail.evo2_prediction?.toLowerCase().includes('oncogenic') ? 'text-red-400' :
-                                                                detail.evo2_prediction?.toLowerCase().includes('benign') || detail.evo2_prediction?.toLowerCase().includes('neutral') ? 'text-green-400' :
-                                                                detail.evo2_prediction?.toLowerCase().includes('uncertain') || detail.evo2_prediction?.toLowerCase().includes('vus') ? 'text-yellow-400' :
-                                                                'text-gray-300'
-                                                            }`}>{detail.evo2_prediction || 'N/A'}</td>
-                                                            <td className="px-3 py-2 text-sm">{detail.delta_likelihood_score !== null && detail.delta_likelihood_score !== undefined ? detail.delta_likelihood_score.toFixed(6) : 'N/A'}</td>
-                                                            <td className="px-3 py-2 text-sm">{detail.evo2_confidence !== null && detail.evo2_confidence !== undefined ? `${(detail.evo2_confidence * 100).toFixed(0)}%` : 'N/A'}</td>
-                                                            <td className="px-3 py-2 text-sm max-w-xs whitespace-pre-wrap">{detail.classification_reasoning}</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            )}
-                                {analysisResult.crispr_recommendations && analysisResult.crispr_recommendations.length > 0 && (
-                                    <div className="space-y-3">
-                                        <h3 className="text-xl font-semibold text-green-300 flex items-center">
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zM9 11a1 1 0 11-2 0 1 1 0 012 0zm2-2a1 1 0 100 2 1 1 0 000-2z" clipRule="evenodd" /></svg>
-                                            CRISPR Therapeutic Recommendations (Conceptual)
-                                        </h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                            {analysisResult.crispr_recommendations.map((rec, index) => (
-                                                <div key={index} className="p-3 rounded-md border border-gray-700 bg-gray-750 hover:border-green-600 transition-colors">
-                                                    <strong className="text-green-400 block mb-1">Target: {rec.target_gene} ({rec.target_variant || 'N/A'})</strong>
-                                                    <span className="text-xs text-gray-400 block mb-0.5">Approach: {rec.recommended_approach || 'N/A'}</span>
-                                                    <p className="text-sm text-gray-300 mb-1">Rationale: {rec.rationale || 'N/A'}</p>
-                                                    <p className="text-xs text-gray-400">Confidence: 
-                                                        <span className={`font-medium ml-1 ${rec.confidence_score >= 0.8 ? 'text-green-400' : rec.confidence_score >= 0.6 ? 'text-yellow-400' : 'text-red-400'}`}>
-                                                            {rec.confidence_score !== null && rec.confidence_score !== undefined ? `${(rec.confidence_score * 100).toFixed(0)}%` : 'N/A'}
-                                                        </span>
-                                                    </p>
-                                                    {rec.source && <p className="text-xs text-gray-500 mt-1 italic">Source: {rec.source}</p>}
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <p className="text-xs text-gray-500 italic mt-2">Note: These recommendations are simulated. Clinical decisions require expert consultation.</p>
-                                    </div>
-                                )}
-                            {analysisResult.evidence && (
-                                    <details className="bg-gray-700 rounded-md border border-gray-600">
-                                        <summary className="p-2 cursor-pointer text-sm text-gray-400 hover:text-gray-200">
-                                            View Full Evidence String
-                                        </summary>
-                                        <pre className="p-3 text-xs text-gray-300 whitespace-pre-wrap bg-gray-750 rounded-b-md">
-                                        {analysisResult.evidence}
-                                    </pre>
-                                    </details>
-                                )}
-                            </div>
-                        ) : (
-                            <div ref={analysisResultsRef} className="p-4 bg-gray-800 rounded-lg shadow-xl border border-gray-700 text-center py-10">
-                                <p className="text-gray-500">Perform an analysis to see results here.</p>
-                                </div>
-                            )}
+                        <AnalysisResults
+                                result={analysisResult}
+                                status={analysisStatusForWorkflow === 'loading' ? 'loading' : analysisStatusForWorkflow}
+                                error={error}
+                                isLoading={isLoadingAnalysis}
+                                activeMutation={activeMutation}
+                                patientMutations={patientMutations}
+                                patientId={selectedPatientId}
+                            />
                     </>
                 );
             case WORKFLOW_STEPS.CRISPR_VIEW:

@@ -20,7 +20,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ScienceIcon from '@mui/icons-material/Science';
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import WarningIcon from '@mui/icons-material/Warning';
-import { Switch, FormControlLabel, Link } from '@mui/material';
+import { Switch, FormControlLabel, Link, AlertTitle } from '@mui/material';
 import ArticleIcon from '@mui/icons-material/Article';
 import MedicationIcon from '@mui/icons-material/Medication';
 import { useNavigate } from 'react-router-dom';
@@ -30,6 +30,9 @@ import ProvenancePanel from '../components/food/ProvenancePanel';
 import SAEFeatureCards from '../components/food/SAEFeatureCards';
 import PatientContextEditor from '../components/food/PatientContextEditor';
 
+// Phase 4: Research Intelligence Components
+import ResearchIntelligenceResults from '../components/research/ResearchIntelligenceResults';
+
 export default function FoodValidatorAB() {
   const navigate = useNavigate();
   const [compound, setCompound] = useState('');
@@ -37,6 +40,7 @@ export default function FoodValidatorAB() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [useLLM, setUseLLM] = useState(true); // Default: LLM enabled
+  const [useResearchIntelligence, setUseResearchIntelligence] = useState(false); // Phase 4: Research Intelligence toggle
   
   // Patient context state
   const [patientContext, setPatientContext] = useState({
@@ -83,7 +87,8 @@ export default function FoodValidatorAB() {
           germline_status: 'negative',
           treatment_line: context.treatment_line,
           prior_therapies: context.prior_therapies,
-          use_llm: useLLM
+          use_llm: useLLM,
+          use_research_intelligence: useResearchIntelligence // Phase 4: Research Intelligence
         })
       });
       
@@ -182,7 +187,7 @@ export default function FoodValidatorAB() {
           </Box>
         </Box>
 
-        <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Box sx={{ mb: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
           <FormControlLabel
             control={
               <Switch
@@ -200,6 +205,25 @@ export default function FoodValidatorAB() {
               </Typography>
             }
           />
+          
+          {/* Phase 4: Research Intelligence Toggle */}
+          <FormControlLabel
+            control={
+              <Switch
+                checked={useResearchIntelligence}
+                onChange={(e) => setUseResearchIntelligence(e.target.checked)}
+                color="primary"
+              />
+            }
+            label={
+              <Typography variant="body2">
+                <strong>🔬 Enable Research Intelligence</strong>
+                <Typography variant="caption" display="block" color="text.secondary">
+                  Full-text parsing, LLM synthesis, and MOAT analysis for complex questions
+                </Typography>
+              </Typography>
+            }
+          />
         </Box>
 
         <Button 
@@ -209,7 +233,13 @@ export default function FoodValidatorAB() {
           fullWidth
           size="large"
         >
-          {loading ? (useLLM ? 'Analyzing A→B + Searching Literature...' : 'Analyzing A→B Dependencies...') : 'Validate'}
+          {loading 
+            ? (useResearchIntelligence 
+                ? 'Running Research Intelligence...' 
+                : useLLM 
+                  ? 'Analyzing A→B + Searching Literature...' 
+                  : 'Analyzing A→B Dependencies...')
+            : 'Validate'}
         </Button>
       </Card>
 
@@ -233,6 +263,22 @@ export default function FoodValidatorAB() {
       {/* Results */}
       {result?.status === 'SUCCESS' && (
         <Box>
+          {/* Research Intelligence Badge */}
+          {result.provenance?.sources?.includes('research_intelligence') && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              <AlertTitle>🔬 Enhanced with Research Intelligence</AlertTitle>
+              <Typography variant="body2">
+                This result was enhanced using full-text parsing and LLM synthesis.
+                {result.provenance?.research_intelligence?.mechanisms_added && (
+                  <> Added {result.provenance.research_intelligence.mechanisms_added} mechanisms from research.</>
+                )}
+                {result.provenance?.research_intelligence?.pathways_added && (
+                  <> Added {result.provenance.research_intelligence.pathways_added} pathways from research.</>
+                )}
+              </Typography>
+            </Alert>
+          )}
+
           {/* Provenance Panel - Top of Results */}
           {result.provenance && (
             <ProvenancePanel provenance={result.provenance} />
@@ -549,6 +595,39 @@ export default function FoodValidatorAB() {
                 {result.llm_evidence.message || 'LLM literature search unavailable or no papers found. Showing base recommendations only.'}
               </Typography>
             </Alert>
+          )}
+
+          {/* Phase 4: Research Intelligence Section */}
+          {result.provenance?.research_intelligence && (
+            <Accordion sx={{ mt: 2, mb: 2 }}>
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography variant="h6">
+                  🔬 Research Intelligence Details
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <ResearchIntelligenceResults
+                  result={result.provenance.research_intelligence}
+                  context={{
+                    disease: patientContext.disease || '',
+                    treatment_line: patientContext.treatment_line?.toString() || '',
+                    biomarkers: patientContext.biomarkers || {}
+                  }}
+                  compact={true}
+                />
+                <Button
+                  variant="outlined"
+                  sx={{ mt: 2 }}
+                  onClick={() => {
+                    const question = result.provenance.research_intelligence.question || 
+                                   `How does ${result.compound} help with ${patientContext.disease.replace(/_/g, ' ')}?`;
+                    navigate(`/research-intelligence?question=${encodeURIComponent(question)}`);
+                  }}
+                >
+                  View Full Research Intelligence
+                </Button>
+              </AccordionDetails>
+            </Accordion>
           )}
 
           {/* Note: Provenance now displayed at top via ProvenancePanel component */}

@@ -38,6 +38,8 @@ const AnalysisResults = ({
     error,
     isLoading = false,
     activeMutation,
+    patientMutations = [],
+    patientId,
     className = "p-4 bg-gray-800 rounded-lg shadow-xl border border-gray-700 space-y-4"
 }) => {
     const { addActivity } = useActivity ? useActivity() : { addActivity: () => {} };
@@ -60,6 +62,11 @@ const AnalysisResults = ({
     const [coverageStats, setCoverageStats] = useState(null);
     const [coverageBusy, setCoverageBusy] = useState(false);
 
+    // VUS Identify (backend ground truth)
+    const [vusIdentify, setVusIdentify] = useState(null);
+    const [vusBusy, setVusBusy] = useState(false);
+    const [vusError, setVusError] = useState(null);
+
     // KB Integration - Extract gene and variant info for KB lookups
     const geneSymbol = activeMutation?.gene || activeMutation?.hugo_gene_symbol;
     const hgvsP = activeMutation?.variant || activeMutation?.hgvs_p || activeMutation?.protein_change;
@@ -67,6 +74,12 @@ const AnalysisResults = ({
     const pos = activeMutation?.pos;
     const ref = activeMutation?.ref;
     const alt = activeMutation?.alt;
+
+    // Patient genes (for pathway_context.patient_actionable_axis)
+    const patientGenes = Array.isArray(patientMutations) ? Array.from(new Set(patientMutations
+        .map(m => (m?.gene || m?.hugo_gene_symbol || m?.hugoGeneSymbol || m?.hugo || m?.hugo_symbol))
+        .filter(Boolean)
+        .map(x => String(x).toUpperCase()))) : [];
 
     // KB Hooks
     const kbGene = useKbGene(geneSymbol);
@@ -83,6 +96,56 @@ const AnalysisResults = ({
 
     const clinvarData = useClinVar({ chrom, pos, ref, alt });
     const fusionCoverage = useFusionCoverage({ chrom, pos, ref, alt });
+
+
+    // VUS Identify: single-call resolution (prior vs evo2) + pathway context + next actions
+    useEffect(() => {
+        const canRun = (chrom && pos && ref && alt) || (geneSymbol && (activeMutation?.hgvs_c || hgvsP));
+        if (!canRun) {
+            setVusIdentify(null);
+            setVusError(null);
+            return;
+        }
+        let cancelled = false;
+        (async () => {
+            setVusBusy(true);
+            setVusError(null);
+            try {
+                const payload = {
+                    variant: {
+                        gene: geneSymbol || undefined,
+                        hgvs_c: activeMutation?.hgvs_c || undefined,
+                        hgvs_p: hgvsP || undefined,
+                        assembly: activeMutation?.assembly || activeMutation?.build || 'GRCh38',
+                        chrom: chrom || undefined,
+                        pos: pos || undefined,
+                        ref: ref || undefined,
+                        alt: alt || undefined,
+                    },
+                    options: {
+                        patient_genes: patientGenes,
+                    }
+                };
+                const res = await fetch(`${API_ROOT}/api/vus/identify`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+                const json = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(json?.detail || `HTTP ${res.status}`);
+                if (!cancelled) setVusIdentify(json);
+            } catch (e) {
+                if (!cancelled) {
+                    setVusIdentify(null);
+                    setVusError(String(e?.message || e));
+                }
+            } finally {
+                if (!cancelled) setVusBusy(false);
+            }
+        })();
+        return () => { cancelled = true; };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [geneSymbol, hgvsP, chrom, pos, ref, alt, activeMutation?.hgvs_c, activeMutation?.assembly, activeMutation?.build, patientGenes.join(',')]);
 
     // Metastasis assessment
     const metastasisData = useMetastasisAssess({
@@ -325,6 +388,46 @@ const AnalysisResults = ({
                 <ProfileToggles value={profile} onChange={setProfile} />
             </div>
             
+
+
+            {/* VUS Resolution (ground truth: /api/vus/identify) */}
+            {(vusBusy || vusIdentify || vusError) && (
+                <div className="p-3 bg-gray-700 rounded-md border border-gray-600">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-purple-300">VUS Resolution</h3>
+                        <div className="text-xs text-gray-400">source: /api/vus/identify</div>
+                    </div>
+                    {vusBusy && <div className="text-sm text-gray-300 mt-1">Resolving variant…</div>}
+                    {vusError && <div className="text-sm text-red-200 mt-1">VUS identify failed: {vusError}</div>}
+                    {vusIdentify && (
+                        <div className="mt-2 space-y-2">
+                            <div className="text-sm text-gray-200">
+                                <span className="font-semibold">Verdict:</span> {vusIdentify?.triage?.verdict || '—'}
+                                <span className="ml-3 text-gray-400">(path: {vusIdentify?.provenance?.resolution_path || vusIdentify?.triage?.resolution_path || '—'})</span>
+                            </div>
+                            <div className="text-xs text-gray-300">
+                                <span className="font-semibold">ClinVar:</span> {vusIdentify?.coverage?.clinvar?.status || '—'}
+                                <span className="ml-3"><span className="font-semibold">Evo2 min_delta:</span> {vusIdentify?.sequence?.min_delta ?? '—'}</span>
+                                <span className="ml-3"><span className="font-semibold">Pathway relevance:</span> {vusIdentify?.pathway_context?.pathway_relevance || '—'}</span>
+                            </div>
+                            <div className="text-xs text-gray-300">
+                                <span className="font-semibold">Patient axis:</span> {vusIdentify?.pathway_context?.patient_actionable_axis || '—'}
+                                <span className="ml-3"><span className="font-semibold">Variant axis:</span> {vusIdentify?.pathway_context?.variant_axis || '—'}</span>
+                            </div>
+                            {Array.isArray(vusIdentify?.next_actions) && vusIdentify.next_actions.length > 0 && (
+                                <div className="mt-2">
+                                    <div className="text-xs text-gray-400 mb-1">Next actions</div>
+                                    <ul className="list-disc list-inside text-xs text-gray-200 space-y-0.5">
+                                        {vusIdentify.next_actions.slice(0, 4).map((a, idx) => (
+                                            <li key={idx}><span className="font-semibold">{a.label || a.action}</span>: {a.description}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            )}
             {/* Active Mutation Focus */}
             {activeMutation && (
                 <div className="p-3 mb-2 bg-gray-700 rounded-lg shadow-md border border-gray-600 flex items-center justify-between">
