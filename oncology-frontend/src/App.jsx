@@ -47,8 +47,6 @@ import FoodValidatorAB from './pages/FoodValidatorAB';
 import BatchFoodValidator from './pages/BatchFoodValidator';
 import AyeshaTwinDemo from './pages/AyeshaTwinDemo';
 import AyeshaCompleteCare from './pages/AyeshaCompleteCare';
-import ToxicityRiskAssessment from './pages/ToxicityRiskAssessment';
-import UniversalCompleteCare from './pages/UniversalCompleteCare';
 import AyeshaTrialExplorer from './pages/AyeshaTrialExplorer';
 import AyeshaDossierBrowser from './pages/AyeshaDossierBrowser';
 import AyeshaDossierDetail from './pages/AyeshaDossierDetail';
@@ -67,7 +65,6 @@ import { AgentsPage } from './pages/AgentsPage';
 import { AgentProvider } from './context/AgentContext';
 import { SyntheticLethalityAnalyzer } from './components/SyntheticLethality';
 import { OrchestratorDashboard } from './pages/OrchestratorDashboard';
-import TherapyFitPage from './pages/TherapyFitPage';
 
 
 
@@ -148,10 +145,6 @@ const App = () => {
           <Route path="/batch-food-validator" element={<BatchFoodValidator />} />
           <Route path="/ayesha-twin-demo" element={<AyeshaTwinDemo />} />
           <Route path="/ayesha-complete-care" element={<AyeshaCompleteCare />} />
-        <Route path="/toxicity-risk" element={<ToxicityRiskAssessment />} />
-        <Route path="/toxicity-risk/:patientId" element={<ToxicityRiskAssessment />} />
-          <Route path="/complete-care" element={<UniversalCompleteCare />} />
-          <Route path="/complete-care/:patientId" element={<UniversalCompleteCare />} />
           <Route path="/ayesha-trials" element={<AyeshaTrialExplorer />} />
           <Route path="/ayesha-dossiers" element={<AyeshaDossierBrowser />} />
           <Route path="/ayesha-dossiers/:nct_id" element={<AyeshaDossierDetail />} />
@@ -168,7 +161,6 @@ const App = () => {
           <Route path="/clinical-dossier-test" element={<ClinicalDossierTest />} />
           <Route path="/synthetic-lethality" element={<SyntheticLethalityAnalyzer />} />
           <Route path="/orchestrator" element={<OrchestratorDashboard />} />
-          <Route path="/therapy-fit" element={<TherapyFitPage />} />
           <Route path="/crispr-designer" element={<CrisprDesigner />} />
           <Route path="/protein-synthesis" element={<ProteinSynthesis />} />
           <Route path="/structure-predictor" element={<StructurePredictor />} />

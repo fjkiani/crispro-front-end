@@ -19,7 +19,6 @@ import {
   CheckCircle,
   Info
 } from '@mui/icons-material';
-import DDRBinGauge from '../../pathway/DDRBinGauge';
 
 /**
  * PathwayDisruptionSection Component
@@ -31,7 +30,7 @@ import DDRBinGauge from '../../pathway/DDRBinGauge';
  * @param {Object} props.pathwayScores - Object with pathway scores (e.g., { ddr: 1.0, tp53: 0.8 })
  * @param {number} props.dnaRepairCapacity - Optional DNA repair capacity score (0-1)
  */
-const PathwayDisruptionSection = ({ pathwayScores = {}, dnaRepairCapacity = null, ddrBinScore = null, saeSource = null }) => {
+const PathwayDisruptionSection = ({ pathwayScores = {}, dnaRepairCapacity = null }) => {
   const [expandedPathway, setExpandedPathway] = useState(null);
 
   // Normalize pathway names for display
@@ -86,13 +85,6 @@ const PathwayDisruptionSection = ({ pathwayScores = {}, dnaRepairCapacity = null
       <Typography variant="h5" sx={{ fontWeight: 600, mb: 3 }}>
         3. Pathway Disruption Analysis
       </Typography>
-
-      {/* DDR_bin Gauge (if TRUE SAE is used) */}
-      {saeSource === "true_sae" && ddrBinScore !== null && ddrBinScore !== undefined && (
-        <Box sx={{ mb: 3 }}>
-          <DDRBinGauge score={ddrBinScore} showLabel={true} />
-        </Box>
-      )}
 
       {/* Pathway Cards Grid */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
@@ -290,11 +282,6 @@ const PathwayDisruptionSection = ({ pathwayScores = {}, dnaRepairCapacity = null
 };
 
 export default PathwayDisruptionSection;
-
-
-
-
-
 
 
 

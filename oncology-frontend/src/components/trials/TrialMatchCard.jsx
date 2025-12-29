@@ -20,8 +20,6 @@ import {
   ChevronDownIcon,
   MapPinIcon,
 } from '@heroicons/react/24/solid';
-import { Tooltip } from '@mui/material';
-import SAESourceIndicator from './SAESourceIndicator';
 
 const TrialMatchCard = ({ trial, rank }) => {
   const [expanded, setExpanded] = useState(false);
@@ -38,16 +36,6 @@ const TrialMatchCard = ({ trial, rank }) => {
     match_score,
     reasoning,
     source_url,
-    // Mechanism fit fields
-    mechanism_fit_score,
-    combined_score,
-    eligibility_score,
-    mechanism_alignment,
-    low_mechanism_fit_warning,
-    mechanism_boost_applied,
-    // TRUE SAE fields
-    sae_source,
-    ddr_bin_score,
   } = trial;
 
   // Get match score color
@@ -59,13 +47,6 @@ const TrialMatchCard = ({ trial, rank }) => {
 
   // Format match score as percentage
   const scorePercent = Math.round(match_score * 100);
-  
-  // Use combined_score if available, otherwise fall back to match_score
-  const displayScore = combined_score !== undefined ? combined_score : match_score;
-  const displayScorePercent = Math.round(displayScore * 100);
-  
-  // Determine if mechanism fit is available
-  const hasMechanismFit = mechanism_fit_score !== undefined;
 
   return (
     <Card sx={{ mb: 2, border: '1px solid', borderColor: 'grey.300' }}>
@@ -104,152 +85,20 @@ const TrialMatchCard = ({ trial, rank }) => {
             </Box>
           </Box>
           <Box textAlign="right">
-            <Box display="flex" alignItems="center" gap={1} justifyContent="flex-end" mb={0.5} flexWrap="wrap">
-              {sae_source && (
-                <SAESourceIndicator source={sae_source} size="small" />
-              )}
-              {hasMechanismFit && mechanism_boost_applied && (
-                <Chip
-                  label="Mechanism-Aligned"
-                  size="small"
-                  color="success"
-                  sx={{ fontSize: '0.65rem', height: '20px' }}
-                />
-              )}
-              {hasMechanismFit && low_mechanism_fit_warning && (
-                <Chip
-                  label="Low Mechanism Fit"
-                  size="small"
-                  color="warning"
-                  sx={{ fontSize: '0.65rem', height: '20px' }}
-                />
-              )}
-            </Box>
-            <Typography variant="h5" color={getScoreColor(displayScore)}>
-              {displayScorePercent}%
+            <Typography variant="h5" color={getScoreColor(match_score)}>
+              {scorePercent}%
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {hasMechanismFit ? 'Combined Score' : 'Match Score'}
+              Match Score
             </Typography>
-            {hasMechanismFit && (
-              <Tooltip title="0.7 × Eligibility + 0.3 × Mechanism Fit">
-                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem', display: 'block', mt: 0.25 }}>
-                  Formula: 0.7×E + 0.3×M
-                </Typography>
-              </Tooltip>
-            )}
             <LinearProgress
               variant="determinate"
-              value={displayScorePercent}
-              color={getScoreColor(displayScore)}
+              value={scorePercent}
+              color={getScoreColor(match_score)}
               sx={{ mt: 0.5, height: 6, borderRadius: 3 }}
             />
           </Box>
         </Box>
-
-        {/* Mechanism Fit Scores (if available) */}
-        {hasMechanismFit && (
-          <Box mb={2} p={1.5} sx={{ bgcolor: 'grey.50', borderRadius: 1 }}>
-            <Typography variant="subtitle2" gutterBottom>
-              Mechanism Fit Scores
-            </Typography>
-            <Box display="flex" gap={2} flexWrap="wrap">
-              {eligibility_score !== undefined && (
-                <Box flex={1} minWidth="120px">
-                  <Typography variant="caption" color="text.secondary" display="block">
-                    Eligibility
-                  </Typography>
-                  <LinearProgress
-                    variant="determinate"
-                    value={eligibility_score * 100}
-                    color={getScoreColor(eligibility_score)}
-                    sx={{ height: 8, borderRadius: 1, mt: 0.5 }}
-                  />
-                  <Typography variant="caption" display="block" mt={0.5}>
-                    {(eligibility_score * 100).toFixed(0)}%
-                  </Typography>
-                </Box>
-              )}
-              {mechanism_fit_score !== undefined && (
-                <Box flex={1} minWidth="120px">
-                  <Typography variant="caption" color="text.secondary" display="block">
-                    Mechanism Fit
-                  </Typography>
-                  <LinearProgress
-                    variant="determinate"
-                    value={mechanism_fit_score * 100}
-                    color={getScoreColor(mechanism_fit_score)}
-                    sx={{ height: 8, borderRadius: 1, mt: 0.5 }}
-                  />
-                  <Typography variant="caption" display="block" mt={0.5}>
-                    {(mechanism_fit_score * 100).toFixed(0)}%
-                  </Typography>
-                </Box>
-              )}
-              {combined_score !== undefined && (
-                <Box flex={1} minWidth="120px">
-                  <Typography variant="caption" color="text.secondary" display="block">
-                    Combined
-                  </Typography>
-                  <LinearProgress
-                    variant="determinate"
-                    value={combined_score * 100}
-                    color={getScoreColor(combined_score)}
-                    sx={{ height: 8, borderRadius: 1, mt: 0.5 }}
-                  />
-                  <Typography variant="caption" display="block" mt={0.5}>
-                    {(combined_score * 100).toFixed(0)}%
-                  </Typography>
-                </Box>
-              )}
-            </Box>
-            
-            {/* Mechanism Alignment Breakdown */}
-            {mechanism_alignment && Object.keys(mechanism_alignment).length > 0 && (
-              <Box mt={2}>
-                <Box display="flex" alignItems="center" gap={1} mb={1}>
-                  <Typography variant="caption" color="text.secondary" display="block">
-                    Pathway Alignment:
-                  </Typography>
-                  {sae_source === "true_sae" && (
-                    <SAESourceIndicator source={sae_source} size="small" />
-                  )}
-                </Box>
-                <Box display="flex" gap={0.5} flexWrap="wrap">
-                  {Object.entries(mechanism_alignment).map(([pathway, score]) => {
-                    // Show DDR_bin score for DDR pathway when TRUE SAE is used
-                    const isDDR = pathway.toLowerCase().includes('ddr');
-                    const showDDRBin = isDDR && sae_source === "true_sae" && ddr_bin_score !== undefined;
-                    
-                    return (
-                      <Tooltip
-                        key={pathway}
-                        title={
-                          showDDRBin
-                            ? `DDR pathway alignment: ${(score * 100).toFixed(0)}%\nDDR_bin score: ${(ddr_bin_score * 100).toFixed(0)}% (TRUE SAE)`
-                            : `${pathway}: ${(score * 100).toFixed(0)}%`
-                        }
-                        arrow
-                      >
-                        <Chip
-                          label={
-                            showDDRBin
-                              ? `DDR: ${(score * 100).toFixed(0)}% (DDR_bin: ${(ddr_bin_score * 100).toFixed(0)}%)`
-                              : `${pathway}: ${(score * 100).toFixed(0)}%`
-                          }
-                          size="small"
-                          color={score >= 0.5 ? 'success' : score >= 0.3 ? 'warning' : 'default'}
-                          variant={showDDRBin ? 'filled' : 'outlined'}
-                          sx={{ fontSize: '0.7rem', height: '24px' }}
-                        />
-                      </Tooltip>
-                    );
-                  })}
-                </Box>
-              </Box>
-            )}
-          </Box>
-        )}
 
         {/* Interventions */}
         {interventions && interventions.length > 0 && (
@@ -404,7 +253,7 @@ const TrialMatchCard = ({ trial, rank }) => {
         {locations && locations.length > 0 && (
           <Box mt={2}>
             <Typography variant="subtitle2" gutterBottom>
-              <MapPinIcon className="h-4 w-4 inline mr-1" />
+              <LocationMarkerIcon className="h-4 w-4 inline mr-1" />
               Locations
             </Typography>
             <Box display="flex" gap={1} flexWrap="wrap">

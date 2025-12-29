@@ -234,11 +234,6 @@ const ClinicalDossierView = ({
               <PathwayDisruptionSection
                 pathwayScores={dossierData.pathway_disruption}
                 dnaRepairCapacity={dossierData.dna_repair_capacity}
-                ddrBinScore={
-                  dossierData.sae_features?.provenance?.sae_diagnostics?.ddr_bin_score ||
-                  dossierData.sae_features?.provenance?.sae_diagnostics?.ddr_bin_score
-                }
-                saeSource={dossierData.sae_features?.provenance?.sae || dossierData.provenance?.sae}
               />
             )}
 

@@ -83,17 +83,7 @@ export const useCoPilotLogic = () => {
         `What are the clinical outcomes for ${gene} ${hgvs_p} in ${disease}?`,
         `Are there targeted therapies for ${gene} ${hgvs_p}?`,
         `How common is ${gene} ${hgvs_p} in the population?`,
-        `What research papers discuss ${gene} ${hgvs_p}?`,
-        // Phase 4: Research Intelligence suggestion
-        {
-          type: 'quick_action',
-          label: '🔬 Research Intelligence',
-          action: 'navigate',
-          endpoint: '/research-intelligence',
-          payload: {
-            question: `What are the latest research findings on ${gene} ${hgvs_p} in ${disease}?`
-          }
-        }
+        `What research papers discuss ${gene} ${hgvs_p}?`
       ];
     }
 
@@ -102,17 +92,7 @@ export const useCoPilotLogic = () => {
       "How common are KRAS mutations in colorectal cancer?",
       "What treatments are available for TP53 variants?",
       "Explain the clinical significance of EGFR mutations",
-      "What are the latest findings on immunotherapy resistance?",
-      // Phase 4: Research Intelligence suggestion
-      {
-        type: 'quick_action',
-        label: '🔬 Research Intelligence',
-        action: 'navigate',
-        endpoint: '/research-intelligence',
-        payload: {
-          question: 'What are the latest research findings on cancer treatment mechanisms?'
-        }
-      }
+      "What are the latest findings on immunotherapy resistance?"
     ];
   };
 
