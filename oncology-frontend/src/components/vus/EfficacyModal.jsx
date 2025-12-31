@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useActivity, ACTIVITY_TYPES } from '../../context/ActivityContext';
+import SporadicProvenanceCard from '../sporadic/SporadicProvenanceCard.jsx';
 
 const Row = ({ d }) => {
 	const [expanded, setExpanded] = useState(false);
@@ -74,6 +75,15 @@ const Row = ({ d }) => {
 									</div>
 								</div>
 							)}
+                                               {/* Sporadic Cancer Provenance */}
+                                               {d?.sporadic_gates_provenance && (
+                                               <div className="mt-3">
+                                               <SporadicProvenanceCard
+                                                   drugName={d?.therapy || d?.name || "Unknown"}
+                                                   provenance={d.sporadic_gates_provenance}
+                                               />
+                                               </div>
+                                               )}
 						</div>
 					</td>
 				</tr>

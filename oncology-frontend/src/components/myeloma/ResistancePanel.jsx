@@ -294,10 +294,23 @@ const ResistancePanel = ({
           <EscalationTriggersList triggers={prediction.escalation_triggers} />
         </Collapse>
 
+        {/* RUO Disclaimer Banner */}
+        <Alert 
+          severity="warning" 
+          sx={{ mt: 2, backgroundColor: 'rgba(255, 152, 0, 0.1)', border: '1px solid #ff9800' }}
+          icon={<InfoIcon />}
+        >
+          <AlertTitle sx={{ fontWeight: 'bold' }}>Research Use Only (RUO)</AlertTitle>
+          <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>
+            Baseline resistance risk stratification. Validated markers: NF1 (OV, RR=2.10), DIS3 (MM, RR=2.08).
+            MAPK pathway markers pending revalidation. Not for clinical decision-making without CA-125 kinetics.
+          </Typography>
+        </Alert>
+
         {/* Provenance */}
         <Box sx={{ mt: 2, pt: 2, borderTop: '1px dashed #ccc' }}>
           <Typography variant="caption" color="text.secondary">
-            Model: {prediction.provenance?.model_version || 'N/A'} •
+            Mode: baseline_only | Model: {prediction.provenance?.model_version || 'N/A'} •
             Treatment Line: {prediction.provenance?.treatment_line || 1} •
             Confidence: {(prediction.confidence * 100).toFixed(0)}%
           </Typography>

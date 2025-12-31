@@ -29,6 +29,9 @@ import { useMetastasisAssess } from '../../hooks/useMetastasis.js';
 // Metastasis Interception Integration
 import MetastasisInterceptionPanel from '../metastasis/MetastasisInterceptionPanel.jsx';
 import { useMetastasisInterception } from '../../hooks/useMetastasisInterception.js';
+// Sporadic Cancer Integration
+import { useSporadic } from '../../context/SporadicContext.jsx';
+import SporadicProvenanceCard from '../sporadic/SporadicProvenanceCard.jsx';
 
 const API_ROOT = import.meta.env.VITE_API_ROOT || '';
 
@@ -44,6 +47,14 @@ const AnalysisResults = ({
 }) => {
     const { addActivity } = useActivity ? useActivity() : { addActivity: () => {} };
     const navigate = useNavigate();
+    // Sporadic Cancer Context (safe - handles missing provider)
+    let sporadicContext = null;
+    try {
+        sporadicContext = useSporadic ? useSporadic() : null;
+    } catch (e) {
+        // SporadicProvider not available - sporadic context will be null
+        console.debug('SporadicContext not available:', e.message);
+    }
     const [effOpen, setEffOpen] = useState(false);
     const [effData, setEffData] = useState(null);
     const [effProv, setEffProv] = useState(null);
@@ -229,7 +240,7 @@ const AnalysisResults = ({
                     { gene: activeMutation?.gene || activeMutation?.hugo_gene_symbol, variant: activeMutation?.variant || activeMutation?.hgvs_p || activeMutation?.protein_change, profile: profileKey }
                 );
             }
-            const payload = {
+            const basePayload = {
                 mutations: [
                     {
                         gene: activeMutation?.gene || activeMutation?.hugo_gene_symbol,
@@ -247,6 +258,11 @@ const AnalysisResults = ({
                 },
                 api_base: API_ROOT || undefined,
             };
+            
+            // Add sporadic context if available
+            const payload = sporadicContext?.getEfficacyPayload 
+                ? sporadicContext.getEfficacyPayload(basePayload)
+                : basePayload;
             const res = await fetch(`${API_ROOT}/api/efficacy/predict`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Route, Routes, useNavigate, Navigate } from "react-router-dom";
 import { Sidebar, Navbar } from "./components";
-import { Home, Profile, Onboarding } from "./pages";
+import { Home, Profile, Onboarding } from "./pages"
+import OutreachDashboard from './pages/OutreachDashboard';;
 import ErrorBoundary from "./components/ErrorBoundary";
 import MedicalRecords from "./pages/records/index";
 import ScreeningSchedule from "./pages/ScreeningSchedule";
@@ -130,7 +131,8 @@ const App = () => {
           />
           <Route path="/screening-schedules" element={<ScreeningSchedule />} />
           <Route path="/research/:patientId" element={<Research />} />
-          <Route path="/research" element={<Research />} />
+          <Route path="/research"
+            <Route path="/outreach" element={<OutreachDashboard />} /> element={<Research />} />
           <Route path="/mutation-explorer" element={<MutationExplorer />} />
           <Route path="/mutation-explorer/:patientId" element={<MutationExplorer />} />
           <Route path="/agent-dashboard" element={<AgentDashboard />} />

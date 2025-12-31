@@ -98,6 +98,15 @@ export default function GermlineStatusBanner({ germlineStatus = "unknown", onQui
           </Stack>
         )}
       </Alert>
+      
+      {/* RUO Disclaimer */}
+      <Alert severity="info" sx={{ mt: 2, backgroundColor: 'rgba(25, 118, 210, 0.1)', border: '1px solid #1976d2' }}>
+        <AlertTitle sx={{ fontWeight: 'bold' }}>Research Use Only (RUO)</AlertTitle>
+        <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>
+          Sporadic cancer analysis based on tumor genomics and disease priors. Not validated for clinical decision-making.
+          Validated gates: PARP penalty (HRD-based), Immunotherapy boost (TMB/MSI-based), Confidence caps (L0/L1/L2).
+        </Typography>
+      </Alert>
     </Box>
   );
 }
