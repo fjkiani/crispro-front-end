@@ -153,7 +153,55 @@ export default function SporadicCancerPage() {
               </Stack>
             </Box>
             <Stack spacing={2}>
+              
               <Box>
+                <Button
+                  variant="outlined"
+                  size="medium"
+                  fullWidth
+                  onClick={() => {
+                    const summary = `# Sporadic Cancer Analysis Summary
+
+## Patient Context
+- **Germline Status**: ${germlineStatus}
+- **Data Level**: ${dataLevel}
+- **Tumor Context ID**: ${tumorContext?.context_id || 'N/A'}
+
+## Biomarkers
+- **TMB**: ${tumorContext?.tmb?.toFixed(1) || 'N/A'} mut/Mb
+- **HRD Score**: ${tumorContext?.hrd_score !== null && tumorContext?.hrd_score !== undefined ? tumorContext.hrd_score.toFixed(0) : 'Unknown'}
+- **MSI Status**: ${tumorContext?.msi_status || 'Unknown'}
+- **Completeness Score**: ${tumorContext?.completeness_score ? (tumorContext.completeness_score * 100).toFixed(0) + '%' : 'N/A'}
+
+## Applied Gates
+${tumorContext?.hrd_score !== null && tumorContext?.hrd_score !== undefined ? (tumorContext.hrd_score >= 42 ? '- ✅ PARP Rescue (HRD≥42)' : '- ⚠️ PARP Penalty (HRD<42)') : ''}
+${tumorContext?.tmb !== null && tumorContext?.tmb !== undefined ? (tumorContext.tmb >= 20 ? '- ✅ IO Boost (TMB≥20)' : tumorContext.tmb >= 10 ? '- ⚠️ IO Boost (TMB≥10)' : '- ❌ ${tumorContext?.msi_status === "MSI-H" ? '- ✅ IO Boost (MSI-H)' : ''}
+- ${dataLevel === 'L2' ? '✅' : dataLevel === 'L1' ? '⚠️' : '❌'} Confidence Cap (${dataLevel})
+
+## Next Steps
+1. Run WIWFM efficacy prediction to see drug recommendations with sporadic-aware scoring
+2. Review provenance cards for each drug to understand gate applications
+3. Consider additional biomarker testing if data level is L0 or L1
+
+---
+*Generated from Sporadic Cancer Analysis Tool (RUO)*`;
+
+                    navigator.clipboard.writeText(summary).then(() => {
+                      alert('Clinician summary copied to clipboard!');
+                    }).catch(err => {
+                      console.error('Failed to copy:', err);
+                      alert('Failed to copy to clipboard');
+                    });
+                  }}
+                  sx={{ mb: 2 }}
+                >
+                  📋 Copy Clinician Summary
+                </Button>
+                <Typography variant="caption" color="text.secondary" sx={block', mt: 0.5 }}>
+                  Copy markdown summary for clinical notes
+                </Typography>
+              </Box>
+<Box>
                 <Button
                   variant="contained"
                   size="large"
