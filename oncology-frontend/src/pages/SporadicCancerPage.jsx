@@ -160,23 +160,49 @@ export default function SporadicCancerPage() {
                   size="medium"
                   fullWidth
                   onClick={() => {
+                    const getGatesText = () => {
+                      const gates = [];
+                      if (tumorContext?.hrd_score !== null && tumorContext?.hrd_score !== undefined) {
+                        gates.push(tumorContext.hrd_score >= 42 ? '- ✅ PARP Rescue (HRD≥42)' : '- ⚠️ PARP Penalty (HRD<42)');
+                      }
+                      if (tumorContext?.tmb !== null && tumorContext?.tmb !== undefined) {
+                        if (tumorContext.tmb >= 20) {
+                          gates.push('- ✅ IO Boost (TMB≥20)');
+                        } else if (tumorContext.tmb >= 10) {
+                          gates.push('- ⚠️ IO Boost (TMB≥10)');
+                        } else {
+                          gates.push('- ❌ No IO Boost');
+                        }
+                      }
+                      if (tumorContext?.msi_status === 'MSI-H') {
+                        gates.push('- ✅ IO Boost (MSI-H     }
+                      const capIcon = dataLevel === 'L2' ? '✅' : dataLevel === 'L1' ? '⚠️' : '❌';
+                      gates.push(`- ${capIcon} Confidence Cap (${dataLevel})`);
+                      return gates.join('\n');
+                    };
+
+                    const tmbVal = tumorContext?.tmb ? tumorContext.tmb.toFixed(1) : 'N/A';
+                    const hrdVal = tumorContext?.hrd_score !== null && tumorContext?.hrd_score !== undefined ? tumorContext.hrd_score.toFixed(0) : 'Unknown';
+                    const msiVal = tumorContext?.msi_status || 'Unknown';
+                    const compVal = tumorContext?.completeness_score ? (tumorContext.completeness_score * 100).toFixed(0) + '%' : 'N/A';
+                    const contextId = tumorContext?.context_id || 'N/A';
+                    const gatesText = getGatesText();
+
                     const summary = `# Sporadic Cancer Analysis Summary
 
 ## Patient Context
 - **Germline Status**: ${germlineStatus}
 - **Data Level**: ${dataLevel}
-- **Tumor Context ID**: ${tumorContext?.context_id || 'N/A'}
+- **ntext ID**: ${contextId}
 
 ## Biomarkers
-- **TMB**: ${tumorContext?.tmb?.toFixed(1) || 'N/A'} mut/Mb
-- **HRD Score**: ${tumorContext?.hrd_score !== null && tumorContext?.hrd_score !== undefined ? tumorContext.hrd_score.toFixed(0) : 'Unknown'}
-- **MSI Status**: ${tumorContext?.msi_status || 'Unknown'}
-- **Completeness Score**: ${tumorContext?.completeness_score ? (tumorContext.completeness_score * 100).toFixed(0) + '%' : 'N/A'}
+- **TMB**: ${tmbVal} mut/Mb
+- **HRD Score**: ${hrdVal}
+- **MSI Status**: ${msiVal}
+- **Completeness Score**: ${compVal}
 
 ## Applied Gates
-${tumorContext?.hrd_score !== null && tumorContext?.hrd_score !== undefined ? (tumorContext.hrd_score >= 42 ? '- ✅ PARP Rescue (HRD≥42)' : '- ⚠️ PARP Penalty (HRD<42)') : ''}
-${tumorContext?.tmb !== null && tumorContext?.tmb !== undefined ? (tumorContext.tmb >= 20 ? '- ✅ IO Boost (TMB≥20)' : tumorContext.tmb >= 10 ? '- ⚠️ IO Boost (TMB≥10)' : '- ❌ ${tumorContext?.msi_status === "MSI-H" ? '- ✅ IO Boost (MSI-H)' : ''}
-- ${dataLevel === 'L2' ? '✅' : dataLevel === 'L1' ? '⚠️' : '❌'} Confidence Cap (${dataLevel})
+${gatesText}
 
 ## Next Steps
 1. Run WIWFM efficacy prediction to see drug recommendations with sporadic-aware scoring
@@ -192,7 +218,7 @@ ${tumorContext?.tmb !== null && tumorContext?.tmb !== undefined ? (tumorContext.
                       console.error('Failed to copy:', err);
                       alert('Failed to copy to clipboard');
                     });
-                  }}
+                  }
                   sx={{ mb: 2 }}
                 >
                   📋 Copy Clinician Summary
