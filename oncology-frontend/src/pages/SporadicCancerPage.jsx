@@ -1,23 +1,10 @@
 import React from 'react';
-import {
-  Box,
-  Container,
-  Typography,
-  Paper,
-  Stack,
-  Chip,
-  Button,
-} from '@mui/material';
+import { Box, Container, Typography, Paper, Stack, Chip, Button } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import { SporadicWorkflow } from '../components/sporadic';
 import { useSporadic } from '../context/SporadicContext';
 
-/**
- * SporadicCancerPage (Day 4 - Module M5)
- *
- * Full-page experience for sporadic (germline-negative) cancer analysis.
- */
 export default function SporadicCancerPage() {
   const navigate = useNavigate();
   const {
@@ -29,15 +16,13 @@ export default function SporadicCancerPage() {
     updateTumorContext,
   } = useSporadic();
 
-  // TODO: Get real patient ID from auth/session
   const patientId = 'ayesha_test_001';
 
   const handleTumorContextGenerated = (data) => {
-    console.log('✅ Tumor context generated:', data);
     updateTumorContext(data);
   };
 
-  const buildGatesPreview = () => {
+  const gatesPreview = () => {
     const chips = [];
 
     if (tumorContext?.hrd_score !== null && tumorContext?.hrd_score !== undefined) {
@@ -63,7 +48,9 @@ export default function SporadicCancerPage() {
 
     if (tumorContext?.msi_status === 'MSI-H') {
       chips.push({ key: 'msi', label: 'IO Boost (MSI-H)', color: 'success' });
-   chips.push({
+    }
+
+    chips.push({
       key: 'cap',
       label: `Confidence Cap (${dataLevel})`,
       color: dataLevel === 'L2' ? 'success' : dataLevel === 'L1' ? 'warning' : 'error',
@@ -73,7 +60,7 @@ export default function SporadicCancerPage() {
   };
 
   const buildClinicianSummary = () => {
-    const tmbVal =
+ st tmbVal =
       tumorContext?.tmb !== null && tumorContext?.tmb !== undefined ? tumorContext.tmb.toFixed(1) : 'N/A';
     const hrdVal =
       tumorContext?.hrd_score !== null && tumorContext?.hrd_score !== undefined
@@ -88,14 +75,18 @@ export default function SporadicCancerPage() {
     const gates = [];
     if (tumorContext?.hrd_score !== null && tumorContext?.hrd_score !== undefined) {
       gates.push(tumorContext.hrd_score >= 42 ? '- ✅ PARP Rescue (HRD≥42)' : '- ⚠️ PARP Penalty (HRD<42)');
-  if (tumorContext?.tmb !== null && tumorContext?.tmb !== undefined) {
+    }
+    if (tumorContext?.tmb !== null && tumorContext?.tmb !== undefined) {
       if (tumorContext.tmb >= 20) gates.push('- ✅ IO Boost (TMB≥20)');
       else if (tumorContext.tmb >= 10) gates.push('- ⚠️ IO Boost (TMB≥10)');
-      else gates.push('- ❌ No IO Boost');
+      else  IO Boost');
     }
     if (tumorContext?.msi_status === 'MSI-H') gates.push('- ✅ IO Boost (MSI-H)');
     const capIcon = dataLevel === 'L2' ? '✅' : dataLevel === 'L1' ? '⚠️' : '❌';
     gates.push(`- ${capIcon} Confidence Cap (${dataLevel})`);
+
+    // Avoid backslash escaping issues by joining with newline char code
+    const gatesText = gates.join(String.fromCharCode(10));
 
     return `# Sporadic Cancer Analysis Summary
 
@@ -111,22 +102,20 @@ export default function SporadicCancerPage() {
 - **Completeness Score**: ${compVal}
 
 ## Applied Gates
-${gates.join('
-')}
+${gatesText}
 
 ## Next Steps
 1. Run WIWFM efficacy prediction to see drug recommendations with sporadic-aware scoring
-2. Review provenance cards for each drug to unions
+2. Review provenance cards for each drug to understand gate applications
 3. Consider additional biomarker testing if data level is L0 or L1
 
 ---
-*Generated from Sporadic Cancer Analysis Tool (RUO)*`;
+*Generated frc Cancer Analysis Tool (RUO)*`;
   };
 
   const copyClinicianSummary = async () => {
     try {
-      const summary = buildClinicianSummary();
-      await navigator.clipboard.writeText(summary);
+      await navigator.clipboard.writeText(buildClinicianSummary());
       window.alert('Clinician summary copied to clipboard!');
     } catch (e) {
       console.error('Failed to copy clinician summary:', e);
@@ -135,16 +124,8 @@ ${gates.join('
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        backgroundColor: '#121212',
-        pt: 4,
-        pb: 6,
-      }}
-    >
+    <Box sx={{ minHeight: '100vh', backgroundColor: '#121212', pt: 4, pb: 6 }}>
       <Container maxWidth="lg">
-        {/* Page Header */}
         <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 4 }}>
           <Typography variant="h4" sx={{ fontWeight: 600 }}>
             Sporadic Cancer Analysis
@@ -158,26 +139,24 @@ ${gates.join('
           recommendations using disease priors and tumor NGS biomarkers.
         </Typography>
 
-        {/* Main Workflow */}
         <SporadicWorkflow
           patientId={patientId}
           germlineStatus={germlineStatus}
           onTumorContextGenerated={handleTumorContextGenerated}
         />
 
-        {/* Next Steps (when context generated) */}
         {hasTumorContext && (
           <Paper sx={{ mt: 4, p: 3, backgroundColor: '#1e1e1e', border: '1px solid #00bcd4' }}>
             <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
               <Typography variant="h6" sx={{ color: '#00bcd4' }}>
                 ✅ Tumor Context Ready ({dataLevel})
               </Typography>
-              <Stack direction="row" spang={1}>
+              <Stack direction="row" spacing={1}>
                 <Chip label={`TMB: ${tumorContext?.tmb?.toFixed(1) || 'N/A'}`} size="small" variant="outlined" />
                 <Chip
                   label={`HRD: ${
                     tumorContext?.hrd_score !== null && tumorContext?.hrd_score !== undefined
-                      ? tumorContext.hrd_score.toFixed(0)
+                      ? tumorCtext.hrd_score.toFixed(0)
                       : 'Unknown'
                   }`}
                   size="small"
@@ -192,17 +171,12 @@ ${gates.join('
               penalty/rescue, IO boosts, and confidence capping based on your data level.
             </Typography>
 
-            {/* Gates Preview */}
             <Box sx={{ mb: 3, p: 2, backgroundColor: '#1a1a1a', borderRadius: 1, border: '1px solid #333' }}>
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{ display: 'block', mb: 1, fontWeight: 500 }}
-              >
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1, fontWeight: 500 }}>
                 Gates that will be applied:
               </Typography>
               <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                {buildGatesPreview().map((c) => (
+                {gatesPreview().map((c) => (
                   <Chip key={c.key} label={c.label} size="small" color={c.color} variant="outlined" />
                 ))}
               </Stack>
@@ -244,8 +218,7 @@ ${gates.join('
                   2. Search Clinical Trials (Coming Soon)
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Find trials matching your tumor biomarkers (TMB, MSI, HRD) - germline-only trials
-                  auto-excluded.
+                  Find trials matching your tumor biomarkers (TMB, MSI, HRD) - germline-only trials auto-excluded.
                 </Typography>
               </Box>
 
