@@ -7,6 +7,7 @@ import { useSporadic } from '../context/SporadicContext';
 
 export default function SporadicCancerPage() {
   const navigate = useNavigate();
+
   const {
     germlineStatus,
     tumorContext,
@@ -16,6 +17,7 @@ export default function SporadicCancerPage() {
     updateTumorContext,
   } = useSporadic();
 
+  // TODO: Get real patient ID from auth/session
   const patientId = 'ayesha_test_001';
 
   const handleTumorContextGenerated = (data) => {
@@ -28,7 +30,7 @@ export default function SporadicCancerPage() {
     if (tumorContext?.hrd_score !== null && tumorContext?.hrd_score !== undefined) {
       chips.push({
         key: 'parp',
-        label: tumorContext.hrd_score >= 42 ? 'PARP Rescue (HRD≥42)' : 'PARP Penalty (HRD<42)',
+        label: tumorContext.hrd_score >= 42 ? 'PARP Rescue (HRD>=42)' : 'PARP Penalty (HRD<42)',
         color: tumorContext.hrd_score >= 42 ? 'success' : 'warning',
       });
     }
@@ -37,10 +39,10 @@ export default function SporadicCancerPage() {
       let label = 'No IO Boost';
       let color = 'default';
       if (tumorContext.tmb >= 20) {
-        label = 'IO Boost (TMB≥20)';
+        label = 'IO Boost (TMB>=20)';
         color = 'success';
       } else if (tumorContext.tmb >= 10) {
-        label = 'IO Boost (TMB≥10)';
+        label = 'IO Boost (TMB>=10)';
         color = 'warning';
       }
       chips.push({ key: 'tmb', label, color });
@@ -60,7 +62,7 @@ export default function SporadicCancerPage() {
   };
 
   const buildClinicianSummary = () => {
- st tmbVal =
+    const tmbVal =
       tumorContext?.tmb !== null && tumorContext?.tmb !== undefined ? tumorContext.tmb.toFixed(1) : 'N/A';
     const hrdVal =
       tumorContext?.hrd_score !== null && tumorContext?.hrd_score !== undefined
@@ -74,49 +76,25 @@ export default function SporadicCancerPage() {
 
     const gates = [];
     if (tumorContext?.hrd_score !== null && tumorContext?.hrd_score !== undefined) {
-      gates.push(tumorContext.hrd_score >= 42 ? '- ✅ PARP Rescue (HRD≥42)' : '- ⚠️ PARP Penalty (HRD<42)');
+      gates.push(tumorContext.hrd_score >= 42 ? '- PARP Rescue (HRD>=42)' : '- PARP Penalty (HRD<42)');
     }
     if (tumorContext?.tmb !== null && tumorContext?.tmb !== undefined) {
-      if (tumorContext.tmb >= 20) gates.push('- ✅ IO Boost (TMB≥20)');
-      else if (tumorContext.tmb >= 10) gates.push('- ⚠️ IO Boost (TMB≥10)');
-      else  IO Boost');
+      if (tumorContext.tmb >= 20) gates.push('- IO Boost (TMB>=20)');
+      else if (tumorContext.tmb >= 10) gates.push('- IO Boost (TMB>=10)');
+      else gates.push('- No IO Boost');
     }
-    if (tumorContext?.msi_status === 'MSI-H') gates.push('- ✅ IO Boost (MSI-H)');
-    const capIcon = dataLevel === 'L2' ? '✅' : dataLevel === 'L1' ? '⚠️' : '❌';
-    gates.push(`- ${capIcon} Confidence Cap (${dataLevel})`);
+    if (tumorContext?.msi_status === 'MSI-H') gates.push('- IO Boost (MSI-H)');
+    gates.push(`- Confidence Cap (${dataLevel})`);
 
-    // Avoid backslash escaping issues by joining with newline char code
     const gatesText = gates.join(String.fromCharCode(10));
 
-    return `# Sporadic Cancer Analysis Summary
-
-## Patient Context
-- **Germline Status**: ${germlineStatus}
-- **Data Level**: ${dataLevel}
-- **Tumor Context ID**: ${contextId || 'N/A'}
-
-## Biomarkers
-- **TMB**: ${tmbVal} mut/Mb
-- **HRD Score**: ${hrdVal}
-- **MSI Status**: ${msiVal}
-- **Completeness Score**: ${compVal}
-
-## Applied Gates
-${gatesText}
-
-## Next Steps
-1. Run WIWFM efficacy prediction to see drug recommendations with sporadic-aware scoring
-2. Review provenance cards for each drug to understand gate applications
-3. Consider additional biomarker testing if data level is L0 or L1
-
----
-*Generated frc Cancer Analysis Tool (RUO)*`;
+    return `# Sporadic Cancer Analysis Summary\n\n## Patient Context\n- Germline Status: ${germlineStatus}\n- Data Level: ${dataLevel}\n- Tumor Context ID: ${contextId || 'N/A'}\n\n## Biomarkers\n- TMB: ${tmbVal} mut/Mb\n- HRD Score: ${hrdVal}\n- MSI Status: ${msiVal}\n- Completeness Score: ${compVal}\n\n## Applied Gates\n${gatesText}\n\n## Next Steps\n1. Run WIWFM efficacy prediction\n2. Review provenance cards per drug\n3. Consider additional biomarker testing if data level is L0/L1\n\n---\nGenerated from Sporadic Cancer Analysis Tool (RUO)`;
   };
 
   const copyClinicianSummary = async () => {
     try {
       await navigator.clipboard.writeText(buildClinicianSummary());
-      window.alert('Clinician summary copied to clipboard!');
+      window.alert('Clinician summary copied to clipboard');
     } catch (e) {
       console.error('Failed to copy clinician summary:', e);
       window.alert('Failed to copy clinician summary');
@@ -149,14 +127,14 @@ ${gatesText}
           <Paper sx={{ mt: 4, p: 3, backgroundColor: '#1e1e1e', border: '1px solid #00bcd4' }}>
             <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
               <Typography variant="h6" sx={{ color: '#00bcd4' }}>
-                ✅ Tumor Context Ready ({dataLevel})
+                Tumor Context Ready ({dataLevel})
               </Typography>
               <Stack direction="row" spacing={1}>
                 <Chip label={`TMB: ${tumorContext?.tmb?.toFixed(1) || 'N/A'}`} size="small" variant="outlined" />
                 <Chip
                   label={`HRD: ${
                     tumorContext?.hrd_score !== null && tumorContext?.hrd_score !== undefined
-                      ? tumorCtext.hrd_score.toFixed(0)
+                      ? tumorContext.hrd_score.toFixed(0)
                       : 'Unknown'
                   }`}
                   size="small"
@@ -167,8 +145,7 @@ ${gatesText}
             </Stack>
 
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Your tumor context is ready. Efficacy predictions will include sporadic-aware scoring: PARP
-              penalty/rescue, IO boosts, and confidence capping based on your data level.
+              Your tumor context is ready. Efficacy predictions will include sporadic-aware scoring.
             </Typography>
 
             <Box sx={{ mb: 3, p: 2, backgroundColor: '#1a1a1a', borderRadius: 1, border: '1px solid #333' }}>
@@ -184,12 +161,9 @@ ${gatesText}
 
             <Stack spacing={2}>
               <Box>
-                <Button variant="outlined" size="medium" fullWidth onClick={copyClinicianSummary} sx={{ mb: 0.5 }}>
+                <Button variant="outlined" size="medium" fullWidth onClick={copyClinicianSummary}>
                   Copy Clinician Summary
                 </Button>
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                  Copies a markdown summary (biomarkers + gates) for clinical notes.
-                </Typography>
               </Box>
 
               <Box>
@@ -209,7 +183,7 @@ ${gatesText}
                   Run Efficacy Prediction (WIWFM)
                 </Button>
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                  {`Your tumor context (TMB, MSI, HRD, ${dataLevel}) will be automatically included in the analysis. Each drug result shows which sporadic gates were applied and why.`}
+                  {`Your tumor context (TMB, MSI, HRD, ${dataLevel}) will be automatically included in the analysis.`}
                 </Typography>
               </Box>
 
@@ -218,7 +192,7 @@ ${gatesText}
                   2. Search Clinical Trials (Coming Soon)
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Find trials matching your tumor biomarkers (TMB, MSI, HRD) - germline-only trials auto-excluded.
+                  Find trials matching your tumor biomarkers (TMB, MSI, HRD).
                 </Typography>
               </Box>
 
@@ -227,7 +201,7 @@ ${gatesText}
                   3. Generate Provider Report (Coming Soon)
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Complete analysis with tumor context, drug rankings, trial matches, and audit trail.
+                  Generate a provider report with tumor context, drug rankings, and an audit trail.
                 </Typography>
               </Box>
             </Stack>
