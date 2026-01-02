@@ -113,6 +113,45 @@ export default function SporadicCancerPage() {
               PARP penalty/rescue, IO boosts, and confidence capping based on your data level.
             </Typography>
 
+            
+            {/* Gates Preview */}
+            <Box sx={{ mb: 3, p: 2, backgroundColor: '#1a1a1a', borderRadius: 1, border: '1px solid #333' }}>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1, fontWeight: 500 }}>
+                Gates that will be applied:
+              </Typography>
+              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                {tumorContext?.hrd_score !== null && tumorContext?.hrd_score !== undefined && (
+                  <Chip 
+                    label={tumorContext.hrd_score >= 42 ? "PARP Rescue (HRD≥42)" : "PARP Penalty (HRD<42)"}
+                    size="small"
+                    color={tumorContext.hrd_score >= 42 ? "success" : "warning"}
+                    variant="outlined"
+                  />
+                )}
+                {tumorContext?.tmb !== null && tumorContext?.tmb !== undefined && (
+                  <Chip 
+                    label={tumorContext.tmb >= 20 ? "IO Boost (TMB≥20)" : tumorContext.tmb >= 10 ? "IO Boost (TMB≥10)" : "No IO Boost"}
+                    size="small"
+                    color={tumorContext.tmb >= 20 ? "success" : tumorContext.tmb >= 10 ? "warning" : "default"}
+                    variant="outlined"
+                  />
+                )}
+                {tumorContext?.msi_status === "MSI-H" && (
+                  <Chip 
+                    label="IO Boost (MSI-H)"
+                    size="small"
+                    color="success"
+                    variant="outlined"
+                  />
+          )}
+                <Chip 
+                  label={`Confidence Cap (${dataLevel})`}
+                  size="small"
+                  color={dataLevel === 'L2' ? "success" : dataLevel === 'L1' ? "warning" : "error"}
+                  variant="outlined"
+                />
+              </Stack>
+            </Box>
             <Stack spacing={2}>
               <Box>
                 <Button
@@ -131,7 +170,7 @@ export default function SporadicCancerPage() {
                   Run Efficacy Prediction (WIWFM)
                 </Button>
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                  Get drug recommendations with sporadic-aware scoring (PARP penalty, IO boosts, confidence capping)
+                  Your tumor context (TMB, MSI, HRD, {dataLevel}) will be automatically included in the analysis. Each drug result will show which sporadic gates were applied and why.
                 </Typography>
               </Box>
 
