@@ -17,12 +17,6 @@ import { useSporadic } from '../context/SporadicContext';
  * SporadicCancerPage (Day 4 - Module M5)
  *
  * Full-page experience for sporadic (germline-negative) cancer analysis.
- *
- * Workflow:
- * 1. Show germline status banner
- * 2. Quick Intake (Level 0/1) OR Upload NGS (Level 2)
- * 3. Generate tumor context
- * 4. Link to WIWFM with sporadic-aware scoring
  */
 export default function SporadicCancerPage() {
   const navigate = useNavigate();
@@ -58,7 +52,8 @@ export default function SporadicCancerPage() {
       let label = 'No IO Boost';
       let color = 'default';
       if (tumorContext.tmb >= 20) {
-        label = 'IO Boost (TMB≥20)'    color = 'success';
+        label = 'IO Boost (TMB≥20)';
+        color = 'success';
       } else if (tumorContext.tmb >= 10) {
         label = 'IO Boost (TMB≥10)';
         color = 'warning';
@@ -68,9 +63,7 @@ export default function SporadicCancerPage() {
 
     if (tumorContext?.msi_status === 'MSI-H') {
       chips.push({ key: 'msi', label: 'IO Boost (MSI-H)', color: 'success' });
-    }
-
-    chips.push({
+   chips.push({
       key: 'cap',
       label: `Confidence Cap (${dataLevel})`,
       color: dataLevel === 'L2' ? 'success' : dataLevel === 'L1' ? 'warning' : 'error',
@@ -80,19 +73,22 @@ export default function SporadicCancerPage() {
   };
 
   const buildClinicianSummary = () => {
-    const tmbVal = tumorContext?.tmb !== null && tumorContext?.tmb !== undefined ? tumorContext.tmb.toFixed(1) : 'N/A';
-    const hrdVal = tumorContext?.hrd_score !== null && tumorContext?.hrd_score !== undefined ? tumorContext.hrd_score.toFixed(0) : 'Unknown';
+    const tmbVal =
+      tumorContext?.tmb !== null && tumorContext?.tmb !== undefined ? tumorContext.tmb.toFixed(1) : 'N/A';
+    const hrdVal =
+      tumorContext?.hrd_score !== null && tumorContext?.hrd_score !== undefined
+        ? tumorContext.hrd_score.toFixed(0)
+        : 'Unknown';
     const msiVal = tumorContext?.msi_status || 'Unknown';
     const compVal =
       tumorContext?.completeness_score !== null && tumorContext?.completeness_score !== undefined
-        ? `${umorContext.completeness_score * 100).toFixed(0)}%`
+        ? `${((tumorContext.completeness_score || 0) * 100).toFixed(0)}%`
         : 'N/A';
 
     const gates = [];
     if (tumorContext?.hrd_score !== null && tumorContext?.hrd_score !== undefined) {
       gates.push(tumorContext.hrd_score >= 42 ? '- ✅ PARP Rescue (HRD≥42)' : '- ⚠️ PARP Penalty (HRD<42)');
-    }
-    if (tumorContext?.tmb !== null && tumorContext?.tmb !== undefined) {
+  if (tumorContext?.tmb !== null && tumorContext?.tmb !== undefined) {
       if (tumorContext.tmb >= 20) gates.push('- ✅ IO Boost (TMB≥20)');
       else if (tumorContext.tmb >= 10) gates.push('- ⚠️ IO Boost (TMB≥10)');
       else gates.push('- ❌ No IO Boost');
@@ -109,7 +105,8 @@ export default function SporadicCancerPage() {
 - **Tumor Context ID**: ${contextId || 'N/A'}
 
 ## Biomarkers
-- **TMBcore**: ${hrdVal}
+- **TMB**: ${tmbVal} mut/Mb
+- **HRD Score**: ${hrdVal}
 - **MSI Status**: ${msiVal}
 - **Completeness Score**: ${compVal}
 
@@ -119,7 +116,7 @@ ${gates.join('
 
 ## Next Steps
 1. Run WIWFM efficacy prediction to see drug recommendations with sporadic-aware scoring
-2. Review provenance cards for each drug to understand gate applications
+2. Review provenance cards for each drug to unions
 3. Consider additional biomarker testing if data level is L0 or L1
 
 ---
@@ -130,7 +127,6 @@ ${gates.join('
     try {
       const summary = buildClinicianSummary();
       await navigator.clipboard.writeText(summary);
-      // keep it simple for demo; can be upgraded to Snackbar later
       window.alert('Clinician summary copied to clipboard!');
     } catch (e) {
       console.error('Failed to copy clinician summary:', e);
@@ -176,7 +172,7 @@ ${gates.join('
               <Typography variant="h6" sx={{ color: '#00bcd4' }}>
                 ✅ Tumor Context Ready ({dataLevel})
               </Typography>
-              <Stack direction="row" spacing={1}>
+              <Stack direction="row" spang={1}>
                 <Chip label={`TMB: ${tumorContext?.tmb?.toFixed(1) || 'N/A'}`} size="small" variant="outlined" />
                 <Chip
                   label={`HRD: ${
@@ -191,7 +187,7 @@ ${gates.join('
               </Stack>
             </Stack>
 
-            <Typography varit="body2" color="text.secondary" sx={{ mb: 2 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               Your tumor context is ready. Efficacy predictions will include sporadic-aware scoring: PARP
               penalty/rescue, IO boosts, and confidence capping based on your data level.
             </Typography>
@@ -239,8 +235,7 @@ ${gates.join('
                   Run Efficacy Prediction (WIWFM)
                 </Button>
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                  Your tumor context (TMB, MSI, HRD, {dataLevel}) will be automatically included in the
-                  analysis. Each drug result shows which sporadic gates were applied and why.
+                  {`Your tumor context (TMB, MSI, HRD, ${dataLevel}) will be automatically included in the analysis. Each drug result shows which sporadic gates were applied and why.`}
                 </Typography>
               </Box>
 
