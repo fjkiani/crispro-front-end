@@ -26,6 +26,7 @@ import {
 import PsychologyIcon from '@mui/icons-material/Psychology';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import TargetIcon from '@mui/icons-material/GpsFixed';
+import EvidenceTierBadge from './findings/EvidenceTierBadge';
 
 export default function SynthesizedFindingsCard({ findings }) {
   if (!findings) {
@@ -35,6 +36,8 @@ export default function SynthesizedFindingsCard({ findings }) {
   const mechanisms = findings.mechanisms || [];
   const evidenceSummary = findings.evidence_summary || findings.summary || '';
   const overallConfidence = findings.overall_confidence || findings.confidence || 0;
+  const evidenceTier = findings.evidence_tier || null;
+  const badges = findings.badges || [];
 
   return (
     <Card sx={{ mb: 2 }}>
@@ -43,6 +46,16 @@ export default function SynthesizedFindingsCard({ findings }) {
           <PsychologyIcon sx={{ mr: 1, color: 'primary.main' }} />
           <Typography variant="h6">Synthesized Findings</Typography>
         </Box>
+
+        {/* Evidence Tier & Badges */}
+        {evidenceTier && (
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+              Evidence Quality
+            </Typography>
+            <EvidenceTierBadge tier={evidenceTier} badges={badges} />
+          </Box>
+        )}
 
         {/* Overall Confidence */}
         <Box sx={{ mb: 3 }}>

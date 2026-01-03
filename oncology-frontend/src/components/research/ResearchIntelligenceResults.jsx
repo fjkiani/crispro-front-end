@@ -26,6 +26,9 @@ import KeywordAnalysisCard from './KeywordAnalysisCard';
 import SynthesizedFindingsCard from './SynthesizedFindingsCard';
 import MOATAnalysisCard from './MOATAnalysisCard';
 import PapersList from './PapersList';
+import SubQuestionAnswersCard from './findings/SubQuestionAnswersCard';
+import ArticleSummariesCard from './findings/ArticleSummariesCard';
+import ProvenanceCard from './provenance/ProvenanceCard';
 
 export default function ResearchIntelligenceResults({ result, context, compact = false }) {
   if (!result) {
@@ -101,8 +104,23 @@ export default function ResearchIntelligenceResults({ result, context, compact =
       {/* Synthesized Findings */}
       <SynthesizedFindingsCard findings={synthesizedFindings} />
 
+      {/* Sub-Question Answers */}
+      {result.sub_question_answers && (
+        <SubQuestionAnswersCard answers={result.sub_question_answers} />
+      )}
+
+      {/* Article Summaries */}
+      {synthesizedFindings.article_summaries && (
+        <ArticleSummariesCard summaries={synthesizedFindings.article_summaries} />
+      )}
+
       {/* MOAT Analysis */}
       <MOATAnalysisCard moatAnalysis={moatAnalysis} context={context} />
+
+      {/* Provenance */}
+      {result.provenance && (
+        <ProvenanceCard provenance={result.provenance} />
+      )}
     </Box>
   );
 }

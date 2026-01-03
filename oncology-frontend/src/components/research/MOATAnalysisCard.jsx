@@ -23,6 +23,12 @@ import {
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import TimelineIcon from '@mui/icons-material/Timeline';
 import BiotechIcon from '@mui/icons-material/Biotech';
+import CrossResistanceCard from './moat/CrossResistanceCard';
+import ToxicityMitigationCard from './moat/ToxicityMitigationCard';
+import SAEFeaturesCard from './moat/SAEFeaturesCard';
+import ClinicalTrialRecsCard from './moat/ClinicalTrialRecsCard';
+import DrugInteractionsCard from './moat/DrugInteractionsCard';
+import CitationNetworkCard from './moat/CitationNetworkCard';
 
 export default function MOATAnalysisCard({ moatAnalysis, context }) {
   if (!moatAnalysis) {
@@ -175,6 +181,31 @@ export default function MOATAnalysisCard({ moatAnalysis, context }) {
             </Grid>
           )}
         </Grid>
+
+        {/* New MOAT Components */}
+        {moatAnalysis.cross_resistance && (
+          <CrossResistanceCard crossResistance={moatAnalysis.cross_resistance} />
+        )}
+
+        {moatAnalysis.toxicity_mitigation && (
+          <ToxicityMitigationCard toxicityMitigation={moatAnalysis.toxicity_mitigation} />
+        )}
+
+        {moatAnalysis.sae_features && (
+          <SAEFeaturesCard saeFeatures={moatAnalysis.sae_features} />
+        )}
+
+        {moatAnalysis.clinical_trial_recommendations && (
+          <ClinicalTrialRecsCard trials={moatAnalysis.clinical_trial_recommendations} />
+        )}
+
+        {moatAnalysis.drug_interactions && (
+          <DrugInteractionsCard drugInteractions={moatAnalysis.drug_interactions} />
+        )}
+
+        {moatAnalysis.citation_network && (
+          <CitationNetworkCard citationNetwork={moatAnalysis.citation_network} />
+        )}
       </CardContent>
     </Card>
   );

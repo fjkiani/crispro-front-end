@@ -66,6 +66,7 @@ import { AgentsPage } from './pages/AgentsPage';
 import { AgentProvider } from './context/AgentContext';
 import { SyntheticLethalityAnalyzer } from './components/SyntheticLethality';
 import { OrchestratorDashboard } from './pages/OrchestratorDashboard';
+import DosingGuidancePage from './pages/DosingGuidancePage';
 
 
 
@@ -131,21 +132,27 @@ const App = () => {
           />
           <Route path="/screening-schedules" element={<ScreeningSchedule />} />
           <Route path="/research/:patientId" element={<Research />} />
-          <Route path="/research"
-            <Route path="/outreach" element={<OutreachDashboard />} /> element={<Research />} />
+          <Route path="/research" element={<Research />} />
+          <Route path="/outreach" element={<OutreachDashboard />} />
           <Route path="/mutation-explorer" element={<MutationExplorer />} />
           <Route path="/mutation-explorer/:patientId" element={<MutationExplorer />} />
           <Route path="/agent-dashboard" element={<AgentDashboard />} />
           <Route path="/agent-dashboard/:patientId" element={<AgentDashboard />} />
           <Route path="/agents" element={<AgentsPage />} />
-          <Route path="/agent-demo/:agentId" element={<AgentDemo />} />
-          <Route path="/agent-studio" element={<AgentStudio />} />
+          {/* Demo routes - gated behind development mode */}
+          {import.meta.env.DEV && (
+            <>
+              <Route path="/agent-demo/:agentId" element={<AgentDemo />} />
+              <Route path="/agent-studio" element={<AgentStudio />} />
+              <Route path="/ayesha-twin-demo" element={<AyeshaTwinDemo />} />
+              <Route path="/clinical-dossier-test" element={<ClinicalDossierTest />} />
+            </>
+          )}
           <Route path="/investor-slideshow" element={<InvestorSlideshow />} />
           <Route path="/genomic-analysis/:patientId" element={<GenomicAnalysis />} />
           <Route path="/validate" element={<HypothesisValidator />} />
           <Route path="/food-validator" element={<FoodValidatorAB />} />
           <Route path="/batch-food-validator" element={<BatchFoodValidator />} />
-          <Route path="/ayesha-twin-demo" element={<AyeshaTwinDemo />} />
           <Route path="/ayesha-complete-care" element={<AyeshaCompleteCare />} />
           <Route path="/ayesha-trials" element={<AyeshaTrialExplorer />} />
           <Route path="/ayesha-dossiers" element={<AyeshaDossierBrowser />} />
@@ -154,6 +161,7 @@ const App = () => {
           <Route path="/universal-dossiers/:patientId/:nct_id" element={<UniversalDossierDetail />} />
           <Route path="/universal-trial-intelligence" element={<UniversalTrialIntelligence />} />
           <Route path="/sporadic-cancer" element={<SporadicCancerPage />} />
+          <Route path="/dosing-guidance" element={<DosingGuidancePage />} />
           <Route path="/threat-assessor" element={<ThreatAssessor />} />
           <Route path="/radonc-co-pilot" element={<RadOncCoPilot />} />
           <Route path="/tools" element={<Armory />} />
@@ -174,14 +182,15 @@ const App = () => {
           {/* Modular Demo Routes - Route-based demo selection */}
           <Route path="/runx-conquest/:demoId" element={<RunxConquest />} />
           <Route path="/runx-conquest" element={<RunxConquest />} />
-          {/* Q2C Router Test Route */}
-          <Route path="/q2c-test" element={<Q2CRouterTest />} />
-          {/* Phase 3 Action Integration Demo Route */}
-          <Route path="/phase3-demo" element={<Phase3ActionDemo />} />
-          {/* Co-Pilot Doctrine Smoke Test Route */}
-          <Route path="/copilot-smoke-test" element={<CoPilotSmokeTest />} />
-          {/* Co-Pilot Doctrine Gap Analysis Route */}
-          <Route path="/copilot-gap-analysis" element={<CoPilotDoctrineGapAnalysis />} />
+          {/* Demo/Test Routes - Gated behind development mode */}
+          {import.meta.env.DEV && (
+            <>
+              <Route path="/q2c-test" element={<Q2CRouterTest />} />
+              <Route path="/phase3-demo" element={<Phase3ActionDemo />} />
+              <Route path="/copilot-smoke-test" element={<CoPilotSmokeTest />} />
+              <Route path="/copilot-gap-analysis" element={<CoPilotDoctrineGapAnalysis />} />
+            </>
+          )}
           {/* <Route path="/dossier" element={<TargetDossier />} /> */}
             </Routes>
           </div>

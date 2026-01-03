@@ -337,17 +337,19 @@ export const CarePlanViewer = ({ carePlan, loading = false }) => {
 
         {/* Patient Info */}
         {carePlan.patient_id && (
-          <Divider sx={{ my: 2 }} />
-          <Box>
-            <Typography variant="caption" color="text.secondary">
-              Patient ID: {carePlan.patient_id}
-            </Typography>
-            {carePlan.disease && (
-              <Typography variant="caption" color="text.secondary" display="block">
-                Disease: {carePlan.disease}
+          <>
+            <Divider sx={{ my: 2 }} />
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                Patient ID: {carePlan.patient_id}
               </Typography>
-            )}
-          </Box>
+              {carePlan.disease && (
+                <Typography variant="caption" color="text.secondary" display="block">
+                  Disease: {carePlan.disease}
+                </Typography>
+              )}
+            </Box>
+          </>
         )}
       </CardContent>
     </Card>

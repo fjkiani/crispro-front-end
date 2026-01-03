@@ -174,7 +174,7 @@ const AyeshaDossierBrowser = () => {
         </Typography>
         <Box display="flex" gap={1} flexWrap="wrap" mt={1}>
           <Chip 
-            label={`Patient: Ayesha Kiani (Stage IVB HGSOC)`}
+            label={`Patient: AK (Stage IVB HGSOC)`}
             color="primary"
           />
           {stats && (

@@ -17,8 +17,11 @@ export default function SporadicCancerPage() {
     updateTumorContext,
   } = useSporadic();
 
-  // TODO: Get real patient ID from auth/session
-  const patientId = 'ayesha_test_001';
+  // Get patient ID from URL params or use authenticated user context
+  const patientId = React.useMemo(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('patientId') || 'ayesha_test_001'; // Fallback for demo
+  }, []);
 
   const handleTumorContextGenerated = (data) => {
     updateTumorContext(data);

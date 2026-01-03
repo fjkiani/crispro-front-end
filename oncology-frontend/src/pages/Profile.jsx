@@ -1,20 +1,17 @@
 import React, { useEffect } from "react";
 import { useStateContext } from "../context";
-// import { usePrivy } from "@privy-io/react-auth"; // Remove import
+import { useAuth } from "../context/AuthContext";
 
 const Profile = () => {
   const { currentUser, fetchUserByEmail } = useStateContext();
-  // const { user } = usePrivy(); // Comment out Privy hook
+  const { user, profile: authProfile, loading: authLoading } = useAuth();
 
   useEffect(() => {
-    // Placeholder: Need a way to get the current user's email without Privy
-    const currentUserEmail = 'dummy@example.com'; // Replace with actual user email source
-
-    if (!currentUser) {
-      // fetchUserByEmail(user?.email?.address);
-      fetchUserByEmail(currentUserEmail); // Use placeholder email
+    // Use authenticated user email from AuthContext
+    if (!currentUser && user?.email && !authLoading) {
+      fetchUserByEmail(user.email);
     }
-  }, [currentUser, fetchUserByEmail]); // Remove user dependency
+  }, [currentUser, user, authLoading, fetchUserByEmail]);
 
   if (!currentUser) {
     return (

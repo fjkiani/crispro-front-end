@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { arrayMove } from "@dnd-kit/sortable";
 import KanbanBoard from '../components/KanbanBoard';
 
-console.log('[FollowUpTaskBoard] VITE_API_ROOT:', import.meta.env.VITE_API_ROOT);
+// API root configured via environment variable
 const API_BASE_URL = import.meta.env.VITE_API_ROOT;
 
 const defaultCols = [

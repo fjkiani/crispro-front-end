@@ -65,7 +65,6 @@ const ResearchPortal = () => {
   }, []);
 
   const handleSearch = async (query, type) => {
-    console.log(`Searching ${type} for: ${query}`);
     setIsLoading(true);
     setSearchResults([]); 
     setError(null); // Clear previous errors
@@ -83,7 +82,6 @@ const ResearchPortal = () => {
       // Simple query format - backend handles parsing
       body = { query: query };
     } else {
-      console.error("Unknown search type:", type);
       setError("Invalid search type selected.");
       setIsLoading(false);
       return;
@@ -133,7 +131,6 @@ const ResearchPortal = () => {
       }
 
     } catch (err) {
-      console.error("API Call failed:", err);
       setError(err.message || "Failed to fetch search results.");
       setSearchResults([]); // Clear results on error
     } finally {

@@ -1,21 +1,25 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useStateContext } from "../context";
-// import { usePrivy } from "@privy-io/react-auth"; // Remove import
+import { useAuth } from "../context/AuthContext";
 
 const Onboarding = () => {
   const { createUser } = useStateContext();
+  const { user, authenticated } = useAuth();
   const [username, setUsername] = useState("");
   const [age, setAge] = useState("");
   const [location, setLocation] = useState("");
   const navigate = useNavigate();
-  // const { user } = usePrivy(); // Comment out Privy hook
 
-  // console.log(user); // Comment out Privy user log
   const handleOnboarding = async (e) => {
     e.preventDefault();
-    // Placeholder: Need a way to get the current user's email without Privy
-    const currentUserEmail = 'dummy@example.com'; // Replace with actual user email source
+    
+    // Require authentication before onboarding
+    if (!authenticated || !user?.email) {
+      alert('Please sign in to complete onboarding');
+      navigate('/login');
+      return;
+    }
 
     const userData = {
       username,
@@ -24,11 +28,9 @@ const Onboarding = () => {
       folders: [],
       treatmentCounts: 0,
       folder: [],
-      // createdBy: user.email.address,
-      createdBy: currentUserEmail, // Use placeholder email
+      createdBy: user.email,
     };
 
-    console.log(userData);
     const newUser = await createUser(userData);
     if (newUser) {
       navigate("/profile");
