@@ -192,3 +192,16 @@ export default function ClinicalTrialRecsCard({ trials = [] }) {
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -141,3 +141,16 @@ export default function DrugInteractionsCard({ drugInteractions }) {
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+

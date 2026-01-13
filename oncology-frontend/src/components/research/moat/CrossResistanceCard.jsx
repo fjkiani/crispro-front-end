@@ -158,3 +158,16 @@ export default function CrossResistanceCard({ crossResistance = [] }) {
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+

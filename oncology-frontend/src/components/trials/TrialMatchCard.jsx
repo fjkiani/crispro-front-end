@@ -48,6 +48,9 @@ const TrialMatchCard = ({ trial, rank }) => {
   // Format match score as percentage
   const scorePercent = Math.round(match_score * 100);
 
+  const reasoningObj = typeof reasoning === 'object' && reasoning !== null ? reasoning : null;
+  const reasoningText = typeof reasoning === 'string' ? reasoning : null;
+
   return (
     <Card sx={{ mb: 2, border: '1px solid', borderColor: 'grey.300' }}>
       <CardContent>
@@ -110,7 +113,7 @@ const TrialMatchCard = ({ trial, rank }) => {
         )}
 
         {/* Eligibility Checklist */}
-        {reasoning && (
+        {reasoningObj && (
           <Box mb={2}>
             <Typography variant="subtitle2" gutterBottom>
               Eligibility Checklist
@@ -118,31 +121,31 @@ const TrialMatchCard = ({ trial, rank }) => {
             <Box display="flex" gap={1} flexWrap="wrap">
               <Chip
                 icon={<CheckCircleIcon className="h-4 w-4" />}
-                label={`Hard: ✅ ${reasoning.why_eligible?.length || 0} met`}
+                label={`Hard: ✅ ${reasoningObj.why_eligible?.length || 0} met`}
                 size="small"
                 color="success"
                 variant="outlined"
               />
               <Chip
                 icon={<CheckCircleIcon className="h-4 w-4" />}
-                label={`Soft: ${reasoning.why_good_fit?.length || 0} boosts`}
+                label={`Soft: ${reasoningObj.why_good_fit?.length || 0} boosts`}
                 size="small"
                 color="info"
                 variant="outlined"
               />
-              {reasoning.conditional_requirements?.length > 0 && (
+              {reasoningObj.conditional_requirements?.length > 0 && (
                 <Chip
                   icon={<ExclamationTriangleIcon className="h-4 w-4" />}
-                  label={`Conditional: ${reasoning.conditional_requirements.length}`}
+                  label={`Conditional: ${reasoningObj.conditional_requirements.length}`}
                   size="small"
                   color="warning"
                   variant="outlined"
                 />
               )}
-              {reasoning.red_flags?.length > 0 && (
+              {reasoningObj.red_flags?.length > 0 && (
                 <Chip
                   icon={<XCircleIcon className="h-4 w-4" />}
-                  label={`Red Flags: ${reasoning.red_flags.length}`}
+                  label={`Red Flags: ${reasoningObj.red_flags.length}`}
                   size="small"
                   color="error"
                   variant="outlined"
@@ -153,7 +156,7 @@ const TrialMatchCard = ({ trial, rank }) => {
         )}
 
         {/* Reasoning Sections (Expandable) */}
-        {reasoning && (
+        {reasoningObj && (
           <Accordion expanded={expanded} onChange={() => setExpanded(!expanded)}>
             <AccordionSummary expandIcon={<ChevronDownIcon className="h-5 w-5" />}>
               <Typography variant="subtitle2">
@@ -162,13 +165,13 @@ const TrialMatchCard = ({ trial, rank }) => {
             </AccordionSummary>
             <AccordionDetails>
               {/* Why Eligible */}
-              {reasoning.why_eligible && reasoning.why_eligible.length > 0 && (
+              {reasoningObj.why_eligible && reasoningObj.why_eligible.length > 0 && (
                 <Box mb={2}>
                   <Typography variant="subtitle2" color="success.main" gutterBottom>
                     ✅ Why Eligible
                   </Typography>
                   <ul style={{ margin: 0, paddingLeft: '20px' }}>
-                    {reasoning.why_eligible.map((reason, idx) => (
+                    {reasoningObj.why_eligible.map((reason, idx) => (
                       <li key={idx}>
                         <Typography variant="body2">{reason}</Typography>
                       </li>
@@ -178,13 +181,13 @@ const TrialMatchCard = ({ trial, rank }) => {
               )}
 
               {/* Why Good Fit */}
-              {reasoning.why_good_fit && reasoning.why_good_fit.length > 0 && (
+              {reasoningObj.why_good_fit && reasoningObj.why_good_fit.length > 0 && (
                 <Box mb={2}>
                   <Typography variant="subtitle2" color="info.main" gutterBottom>
                     🎯 Why Good Fit
                   </Typography>
                   <ul style={{ margin: 0, paddingLeft: '20px' }}>
-                    {reasoning.why_good_fit.map((reason, idx) => (
+                    {reasoningObj.why_good_fit.map((reason, idx) => (
                       <li key={idx}>
                         <Typography variant="body2">{reason}</Typography>
                       </li>
@@ -194,13 +197,13 @@ const TrialMatchCard = ({ trial, rank }) => {
               )}
 
               {/* Conditional Requirements */}
-              {reasoning.conditional_requirements && reasoning.conditional_requirements.length > 0 && (
+              {reasoningObj.conditional_requirements && reasoningObj.conditional_requirements.length > 0 && (
                 <Box mb={2}>
                   <Typography variant="subtitle2" color="warning.main" gutterBottom>
                     ⚠️ Conditional Requirements
                   </Typography>
                   <ul style={{ margin: 0, paddingLeft: '20px' }}>
-                    {reasoning.conditional_requirements.map((req, idx) => (
+                    {reasoningObj.conditional_requirements.map((req, idx) => (
                       <li key={idx}>
                         <Typography variant="body2">{req}</Typography>
                       </li>
@@ -210,13 +213,13 @@ const TrialMatchCard = ({ trial, rank }) => {
               )}
 
               {/* Red Flags */}
-              {reasoning.red_flags && reasoning.red_flags.length > 0 && (
+              {reasoningObj.red_flags && reasoningObj.red_flags.length > 0 && (
                 <Box mb={2}>
                   <Typography variant="subtitle2" color="error.main" gutterBottom>
                     ❌ Red Flags
                   </Typography>
                   <ul style={{ margin: 0, paddingLeft: '20px' }}>
-                    {reasoning.red_flags.map((flag, idx) => (
+                    {reasoningObj.red_flags.map((flag, idx) => (
                       <li key={idx}>
                         <Typography variant="body2">{flag}</Typography>
                       </li>
@@ -228,18 +231,18 @@ const TrialMatchCard = ({ trial, rank }) => {
               {/* Evidence Tier & Enrollment Likelihood */}
               <Box display="flex" gap={2} mt={2}>
                 <Chip
-                  label={`Evidence: ${reasoning.evidence_tier || 'Unknown'}`}
+                  label={`Evidence: ${reasoningObj.evidence_tier || 'Unknown'}`}
                   size="small"
                   variant="outlined"
                 />
                 <Chip
-                  label={`Enrollment: ${reasoning.enrollment_likelihood || 'Unknown'}`}
+                  label={`Enrollment: ${reasoningObj.enrollment_likelihood || 'Unknown'}`}
                   size="small"
                   variant="outlined"
                   color={
-                    reasoning.enrollment_likelihood === 'HIGH'
+                    reasoningObj.enrollment_likelihood === 'HIGH'
                       ? 'success'
-                      : reasoning.enrollment_likelihood === 'MEDIUM'
+                      : reasoningObj.enrollment_likelihood === 'MEDIUM'
                       ? 'warning'
                       : 'default'
                   }
@@ -249,11 +252,18 @@ const TrialMatchCard = ({ trial, rank }) => {
           </Accordion>
         )}
 
+        {/* Fallback reasoning text (older payloads) */}
+        {reasoningText && (
+          <Alert severity="info" sx={{ mt: 2 }}>
+            {reasoningText}
+          </Alert>
+        )}
+
         {/* Locations */}
         {locations && locations.length > 0 && (
           <Box mt={2}>
             <Typography variant="subtitle2" gutterBottom>
-              <LocationMarkerIcon className="h-4 w-4 inline mr-1" />
+              <MapPinIcon className="h-4 w-4 inline mr-1" />
               Locations
             </Typography>
             <Box display="flex" gap={1} flexWrap="wrap">
