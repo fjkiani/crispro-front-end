@@ -101,9 +101,9 @@ const mockSupabaseClient = {
 
 // Export client - use real client if available, mock otherwise
 // The client will be initialized asynchronously after DOM is ready
-export const supabase = new Proxy(mockSupabaseClient, {
+export const supabase = new Proxy({}, {
   get(target, prop) {
-    // If client is already initialized, use it
+    // Always check if client is initialized (it may have been initialized since last access)
     if (supabaseClient) {
       return supabaseClient[prop];
     }
@@ -118,7 +118,26 @@ export const supabase = new Proxy(mockSupabaseClient, {
 
     // Return mock client property for now
     // Once supabaseClient is initialized, this proxy will return the real client
-    return target[prop];
+    const mockProp = mockSupabaseClient[prop];
+    
+    // If it's a function, wrap it to check for real client first
+    if (typeof mockProp === 'function') {
+      return function(...args) {
+        // Check again if client is now available
+        if (supabaseClient) {
+          const realMethod = supabaseClient[prop];
+          if (typeof realMethod === 'function') {
+            return realMethod.apply(supabaseClient, args);
+          }
+          return supabaseClient[prop];
+        }
+        // Use mock
+        return mockProp.apply(mockSupabaseClient, args);
+      };
+    }
+    
+    // Return mock property
+    return mockProp;
   }
 });
 
