@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: crispro-frontend
+    env: static
+    # CRITICAL: Root Directory must be empty (.) or not set in Render dashboard
+    # The package.json is at the repository root, NOT in a subdirectory
+    # If Root Directory is set to "src", change it to empty/blank in Render dashboard
+    # Alternative: Use inline script if build.sh not found (handles Root Directory misconfiguration)
+    buildCommand: if [ -f package.json ]; then npm install && npm run build; elif [ -f ../package.json ]; then cd .. && npm install && npm run build; else echo "ERROR: package.json not found" && exit 1; fi
+    staticPublishPath: ./dist
+    envVars:
+      - key: NODE_VERSION
+        value: 18.x

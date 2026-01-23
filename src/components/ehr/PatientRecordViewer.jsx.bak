@@ -1,0 +1,897 @@
+import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
+import useWebSocket from '../../../frontend/src/hooks/useWebSocket';
+import ConsultationPanel from '../../../frontend/src/components/collaboration/ConsultationPanel';
+import { v4 as uuidv4 } from 'uuid';
+import { useActivity, ACTIVITY_TYPES } from '../../context/ActivityContext';
+
+// Helper function to format dates (optional, basic implementation)
+const formatDate = (dateString) => {
+  if (!dateString) return 'N/A';
+  try {
+    return new Date(dateString).toLocaleDateString();
+  } catch (error) {
+    return dateString; // Return original if formatting fails
+  }
+};
+
+// --- Helper Component to Render Included Info in Joining View ---
+const RenderIncludedInfo = ({ relatedInfo }) => {
+  if (!relatedInfo || Object.keys(relatedInfo).length === 0) {
+    return <p className="text-xs italic text-gray-500 mt-2">No specific data sections were included by the initiator.</p>;
+  }
+
+  return (
+    <div className="space-y-3 mt-2">
+      {Object.entries(relatedInfo).map(([key, data]) => {
+        // Handle potential empty data sections
+        if (!data || (Array.isArray(data) && data.length === 0)) {
+             return (
+                <div key={key} className="mb-2 pb-2 border-b last:border-b-0">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-1">{key}</h4>
+                    <p className="text-xs text-gray-500 italic pl-2">None included or available.</p>
+                </div>
+            );
+        }
+
+        return (
+          <div key={key} className="mb-2 pb-2 border-b last:border-b-0">
+            <h4 className="text-sm font-semibold text-gray-700 mb-1">{key}</h4>
+            <div className="pl-2 text-xs space-y-1">
+              {/* --- Specific Rendering based on Key --- */}
+              
+              {key === 'Recent Labs' && Array.isArray(data) && data.map((panel, pIndex) => (
+                 <div key={`panel-${pIndex}`} className="mb-1">
+                     <p className="font-medium text-gray-600">{panel.panelName || 'Lab Panel'} ({formatDate(panel.resultDate)})</p>
+                     <ul className="list-disc list-inside ml-2">
+                         {panel.components?.map((comp, cIndex) => (
+                            <li key={`comp-${cIndex}`}>
+                               {comp.test}: {comp.value} {comp.unit} {comp.flag && comp.flag !== 'Normal' ? <span className='text-red-600 font-semibold'>({comp.flag})</span> : ''}
+                            </li>
+                         ))}
+                     </ul>
+                 </div>
+              ))}
+
+              {key === 'Current Treatments/Medications' && Array.isArray(data) && data.map((med, mIndex) => (
+                 <p key={`med-${mIndex}`}>{med.name} {med.dosage} - {med.frequency}</p>
+              ))}
+
+              {key === 'Medical History' && Array.isArray(data) && data.map((item, hIndex) => (
+                  // Handle both string history items and potential object structure
+                  <p key={`hist-${hIndex}`}>
+                      {typeof item === 'string' ? item : 
+                      (item.condition ? `${item.condition} (Diagnosed: ${formatDate(item.diagnosisDate)})` : JSON.stringify(item))}
+                  </p>
+              ))}
+
+              {key === 'Recent Notes' && Array.isArray(data) && data.map((note, nIndex) => (
+                 <div key={`note-${nIndex}`} className="border-t first:border-t-0 pt-1 mt-1">
+                    <p className="font-medium text-gray-600">{formatDate(note.date)} - {note.author || note.author}</p>
+                    <p className="italic text-gray-700 whitespace-pre-wrap">"{note.content || note.text || 'No content.'}"</p>
+                 </div>
+              ))}
+
+              {key === 'Diagnosis' && typeof data === 'object' && data !== null && (
+                 <div>
+                    <p><strong>Primary:</strong> {data.primary || data.condition || 'N/A'}</p>
+                    <p><strong>Date:</strong> {formatDate(data.diagnosedDate || data.diagnosisDate)}</p>
+                    <p><strong>Status:</strong> {data.status || 'N/A'}</p>
+                 </div>
+              )}
+              
+               {/* Add more specific renderers for other keys if needed (e.g., Allergies, Imaging) */}
+               {/* Fallback for unhandled data types/keys */}
+               {!['Recent Labs', 'Current Treatments/Medications', 'Medical History', 'Recent Notes', 'Diagnosis'].includes(key) && (
+                    <pre className="text-xs whitespace-pre-wrap bg-gray-100 p-1 rounded">{JSON.stringify(data, null, 1)}</pre>
+               )}
+
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+const PatientRecordViewer = ({ patientData }) => {
+  console.log("[PatientRecordViewer] Rendering..."); // <-- Log 1: Check if component renders
+  const { setCurrentPatientId, addActivity } = useActivity(); // <-- Get context functions
+  
+  // State for Prompt Interaction
+  const [promptText, setPromptText] = useState("");
+  const [isProcessingPrompt, setIsProcessingPrompt] = useState(false);
+  const [promptResult, setPromptResult] = useState(null);
+  const [promptError, setPromptError] = useState(null);
+  const [activeActionTab, setActiveActionTab] = useState(null);
+  const [showDeepDiveButton, setShowDeepDiveButton] = useState(false);
+  const [activeAgentMessage, setActiveAgentMessage] = useState(null);
+  const [suggestionChips, setSuggestionChips] = useState([]); // <-- New state for suggestion chips
+  
+  // --- State for Consultation Panel ---
+  const [isConsultPanelOpen, setIsConsultPanelOpen] = useState(false);
+  const [currentConsultation, setCurrentConsultation] = useState(null); // { roomId, participants, initialContext }
+  const [incomingConsultRequest, setIncomingConsultRequest] = useState(null); // Store request details { roomId, patientId, initiator, context }
+  const [isJoiningConsult, setIsJoiningConsult] = useState(false);
+  
+  // --- State for Consultation Initiation Options (Revised for Modal Flow) ---
+  const [showConsultOptionsModal, setShowConsultOptionsModal] = useState(false);
+  const [consultTargetUser, setConsultTargetUser] = useState(null);
+  const [consultTopic, setConsultTopic] = useState("");
+  const [consultUseAI, setConsultUseAI] = useState(true);
+  const [consultIncludeOptions, setConsultIncludeOptions] = useState({ // Data sections to include
+    includeLabs: true,
+    includeMeds: true,
+    includeHistory: false,
+    includeNotes: false, 
+    includeDiagnosis: true,
+  });
+  const [consultInitiatorNote, setConsultInitiatorNote] = useState("");
+  
+  // --- State for Highlighting Sections --- 
+  const [highlightSections, setHighlightSections] = useState(null); // Stores { includeLabs: true, ... } or null
+  
+  // --- Determine Current User (for testing purposes) ---
+  // Check for userId query parameter to simulate different users
+  const queryParams = new URLSearchParams(window.location.search);
+  const queryUserId = queryParams.get('userId');
+  
+  const currentUser = queryUserId === 'dr_b' 
+      ? { id: 'dr_b', name: 'Dr. Baker (PCP)' } 
+      : { id: 'dr_a', name: 'Dr. Adams (Oncologist)' }; // Default to dr_a
+
+  console.log("[PatientRecordViewer] Current simulated user:", currentUser.id);
+
+  // --- WebSocket Setup (Main connection for patient context/notifications) ---
+  const patientId = patientData?.patientId; 
+  console.log("[PatientRecordViewer] patientId:", patientId); // <-- Log 2: Check if patientId is available
+  const wsUrl = patientId ? `ws://localhost:8000/ws` : null; 
+  const mainAuthToken = `valid_token_${currentUser.id}`; // Use dynamic currentUser.id
+
+  console.log("[PatientRecordViewer] Calling useWebSocket hook..."); // <-- Log 3: Check if hook call is reached
+  const {
+    isConnected: isMainWsConnected, 
+    lastMessage: lastMainWsMessage, 
+    sendMessage: sendMainWsMessage, // Use this for general comms / initiation
+    error: mainWsError,
+    readyState: mainWsReadyState
+  } = useWebSocket(wsUrl, mainAuthToken, patientId); // Connect to patient room initially
+
+  // --- Effect to handle incoming MAIN WebSocket messages (e.g., notifications) ---
+  useEffect(() => {
+    if (lastMainWsMessage) {
+      console.log("Main WS message received in PatientViewer:", lastMainWsMessage);
+      const { type, message, result, error, roomId, patientId: reqPatientId, initiator, context } = lastMainWsMessage;
+      
+      // Log the raw result for debugging summary
+      if (type === 'prompt_result') {
+        console.log("Backend prompt_result details:", JSON.stringify(result, null, 2));
+        // Log the raw result first
+        console.log("<<< Backend Raw Result:", JSON.stringify(result, null, 2)); 
+
+        // Determine status based on potential errors within the backend's output object OR top-level status
+        // *** READ STATUS FROM TOP LEVEL OF WS MESSAGE, NOT NESTED RESULT ***
+        const backendStatus = lastMainWsMessage?.status || 'unknown'; 
+        const hasErrors = result?.output?.errors && result.output.errors.length > 0; // Checks for errors *inside* the output object
+        
+        // *** Add detailed logging here ***
+        console.log(`<<< Status Check: backendStatus='${backendStatus}', hasErrors=${hasErrors}`);
+
+        // Treat common successful backend statuses as 'success' on the frontend
+        const isBackendSuccess = ['success', 'met', 'completed'].includes(backendStatus?.toLowerCase());
+        const derivedStatus = hasErrors ? 'failure' : (isBackendSuccess ? 'success' : 'partial_success'); // Adjusted logic
+
+        // *** Log the derived status ***
+        console.log(`<<< Status Check: isBackendSuccess=${isBackendSuccess}, derivedStatus='${derivedStatus}'`);
+
+        setPromptResult({
+          // Store the entire inner 'result' object (agent's payload) into the 'output' state field
+          output: result || {}, 
+          status: derivedStatus,
+          summary: result.summary || null, // Capture the backend summary message if it exists
+          message: result.message || null  // Capture any top-level message
+        });
+        setPromptError(null);
+        setIsProcessingPrompt(false);
+        setActiveAgentMessage(null); // <-- Clear active agent message
+
+        // Log success/error for specific actions based on original prompt or result content
+        // Ensure logging uses result.output where appropriate now
+        if (result?.output?.summary_text && !result?.output?.deep_dive_sections) { // Initial Summary
+            addActivity(
+                ACTIVITY_TYPES.SUMMARY, 
+                "Initial clinical summary generated", 
+                { 
+                    patient: patientId, 
+                    status: 'success',
+                    summary: result.output.summary_text // <-- Add summary text
+                }
+            );
+            setShowDeepDiveButton(true);
+        } else if (result?.output?.deep_dive_sections) { // Deep Dive Result
+            const llmTopics = result.output.deep_dive_sections.filter(s => s.source === 'DataAnalysisAgent_LLM');
+            const conceptualInsights = result.output.deep_dive_sections.filter(s => s.source !== 'DataAnalysisAgent_LLM');
+            const topicsList = result.output.deep_dive_sections.map(s => s.topic || 'Unknown Topic');
+            addActivity(
+                ACTIVITY_TYPES.DEEP_DIVE_SUCCESS, 
+                "Deep dive summarization complete", 
+                { 
+                    patient: patientId, 
+                    total_sections: result.output.deep_dive_sections.length,
+                    llm_topics_count: llmTopics.length,
+                    conceptual_agent_insights_count: conceptualInsights.length,
+                    topics: topicsList // <-- Add list of topics
+                    // Optionally, add top 1-2 topics/sources if not too verbose
+                    // top_topics: llmTopics.slice(0,2).map(t => t.topic).join(', ') || 'N/A',
+                    // conceptual_sources: conceptualInsights.slice(0,2).map(c => c.source.replace('Mock','')).join(', ') || 'N/A'
+                }
+            );
+            setShowDeepDiveButton(false); 
+        } else if (result?.output?.analysis_summary && Array.isArray(result?.output?.details)) { // Genomic Analysis Result (if handled here)
+             addActivity(ACTIVITY_TYPES.GENOMIC_ANALYSIS_SUCCESS, "Genomic profile analysis complete", { patient: patientId, summary: result.output.analysis_summary });
+        } else if (lastMainWsMessage?.originalPrompt?.includes("Notify") || result?.output?.simulated_send) {
+            addActivity(ACTIVITY_TYPES.AGENT_ACTION_SUCCESS, "Agent action: Notify completed", { patient: patientId, result: result?.output?.simulated_send || 'N/A' });
+        } // Add more specific logging for other agent actions based on prompt/result
+      } else if (type === 'status') {
+        console.log("Main WebSocket Status Update:", message);
+      } else if (type === 'error') {
+        setPromptError(message || 'Unknown WebSocket error');
+        setPromptResult(null);
+        setIsProcessingPrompt(false);
+        setActiveAgentMessage(null); // <-- Clear active agent message
+        // Log error for specific actions
+        if (lastMainWsMessage?.originalPrompt?.toLowerCase().includes("deep dive")) {
+            addActivity(ACTIVITY_TYPES.DEEP_DIVE_ERROR, "Deep dive summarization failed", { patient: patientId, error: message });
+        } else {
+            addActivity(ACTIVITY_TYPES.AGENT_ACTION_ERROR, "Agent action failed", { patient: patientId, error: message, prompt: lastMainWsMessage?.originalPrompt });
+        }
+      } else if (type === 'consult_request') {
+        console.log(`Received consult request from ${initiator?.name} for patient ${reqPatientId} in room ${roomId}`);
+        // Log the received context
+        console.log("[PatientViewer] Received context:", context);
+        if (reqPatientId === patientId) { 
+            setIncomingConsultRequest({ 
+                roomId: roomId,
+                patientId: reqPatientId,
+                initiator: initiator, 
+                context: context // Store the potentially enriched context object
+            });
+        } else {
+            console.warn(`Received consult request for different patient (${reqPatientId}), ignoring for current view (${patientId}).`);
+            // Optionally show a global notification elsewhere
+        }
+      } else if (type === 'initiate_ok') {
+        // Confirmation that our initiated consult was sent to the target
+        console.log(`Consultation initiation confirmed for room ${roomId}`);
+        // We already opened the panel optimistically, could add visual confirmation here
+      } else if (type === 'initiate_fail') {
+         // Failed to notify the target user
+         console.error(`Failed to initiate consultation for room ${roomId}: ${error}`);
+         setPromptError(`Failed to notify colleague: ${error || 'Unknown reason'}`);
+         // Close the panel if it was opened optimistically
+         handleCloseConsultation(); // Assuming this safely handles null currentConsultation
+      }
+      
+    }
+  }, [lastMainWsMessage, patientId]);
+  
+   // Effect to handle MAIN WebSocket connection errors
+   useEffect(() => {
+     if (mainWsError) {
+       console.error("Main WebSocket Hook Error:", mainWsError);
+       setPromptError(`Main Connection Error: ${mainWsError.message}`);
+       setIsProcessingPrompt(false); 
+     }
+   }, [mainWsError]);
+
+  // --- Effect for generating contextual suggestion chips ---
+  useEffect(() => {
+    const newChips = [];
+    if (patientData && promptResult?.output) {
+      // Suggestion for EGFR Insights if EGFR mutation exists and Genomic Analysis ran
+      const hasEgfrMutation = patientData.mutations?.some(mut => mut.hugo_gene_symbol?.toUpperCase() === 'EGFR');
+      if (hasEgfrMutation && promptResult.output.details && Array.isArray(promptResult.output.details)) {
+        // Find the first genomic detail related to EGFR to link to
+        const egfrDetailIndex = promptResult.output.details.findIndex(detail => detail.criterion_query?.toUpperCase().includes('EGFR'));
+        if (egfrDetailIndex !== -1) {
+          newChips.push({
+            id: 'genomic_egfr_insight',
+            text: "Explore EGFR Insights (from Genomic Analysis)",
+            targetElementId: `genomic-detail-${egfrDetailIndex}`, 
+            type: 'genomic'
+          });
+        }
+      }
+
+      // Suggestion for Integrative Wellness if "anxiety" in notes and Deep Dive ran
+      const mentionsAnxiety = patientData.notes?.some(note => note.text?.toLowerCase().includes('anxiety'));
+      if (mentionsAnxiety && promptResult.output.deep_dive_sections && Array.isArray(promptResult.output.deep_dive_sections)) {
+        const integrativeMedicineSectionIndex = promptResult.output.deep_dive_sections.findIndex(
+          section => section.source === 'IntegrativeMedicineAgentMock'
+        );
+        if (integrativeMedicineSectionIndex !== -1) {
+          newChips.push({
+            id: 'integrative_wellness_anxiety',
+            text: "Consider Integrative Wellness Plan (for anxiety)",
+            targetElementId: `deep-dive-${integrativeMedicineSectionIndex}`,
+            type: 'deep_dive'
+          });
+        }
+      }
+      // Add more suggestion logic here based on other patient data or agent results
+    }
+    setSuggestionChips(newChips);
+  }, [patientData, promptResult]); // Re-run when patientData or promptResult changes
+
+  // Set the patient ID in the context when data is available
+  useEffect(() => {
+    const currentId = patientData?.patientId || null;
+    console.log("[PatientRecordViewer] Setting patient context ID:", currentId); // <-- Log setting context
+    setCurrentPatientId(currentId);
+  }, [patientData?.patientId, setCurrentPatientId]);
+
+  // *** Add log to inspect state before render ***
+  console.log(">>> Before Render - promptResult.output:", JSON.stringify(promptResult?.output, null, 2));
+
+  if (!patientData) {
+    return <div className="p-4 text-center text-gray-500">Loading patient data...</div>;
+  }
+
+  // Destructure for easier access, providing default empty objects/arrays
+  const {
+    demographics = {},
+    diagnosis = {},
+    medicalHistory = [],
+    currentMedications = [],
+    allergies = [],
+    recentLabs = [],
+    imagingStudies = [],
+    patientGeneratedHealthData = null,
+    notes = []
+  } = patientData;
+
+  // --- New WebSocket Prompt Submission Handler ---
+  const submitPromptViaWebSocket = (currentPrompt, promptDetails = null) => {
+     if (!currentPrompt.trim()) {
+       setPromptError("Cannot process empty prompt.");
+       setActiveAgentMessage(null);
+       return;
+     }
+     if (!isMainWsConnected) {
+       setPromptError("WebSocket is not connected. Please wait or refresh.");
+       console.error("Attempted to send prompt while WebSocket is not connected.");
+       setActiveAgentMessage(null);
+       return;
+     }
+
+     setIsProcessingPrompt(true);
+     setPromptResult(null);
+     setPromptError(null);
+     
+     // Set active agent message based on prompt
+     if (currentPrompt.toLowerCase().includes("generate a clinical summary")) {
+        setActiveAgentMessage("AI Agents at work: Data Analyzer is generating an initial summary...");
+        addActivity(ACTIVITY_TYPES.SUMMARY, "Initial clinical summary requested", { patient: patientId });
+     } else if (currentPrompt.toLowerCase().includes("perform a deep dive summarization")) {
+        setActiveAgentMessage("AI Agents at work: Data Analyzer is performing a holistic analysis with insights from conceptual agents (Comparative Therapy, CRISPR, Integrative Medicine)...");
+        addActivity(ACTIVITY_TYPES.DEEP_DIVE_REQUESTED, "Deep dive summarization requested", { patient: patientId });
+     } else if (currentPrompt.toLowerCase().includes("analyze genomic profile")) {
+        setActiveAgentMessage("AI Agents at work: Genomic Analyst is processing the patient's genomic profile...");
+        // This specific action is already logged in MutationExplorer, but if called from here directly:
+        addActivity(ACTIVITY_TYPES.GENOMIC_QUERY_SUBMITTED, "Genomic profile analysis requested", { patient: patientId, query: "Analyze genomic profile" });
+     } else if (promptDetails && promptDetails.actionName) { // Check if promptDetails and actionName exist
+        setActiveAgentMessage(`AI Agents at work: Processing ${promptDetails.actionName}...`);
+        addActivity(ACTIVITY_TYPES.AGENT_ACTION_REQUESTED, `${promptDetails.actionName} requested`, { patient: patientId, action: promptDetails.actionName });
+     } else {
+        setActiveAgentMessage("AI Agents at work: Processing your request..."); // Default message
+        addActivity(ACTIVITY_TYPES.AGENT_STATUS, "General prompt submitted", { patient: patientId, prompt: currentPrompt });
+     }
+
+     console.log(`Sending prompt via WebSocket for patient ${patientId}: ${currentPrompt}`);
+
+     // Send message in the format expected by the backend WS endpoint
+     sendMainWsMessage({
+       type: "prompt", // Indicate this is a prompt message
+       prompt: currentPrompt
+     });
+
+     // Note: We no longer handle the response directly here.
+     // The useEffect hook listening to lastMainWsMessage will handle the result.
+  };
+
+  // Handler for the form submission - NOW USES WEBSOCKET
+  const handlePromptFormSubmit = (e) => {
+    e.preventDefault();
+    submitPromptViaWebSocket(promptText, { source: 'form_submission' }); // Pass source
+  };
+
+  // Handler for the Quick Summary button - NOW USES WEBSOCKET
+  const handleQuickSummaryClick = () => {
+    submitPromptViaWebSocket("Generate a clinical summary", { source: 'quick_summary_button' }); // Pass source
+  }
+
+  // Placeholder handler for future actions
+  const handlePlaceholderAction = (actionName) => {
+    console.log(`Action triggered: ${actionName} for patient ${patientId}`);
+    
+    // Map action names to appropriate prompts for the backend
+    let promptTextForAgent = ""; // Renamed to avoid conflict
+    switch(actionName) {
+      case 'Notify PCP':
+        promptTextForAgent = `Notify PCP about ${demographics.name}'s ${diagnosis?.primary || 'condition'}`;
+        break;
+      case 'Draft Lab Order':
+        promptTextForAgent = `Draft a lab order for ${demographics.name} to monitor ${diagnosis?.primary || 'their condition'}`;
+        break;
+      case 'Flag for Review':
+        promptTextForAgent = `Flag ${demographics.name}'s case for review by the attending physician`;
+        break;
+      case 'Schedule Follow-up':
+        promptTextForAgent = `Schedule a follow-up appointment for ${demographics.name} in 4 weeks`;
+        break;
+      case 'Draft Referral':
+        promptTextForAgent = `Draft a referral to Oncology for ${demographics.name}`;
+        break;
+      case 'Check Trial Eligibility':
+        promptTextForAgent = `Find clinical trials for ${demographics.name}'s ${diagnosis?.primary || 'condition'}`;
+        break;
+      case 'Review Side Effects':
+        promptTextForAgent = `Review potential side effects of ${currentMedications?.[0]?.name || 'current medications'} for ${demographics.name}`;
+        break;
+      case 'Check Interactions':
+        promptTextForAgent = `Check for medication interactions in ${demographics.name}'s current regimen`;
+        break;
+      default:
+        promptTextForAgent = `Process action: ${actionName} for ${demographics.name}`;
+    }
+    
+    // Use the existing WebSocket mechanism to send the prompt
+    submitPromptViaWebSocket(promptTextForAgent, { actionName: actionName, source: 'placeholder_action_button' }); // Pass actionName and source
+  };
+
+  // --- Consultation Initiation & Joining Logic (Revised Modal Flow) ---
+  
+  // Step 1: Show options modal when MAIN "Consult Colleague" is clicked
+  const handleInitiateConsultation = (targetParticipant) => {
+    console.log("Initiating consultation process with:", targetParticipant);
+    setConsultTargetUser(targetParticipant);
+    setConsultTopic("Review patient case");
+    setConsultUseAI(true);
+    setConsultIncludeOptions({ includeLabs: true, includeMeds: true, includeHistory: false, includeNotes: false, includeDiagnosis: true });
+    setConsultInitiatorNote("");
+    setHighlightSections(null); // Clear any previous highlights when starting new consult
+    setShowConsultOptionsModal(true);
+  };
+
+  // Step 2: Send the invitation from the modal with selected options
+  const handleSendConsultInvitation = () => {
+    if (!patientId || !isMainWsConnected || !consultTargetUser) {
+        setPromptError("Cannot initiate consultation: Missing required info or connection.");
+        setShowConsultOptionsModal(false);
+        return;
+    }
+    const roomId = `consult_${patientId}_${uuidv4()}`;
+    const initiationPayload = {
+        type: 'initiate_consult',
+        targetUserId: consultTargetUser.id,
+        patientId: patientId,
+        initiator: currentUser,
+        roomId: roomId,
+        context: {
+            initialTrigger: { description: consultTopic || "General Consultation" }, 
+            includeOptions: consultIncludeOptions,
+            useAI: consultUseAI,
+            initiatorNote: consultInitiatorNote || null
+        }
+    };
+    console.log("Sending initiate_consult message:", initiationPayload);
+    sendMainWsMessage(initiationPayload);
+    setCurrentConsultation({
+      roomId: roomId,
+      participants: [consultTargetUser],
+      initialContext: { 
+          ...initiationPayload.context, 
+          description: `Consultation regarding: ${consultTopic || 'General Consultation'}` 
+      }
+    });
+    setIsConsultPanelOpen(true);
+    setShowConsultOptionsModal(false);
+  };
+
+  // Step 3: Close the modal without sending
+  const handleCloseConsultOptionsModal = () => {
+      setShowConsultOptionsModal(false);
+      setConsultTargetUser(null);
+      setConsultTopic("");
+  };
+  
+  // handleJoinConsultation, handleCloseConsultation, handleViewFullRecord (as before)
+  const handleJoinConsultation = () => {
+      if (!incomingConsultRequest) return;
+      console.log(`Joining consultation room: ${incomingConsultRequest.roomId}`);
+      console.log("[PatientViewer] Setting consultation context:", incomingConsultRequest.context);
+      setCurrentConsultation({
+          roomId: incomingConsultRequest.roomId,
+          participants: [incomingConsultRequest.initiator], 
+          initialContext: incomingConsultRequest.context // Pass the full context object
+      });
+      setIsConsultPanelOpen(true);
+      setIsJoiningConsult(true); 
+      setIncomingConsultRequest(null); 
+  };
+  const handleCloseConsultation = () => {
+      console.log(`Closing consultation room: ${currentConsultation?.roomId}`);
+      setIsConsultPanelOpen(false);
+      setCurrentConsultation(null);
+      setIsJoiningConsult(false);
+      setHighlightSections(null); // Clear highlights when consult panel is closed
+  };
+  const handleViewFullRecord = () => {
+      // Persist the include options for highlighting
+      if (currentConsultation?.initialContext?.includeOptions) {
+          console.log("Setting highlight sections:", currentConsultation.initialContext.includeOptions);
+          setHighlightSections(currentConsultation.initialContext.includeOptions);
+      } else {
+           console.log("Clearing highlight sections (no options found).");
+           setHighlightSections(null); // Clear if no options found
+      }
+      setIsJoiningConsult(false); // Switch view
+  };
+
+  // --- Render Consultation Options Modal (Defined here) ---
+  const renderConsultOptionsModal = () => {
+    if (!showConsultOptionsModal || !consultTargetUser) return null;
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50">
+        <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg">
+          <h3 className="text-xl font-semibold mb-4">Initiate Consultation with {consultTargetUser.name}</h3>
+          {/* Topic Input */}
+          <div className="mb-4">
+             <label htmlFor="consultTopic" className="block text-sm font-medium text-gray-700 mb-1">
+              Consultation Topic/Reason:
+            </label>
+             <input
+              type="text"
+              id="consultTopic"
+              value={consultTopic}
+              onChange={(e) => setConsultTopic(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              placeholder="e.g., Review recent labs, Discuss treatment options"
+            />
+          </div>
+           {/* Include Data Sections Checkboxes */}
+           <div className="mb-4 border p-3 rounded border-gray-200">
+              <p className="text-sm font-medium text-gray-600 mb-2">Include in shared context:</p>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                {Object.keys(consultIncludeOptions).map((key) => (
+                  <label key={key} className="flex items-center text-sm">
+                    <input
+                      type="checkbox"
+                      checked={consultIncludeOptions[key]}
+                      onChange={(e) => setConsultIncludeOptions(prev => ({ ...prev, [key]: e.target.checked }))}
+                      className="form-checkbox h-4 w-4 text-indigo-600 rounded mr-2"
+                    />
+                    {key.replace('include', '')}
+                  </label>
+                ))}
+              </div>
+            </div>
+          {/* AI Toggle */}
+          <div className="mb-4">
+            <label className="flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={consultUseAI}
+                onChange={(e) => setConsultUseAI(e.target.checked)}
+                className="form-checkbox h-5 w-5 text-indigo-600 rounded"
+              />
+              <span className="ml-2 text-gray-700">Enable AI Assistance (Generate Focus Statement)</span>
+            </label>
+          </div>
+          {/* Initiator Note */}
+          <div className="mb-4">
+            <label htmlFor="initiatorNote" className="block text-sm font-medium text-gray-700 mb-1">
+              Add a note (optional):
+            </label>
+            <textarea
+              id="initiatorNote"
+              rows="3"
+              value={consultInitiatorNote}
+              onChange={(e) => setConsultInitiatorNote(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              placeholder="e.g., 'Concerned about potential nephrotoxicity...'"
+            ></textarea>
+          </div>
+          {/* Action Buttons */}
+          <div className="flex justify-end space-x-3">
+            <button
+              onClick={handleCloseConsultOptionsModal}
+              className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSendConsultInvitation}
+              className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:bg-gray-400"
+              disabled={!isMainWsConnected}
+              title={!isMainWsConnected ? "WebSocket disconnected" : "Send consultation invitation"}
+            >
+              Send Invitation
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // --- Main Render Logic ---
+  const commonHeader = (
+      <div className="flex justify-between items-start mb-4">
+        <h2 className="text-2xl font-bold text-indigo-700">Patient Record: {demographics.name || 'N/A'} ({patientId})</h2>
+        {/* Ensure button is shown correctly and calls the right handler */} 
+        {!isJoiningConsult && !showConsultOptionsModal && ( 
+             <button 
+                onClick={() => handleInitiateConsultation(
+                    { id: 'dr_b', name: 'Dr. Baker (PCP)' } // Just pass the target user
+                )}
+                disabled={!patientId || !isMainWsConnected} 
+                className={`px-3 py-1 rounded-md text-sm font-semibold transition-colors duration-200 ${!patientId || !isMainWsConnected ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-purple-600 text-white hover:bg-purple-700'}`}
+                title={patientId && isMainWsConnected ? "Start a real-time consultation with a colleague" : "Cannot consult (missing patient data or disconnected)"}
+              >
+                Consult Colleague
+              </button>
+        )}
+      </div>
+  );
+
+  // --- Conditional Rendering Based on View Mode ---
+
+  if (isJoiningConsult && currentConsultation) {
+    // --- RENDER SIMPLIFIED "JOINING CONSULT" VIEW --- 
+    return (
+      <div className="max-w-4xl mx-auto p-4 bg-gray-100 rounded-lg shadow space-y-4 relative">
+         {/* Notification Area */} 
+         {incomingConsultRequest && (
+                <div className="absolute top-2 left-1/2 transform -translate-x-1/2 z-30 bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded shadow-lg w-3/4">
+                    <strong className="font-bold">Consult Request!</strong>
+                    <span className="block sm:inline ml-2">
+                        {incomingConsultRequest.initiator?.name || 'A colleague'} wants to consult about Patient {incomingConsultRequest.patientId} regarding "{incomingConsultRequest.context?.description || 'General'}".
+                    </span>
+                    <button 
+                        onClick={handleJoinConsultation}
+                        className="ml-4 px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm font-semibold"
+                    >
+                        Accept & Join
+                    </button>
+                    <button 
+                        onClick={() => setIncomingConsultRequest(null)}
+                        className="ml-2 px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+                    >
+                        Dismiss
+                    </button>
+                </div>
+            )}
+            
+            {commonHeader}
+            
+            {/* Focused Context Area - Updated to show related items */} 
+            <section className="p-4 bg-white rounded shadow border border-indigo-200 space-y-3">
+                <h3 className="text-lg font-semibold text-indigo-600">Consultation Context</h3>
+                <div>
+                    <p className="text-sm text-gray-700">
+                        Initiated by: {currentConsultation.participants[0]?.name || 'Unknown'}
+                    </p>
+                    <p className="text-sm text-gray-800 font-medium mt-1">
+                        Initial Topic: {currentConsultation.initialContext?.description || 'General Consultation'}
+                    </p>
+                </div>
+                
+                {/* --- Display AI Consult Focus --- */}
+                {currentConsultation.initialContext?.consultFocusStatement && (
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded">
+                        <p className="text-sm font-semibold text-blue-800 mb-1">AI Generated Consult Focus:</p>
+                        <p className="text-sm text-blue-900 whitespace-pre-wrap"> 
+                            {currentConsultation.initialContext.consultFocusStatement}
+                        </p>
+                    </div>
+                )}
+                {/* --- End AI Consult Focus --- */}
+                
+                {/* Display Included Related Info - USE HELPER COMPONENT */}
+                <div className="p-3 bg-gray-50 rounded border border-gray-200">
+                   <p className="text-sm font-medium text-gray-600 mb-1">Included Information Sent by Initiator:</p>
+                   <RenderIncludedInfo relatedInfo={currentConsultation.initialContext?.relatedInfo} /> 
+                </div>
+            </section>
+            
+            {/* Consultation Panel takes main space */} 
+            <section className="flex justify-center"> {/* Center the panel */} 
+                <ConsultationPanel 
+                   patientId={patientId}
+                   consultationRoomId={currentConsultation.roomId}
+                   currentUser={currentUser}
+                   participants={currentConsultation.participants}
+                   initialContext={currentConsultation.initialContext}
+                   onClose={handleCloseConsultation}
+                 />
+            </section>
+            
+            {/* Button to switch back */} 
+            <div className="text-center mt-4">
+                <button 
+                   onClick={handleViewFullRecord}
+                   className="px-4 py-2 text-sm font-medium text-indigo-700 bg-indigo-100 rounded hover:bg-indigo-200 transition-colors"
+                >
+                    View Full Patient Record
+                </button>
+            </div>
+         </div>
+       );
+   } else {
+       // --- RENDER FULL PATIENT RECORD VIEW (Original Layout) --- 
+       return (
+         <div className="max-w-7xl mx-auto p-4 bg-gray-50 rounded-lg shadow relative"> 
+             {/* Render Modal if shown */}
+             {renderConsultOptionsModal()} 
+ 
+             {commonHeader}
+      
+             {/* Create a grid layout with sidebar and main content */}
+             <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-6">
+               {/* Sidebar - CoPilot Actions */}
+               <section className="lg:col-span-1 p-4 bg-white rounded shadow sticky top-5 z-10 border border-gray-200 self-start lg:max-h-screen overflow-y-auto">
+                 <h3 className="text-xl font-semibold mb-2 text-indigo-700">CoPilot Actions</h3>
+                 {/* Display MAIN WebSocket Connection Status */}
+                 <div className="text-xs mb-2 text-right">
+                     Connection Status:
+                     {wsUrl ? (
+                       <span className={`font-semibold ${isMainWsConnected ? 'text-green-600' : (mainWsReadyState === 0 ? 'text-yellow-600' : 'text-red-600')}`}>
+                         {isMainWsConnected ? 'Connected' : (mainWsReadyState === 0 ? 'Connecting...' : (mainWsReadyState === 2 ? 'Closing...' : 'Disconnected'))}
+                       </span>
+                     ) : (
+                       <span className="text-gray-500 font-semibold">Inactive (No Patient ID)</span>
+                     )}
+                  </div>
+                  
+                  {/* Include the existing form with all its elements */}
+                  <form onSubmit={handlePromptFormSubmit} className="space-y-3">
+                    <textarea
+                      value={promptText}
+                      onChange={(e) => setPromptText(e.target.value)}
+                      placeholder={`Ask about ${demographics.name || 'this patient'} (e.g., "Summarize latest notes", "What was the last WBC?", "Notify PCP about elevated glucose")`}
+                      className="w-full p-2 border rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                      rows={3}
+                      disabled={isProcessingPrompt || !isMainWsConnected}
+                    />
+                    {/* Keep all existing quick action buttons */}
+                    <div className="flex flex-wrap gap-2 text-xs mb-2">
+                      <span className="font-medium text-gray-600 mr-1">Quick Actions:</span>
+                      <button type="button" onClick={() => setPromptText('Summarize the patient record')} className="py-0.5 px-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors">Summarize</button>
+                      {/* ... other buttons ... */}
+                    </div>
+                    
+                    {/* Submit button section */}
+                    <div className="flex items-center space-x-2">
+                      <button 
+                        type="submit" 
+                        disabled={isProcessingPrompt || !promptText.trim() || !isMainWsConnected}
+                        className={`flex-grow px-4 py-2 rounded-md text-white font-semibold transition-colors duration-200 ${isProcessingPrompt || !promptText.trim() || !isMainWsConnected ? 'bg-gray-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                      >
+                        {isProcessingPrompt ? 'Processing...' : 'Submit Prompt'}
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => submitPromptViaWebSocket("Analyze genomic profile for this patient")}
+                        disabled={isProcessingPrompt || !isMainWsConnected}
+                        className={`px-4 py-2 rounded-md text-white font-semibold transition-colors duration-200 ${isProcessingPrompt || !isMainWsConnected ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'}`}
+                      >
+                        {isProcessingPrompt ? 'Processing...' : 'Analyze Genomic Profile'}
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={handleQuickSummaryClick}
+                        disabled={isProcessingPrompt || !isMainWsConnected}
+                        className={`px-4 py-2 rounded-md text-white font-semibold transition-colors duration-200 ${isProcessingPrompt || !isMainWsConnected ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
+                      >
+                        {isProcessingPrompt ? 'Processing...' : 'Quick Summary'}
+                      </button>
+                    </div>
+                  </form>
+                  
+                  {/* Display Active Agent Message */}
+                  {activeAgentMessage && (
+                    <div className="mt-2 p-2 bg-blue-50 border border-blue-200 text-blue-700 rounded text-xs italic">
+                      <p>{activeAgentMessage}</p>
+                    </div>
+                  )}
+                  
+                  {/* Display errors */}
+                  {promptError && (
+                    <div className="mt-2 p-2 bg-red-100 border border-red-300 text-red-700 rounded text-xs">
+                      <p><strong>Error:</strong> {promptError}</p>
+                    </div>
+                  )}
+                  
+                  {/* Contextual Suggestion Chips */}
+                  {suggestionChips.length > 0 && (
+                    <div className="mt-4 pt-3 border-t">
+                      <h4 className="text-sm font-semibold text-gray-600 mb-2">Contextual Suggestions:</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {suggestionChips.map((chip) => (
+                          <button
+                            key={chip.id}
+                            type="button"
+                            onClick={() => {
+                              const targetElement = document.getElementById(chip.targetElementId);
+                              if (targetElement) {
+                                targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                targetElement.classList.add('ring-2', 'ring-yellow-400', 'ring-offset-2', 'transition-all', 'duration-300');
+                                setTimeout(() => {
+                                  targetElement.classList.remove('ring-2', 'ring-yellow-400', 'ring-offset-2');
+                                }, 2500);
+                              }
+                            }}
+                            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors 
+                              ${chip.type === 'genomic' ? 'bg-green-100 text-green-700 hover:bg-green-200' : 
+                                (chip.type === 'deep_dive' ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200' : 'bg-gray-100 text-gray-700 hover:bg-gray-200')}
+                            `}
+                            title={`Scroll to: ${chip.text}`}
+                          >
+                            {chip.text}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </section>
+
+                {/* Main Content Area */}
+                <div className="lg:col-span-2 space-y-4">
+                  {/* CoPilot Output Panel */}
+                  {promptResult && (
+                    <section className="mb-6 p-4 bg-white rounded shadow border border-blue-200">
+                      <h3 className="text-xl font-semibold mb-3 border-b pb-2 text-blue-700">CoPilot Output</h3>
+                      {/* Keep the existing output rendering logic */}
+                    </section>
+                  )}
+
+                  {/* Include all the patient sections here */}
+                </div>
+              </div>
+
+           {/* --- Consultation Panel (Renders if Dr. A initiated or Dr. B switched back) --- */}
+           {isConsultPanelOpen && currentConsultation && (
+             <div className="fixed top-16 right-5 z-20"> {/* Keep fixed positioning */} 
+               <ConsultationPanel 
+                 patientId={patientId}
+                 consultationRoomId={currentConsultation.roomId}
+                 currentUser={currentUser}
+                 participants={currentConsultation.participants}
+                 initialContext={currentConsultation.initialContext}
+                 onClose={handleCloseConsultation}
+               />
+             </div>
+           )}
+
+         </div> {/* End of main wrapper div */}
+         );
+     }
+};
+
+// PropTypes for basic type checking
+PatientRecordViewer.propTypes = {
+  patientData: PropTypes.shape({
+    patientId: PropTypes.string,
+    demographics: PropTypes.object,
+    diagnosis: PropTypes.object,
+    medicalHistory: PropTypes.array,
+    currentMedications: PropTypes.array,
+    allergies: PropTypes.array,
+    recentLabs: PropTypes.array,
+    imagingStudies: PropTypes.array,
+    patientGeneratedHealthData: PropTypes.object,
+    notes: PropTypes.array
+  }).isRequired // Make patientData required
+};
+
+export default PatientRecordViewer;
