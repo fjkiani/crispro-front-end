@@ -1,9 +1,13 @@
 // Supabase client with delayed initialization to prevent response.headers errors
 // Try to initialize immediately, but retry after delay if it fails
 
-// Get environment variables
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim();
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
+// Get environment variables - ensure they are strings before calling trim()
+const supabaseUrl = (typeof import.meta.env.VITE_SUPABASE_URL === 'string' 
+  ? import.meta.env.VITE_SUPABASE_URL.trim() 
+  : null) || null;
+const supabaseAnonKey = (typeof import.meta.env.VITE_SUPABASE_ANON_KEY === 'string' 
+  ? import.meta.env.VITE_SUPABASE_ANON_KEY.trim() 
+  : null) || null;
 
 // Debug logging (only in development)
 if (import.meta.env.DEV) {
