@@ -1,6 +1,7 @@
-// DISABLED: Supabase client causes response.headers errors during initialization
-// Completely disable Supabase client creation to prevent runtime errors
-// All Supabase operations will return empty results
+// Supabase client with safe initialization
+// The Response.headers protection in index.html should prevent initialization errors
+
+import { createClient } from '@supabase/supabase-js';
 
 // Get environment variables
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim();
@@ -17,13 +18,35 @@ if (import.meta.env.DEV) {
   });
 }
 
-// Mock Supabase client that returns empty results
+// Check if environment variables are present
+export const isSupabaseEnabled = !!(supabaseUrl && supabaseAnonKey);
+
+// Initialize Supabase client with error handling
+let supabaseClient = null;
+
+if (isSupabaseEnabled) {
+  try {
+    // Create client - Response.headers protection in index.html should prevent errors
+    supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+      },
+    });
+    console.log('✅ Supabase client initialized successfully');
+  } catch (error) {
+    console.error('❌ Failed to initialize Supabase client:', error);
+    supabaseClient = null;
+  }
+}
+
+// Mock client for when Supabase is not available
 const mockSupabaseClient = {
   auth: {
     getSession: () => Promise.resolve({ data: { session: null }, error: null }),
     onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
-    signInWithPassword: () => Promise.resolve({ data: null, error: { message: 'Supabase disabled' } }),
-    signUp: () => Promise.resolve({ data: null, error: { message: 'Supabase disabled' } }),
+    signInWithPassword: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } }),
+    signUp: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } }),
     signOut: () => Promise.resolve({ error: null }),
     resetPasswordForEmail: () => Promise.resolve({ error: null }),
   },
@@ -51,15 +74,8 @@ const mockSupabaseClient = {
   }),
 };
 
-// Check if environment variables are present
-// isSupabaseEnabled should be true if both URL and key are provided
-// This allows the UI to show proper configuration status
-export const isSupabaseEnabled = !!(supabaseUrl && supabaseAnonKey);
-
-// For now, use mock client to prevent response.headers errors
-// TODO: Re-enable real Supabase client once the response.headers issue is resolved
-// The mock client provides the same API but returns empty results
-export const supabase = mockSupabaseClient;
+// Export client - use real client if available, mock otherwise
+export const supabase = supabaseClient || mockSupabaseClient;
 
 // Analysis history table
 const ANALYSIS_HISTORY_TABLE = 'analysis_history';
