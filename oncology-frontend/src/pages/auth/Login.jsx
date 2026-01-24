@@ -4,8 +4,8 @@ import { useAuth } from '../../context/AuthContext';
 import { usePersona } from '../../context/PersonaContext';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('ak@ak.com'); // Pre-fill with test email
+  const [password, setPassword] = useState(''); // Password not needed in bypass mode
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { signIn, authenticated, loading: authLoading, profileLoading } = useAuth();
@@ -21,7 +21,6 @@ const Login = () => {
       // If patient persona (Ayesha), redirect to patient home dashboard
       if (persona === 'patient') {
         console.log('✅ Patient authenticated - redirecting to patient home dashboard');
-        // Try /home first (PatientHomeDashboard), fallback to /ayesha-complete-care
         navigate('/home', { replace: true });
       } else if (from && from !== '/login') {
         // Otherwise redirect to intended destination or home
@@ -95,6 +94,9 @@ const Login = () => {
               create a new account
             </Link>
           </p>
+          <div className="mt-2 text-center text-xs text-yellow-600 bg-yellow-50 p-2 rounded">
+            ⚠️ Auth bypass enabled - any email/password will work
+          </div>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
@@ -129,9 +131,8 @@ const Login = () => {
                 name="password"
                 type="password"
                 autoComplete="current-password"
-                required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
+                placeholder="Password (optional in bypass mode)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
@@ -158,7 +159,7 @@ const Login = () => {
           </div>
         </form>
         <div className="text-center text-xs text-gray-500">
-          <p>Test credentials: ak@ak.com / 786</p>
+          <p>Auth bypass mode: Any email/password will work</p>
         </div>
       </div>
     </div>

@@ -29,8 +29,8 @@ console.log('🔍 Supabase Config Check:', {
   prod: import.meta.env.PROD,
 });
 
-// Check if environment variables are present
-export const isSupabaseEnabled = !!(supabaseUrl && supabaseAnonKey);
+// TEMPORARY: Supabase disabled - bypass authentication
+export const isSupabaseEnabled = false; // Set to !!(supabaseUrl && supabaseAnonKey) to re-enable
 
 // If not enabled, show helpful error message
 if (!isSupabaseEnabled) {

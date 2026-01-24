@@ -1,6 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-// Supabase disabled - using mock authentication
-// import { supabase, isSupabaseEnabled } from '../services/supabaseClient';
 
 const AuthContext = createContext({});
 
@@ -11,6 +9,9 @@ export const useAuth = () => {
   }
   return context;
 };
+
+// TEMPORARY: Supabase authentication disabled - using mock authentication
+const BYPASS_AUTH = true; // Set to false to re-enable Supabase
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -61,142 +62,111 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Check for existing mock session in localStorage
   useEffect(() => {
-    const checkMockSession = async () => {
-      try {
-        const storedSession = localStorage.getItem('mock_auth_session');
-        if (storedSession) {
-          const sessionData = JSON.parse(storedSession);
-          // Check if session is still valid (not expired)
-          if (sessionData.expires_at && Date.now() < sessionData.expires_at) {
-            setSession(sessionData);
-            setUser(sessionData.user);
-            if (sessionData.user?.email) {
-              await fetchUserProfile(null, sessionData.user.id, sessionData.user.email);
-            }
-          } else {
-            // Session expired, clear it
-            localStorage.removeItem('mock_auth_session');
-          }
-        }
-      } catch (error) {
-        console.error('Error checking mock session:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    if (BYPASS_AUTH) {
+      // Mock authentication - auto-login with default user
+      console.log('🔓 Auth bypass enabled - using mock authentication');
+      
+      const mockUser = {
+        id: 'mock-user-id',
+        email: 'ak@ak.com',
+      };
+      
+      const mockSession = {
+        access_token: 'mock-token',
+        user: mockUser,
+      };
+      
+      setUser(mockUser);
+      setSession(mockSession);
+      
+      // Try to fetch profile
+      fetchUserProfile(null, mockUser.id, mockUser.email);
+      
+      setLoading(false);
+      return;
+    }
 
-    checkMockSession();
+    // Original Supabase auth code (disabled)
+    // if (!isSupabaseEnabled) {
+    //   console.warn('Supabase not configured - auth disabled');
+    //   setLoading(false);
+    //   setProfileLoading(false);
+    //   return;
+    // }
+    // ... rest of Supabase code
+    setLoading(false);
   }, []);
 
   const signIn = async (email, password) => {
-    try {
-      console.log('🔐 Mock authentication - signing in:', email);
+    if (BYPASS_AUTH) {
+      // Mock login - always succeeds
+      console.log('🔓 Auth bypass: Mock login for', email);
       
-      // Create mock user object
       const mockUser = {
-        id: `mock-user-${email.replace('@', '-at-')}`,
-        email: email,
-        user_metadata: {
-          email: email,
-        },
-        created_at: new Date().toISOString(),
+        id: 'mock-user-id',
+        email: email || 'ak@ak.com',
       };
-
-      // Create mock session
+      
       const mockSession = {
-        access_token: `mock-token-${Date.now()}`,
-        refresh_token: `mock-refresh-${Date.now()}`,
-        expires_in: 3600,
-        expires_at: Date.now() + 3600000,
-        token_type: 'bearer',
+        access_token: 'mock-token',
         user: mockUser,
       };
-
-      // Store session in localStorage
-      localStorage.setItem('mock_auth_session', JSON.stringify(mockSession));
-
-      // Set state
-      setSession(mockSession);
+      
       setUser(mockUser);
-
-      // Fetch profile from backend using email
-      await fetchUserProfile(null, mockUser.id, email);
-
-      console.log('✅ Mock authentication successful');
+      setSession(mockSession);
+      
+      // Fetch profile
+      await fetchUserProfile(null, mockUser.id, mockUser.email);
+      
       return { data: { user: mockUser, session: mockSession }, error: null };
-    } catch (error) {
-      console.error('❌ Mock authentication failed:', error);
-      return { data: null, error };
     }
+
+    // Original Supabase signIn code would go here
+    return { data: null, error: { message: 'Supabase authentication disabled' } };
   };
 
   const signUp = async (email, password, metadata = {}) => {
-    try {
-      console.log('🔐 Mock signup - creating account:', email);
-      
-      // For mock, signup is same as signin
-      return await signIn(email, password);
-    } catch (error) {
-      return { data: null, error };
+    if (BYPASS_AUTH) {
+      // Mock signup - always succeeds
+      console.log('🔓 Auth bypass: Mock signup for', email);
+      return signIn(email, password);
     }
+
+    return { data: null, error: { message: 'Supabase authentication disabled' } };
   };
 
   const signOut = async () => {
-    try {
-      localStorage.removeItem('mock_auth_session');
+    if (BYPASS_AUTH) {
+      console.log('🔓 Auth bypass: Mock signout');
       setUser(null);
       setSession(null);
       setProfile(null);
-      console.log('✅ Signed out');
-    } catch (error) {
-      console.error('Sign out error:', error);
-      throw error;
+      return;
     }
+
+    // Original Supabase signOut code would go here
   };
 
   const resetPassword = async (email) => {
-    // Mock implementation - just return success
-    console.log('🔐 Mock password reset requested for:', email);
-    return { error: null };
+    if (BYPASS_AUTH) {
+      console.log('🔓 Auth bypass: Mock password reset for', email);
+      return { error: null };
+    }
+
+    return { error: { message: 'Supabase authentication disabled' } };
   };
 
   const updateProfile = async (updates) => {
-    if (!session?.access_token && !user?.email) {
-      throw new Error('Not authenticated');
+    if (BYPASS_AUTH) {
+      console.log('🔓 Auth bypass: Mock profile update', updates);
+      // Update local profile state
+      setProfile(prev => ({ ...prev, ...updates }));
+      return { data: { ...profile, ...updates }, error: null };
     }
 
-    try {
-      const url = session?.access_token
-        ? `${API_ROOT}/api/auth/profile`
-        : `${API_ROOT}/api/auth/profile?email=${encodeURIComponent(user.email)}`;
-      
-      const headers = session?.access_token
-        ? {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json'
-          }
-        : {
-            'Content-Type': 'application/json'
-          };
-
-      const response = await fetch(url, {
-        method: 'PUT',
-        headers,
-        body: JSON.stringify(updates)
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update profile');
-      }
-
-      const data = await response.json();
-      setProfile(data.data);
-      return { data, error: null };
-    } catch (error) {
-      return { data: null, error };
-    }
+    // Original Supabase updateProfile code would go here
+    return { data: null, error: { message: 'Supabase authentication disabled' } };
   };
 
   const value = {
@@ -205,16 +175,18 @@ export const AuthProvider = ({ children }) => {
     profile,
     loading,
     profileLoading,
-    authenticated: !!user,
-    isSupabaseEnabled: false, // Supabase disabled
+    authenticated: BYPASS_AUTH ? !!user : !!user, // Always true when bypassed and user is set
+    isSupabaseEnabled: !BYPASS_AUTH, // Return false when bypassed
     signIn,
     signUp,
     signOut,
     resetPassword,
     updateProfile,
     refreshProfile: async () => {
-      if (user?.email) {
-        await fetchUserProfile(session?.access_token, user.id, user.email);
+      if (user && session?.access_token) {
+        await fetchUserProfile(session.access_token, user.id);
+      } else if (user) {
+        await fetchUserProfile(null, user.id, user.email);
       }
     }
   };
