@@ -83,6 +83,42 @@ if (isSupabaseEnabled && typeof window !== 'undefined') {
   }
 }
 
+// Create a chainable mock query builder that supports all methods
+function createMockQueryBuilder() {
+  const mockResult = { data: [], error: null };
+  const mockSingleResult = { data: null, error: null };
+  
+  const builder = {
+    select: () => builder,
+    insert: () => builder,
+    update: () => builder,
+    delete: () => builder,
+    eq: () => builder,
+    neq: () => builder,
+    is: () => builder,
+    in: () => builder,
+    lt: () => builder,
+    lte: () => builder,
+    gt: () => builder,
+    gte: () => builder,
+    like: () => builder,
+    ilike: () => builder,
+    match: () => builder,
+    not: () => builder,
+    or: () => builder,
+    filter: () => builder,
+    order: () => builder,
+    limit: () => builder,
+    range: () => builder,
+    single: () => Promise.resolve(mockSingleResult),
+    maybeSingle: () => Promise.resolve(mockSingleResult),
+    then: (callback) => Promise.resolve(mockResult).then(callback),
+    catch: (callback) => Promise.resolve(mockResult).catch(callback),
+  };
+  
+  return builder;
+}
+
 // Mock client for when Supabase is not available
 const mockSupabaseClient = {
   auth: {
@@ -92,28 +128,23 @@ const mockSupabaseClient = {
     signUp: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } }),
     signOut: () => Promise.resolve({ error: null }),
     resetPasswordForEmail: () => Promise.resolve({ error: null }),
+    getUser: () => Promise.resolve({ data: { user: null }, error: null }),
+    refreshSession: () => Promise.resolve({ data: { session: null }, error: null }),
   },
-  from: () => ({
-    select: () => ({
-      eq: () => ({
-        single: () => Promise.resolve({ data: null, error: null }),
-        then: (callback) => Promise.resolve({ data: [], error: null }).then(callback),
-      }),
-      is: () => ({
-        then: (callback) => Promise.resolve({ data: [], error: null }).then(callback),
-      }),
-      order: () => ({
-        limit: () => Promise.resolve({ data: [], error: null }),
-      }),
-      then: (callback) => Promise.resolve({ data: [], error: null }).then(callback),
+  from: () => createMockQueryBuilder(),
+  rpc: () => Promise.resolve({ data: null, error: null }),
+  storage: {
+    from: () => ({
+      upload: () => Promise.resolve({ data: null, error: null }),
+      download: () => Promise.resolve({ data: null, error: null }),
+      getPublicUrl: () => ({ data: { publicUrl: '' } }),
+      list: () => Promise.resolve({ data: [], error: null }),
+      remove: () => Promise.resolve({ data: null, error: null }),
     }),
-    insert: () => ({
-      select: () => Promise.resolve({ data: null, error: null }),
-    }),
-    delete: () => ({
-      eq: () => Promise.resolve({ error: null }),
-      neq: () => Promise.resolve({ error: null }),
-    }),
+  },
+  channel: () => ({
+    on: () => ({ subscribe: () => ({ unsubscribe: () => {} }) }),
+    subscribe: () => ({ unsubscribe: () => {} }),
   }),
 };
 
