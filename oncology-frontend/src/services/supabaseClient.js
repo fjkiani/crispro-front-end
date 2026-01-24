@@ -2,6 +2,7 @@
 // Try to initialize immediately, but retry after delay if it fails
 
 // Get environment variables - ensure they are strings before calling trim()
+// IMPORTANT: Vite only exposes env vars that start with VITE_ at BUILD TIME
 const supabaseUrl = (typeof import.meta.env.VITE_SUPABASE_URL === 'string' 
   ? import.meta.env.VITE_SUPABASE_URL.trim() 
   : null) || null;
@@ -9,7 +10,7 @@ const supabaseAnonKey = (typeof import.meta.env.VITE_SUPABASE_ANON_KEY === 'stri
   ? import.meta.env.VITE_SUPABASE_ANON_KEY.trim() 
   : null) || null;
 
-// Debug logging (works in both dev and production)
+// Enhanced debug logging (works in both dev and production)
 console.log('🔍 Supabase Config Check:', {
   hasUrl: !!supabaseUrl,
   hasKey: !!supabaseAnonKey,
@@ -21,11 +22,24 @@ console.log('🔍 Supabase Config Check:', {
   rawUrl: import.meta.env.VITE_SUPABASE_URL,
   rawKey: import.meta.env.VITE_SUPABASE_ANON_KEY ? 'SET' : 'MISSING',
   isEnabled: !!(supabaseUrl && supabaseAnonKey),
+  // Additional debugging
+  allEnvKeys: Object.keys(import.meta.env).filter(k => k.includes('SUPABASE')),
+  mode: import.meta.env.MODE,
+  dev: import.meta.env.DEV,
+  prod: import.meta.env.PROD,
 });
 
-// DISABLE SUPABASE FOR NOW - Use mock authentication instead
 // Check if environment variables are present
-export const isSupabaseEnabled = false; // Temporarily disabled to bypass Supabase initialization errors
+export const isSupabaseEnabled = !!(supabaseUrl && supabaseAnonKey);
+
+// If not enabled, show helpful error message
+if (!isSupabaseEnabled) {
+  console.error('❌ Supabase not configured!', {
+    reason: !supabaseUrl ? 'VITE_SUPABASE_URL missing' : 'VITE_SUPABASE_ANON_KEY missing',
+    availableEnvVars: Object.keys(import.meta.env).filter(k => k.startsWith('VITE_')),
+    instructions: 'Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to Render environment variables and REBUILD the service',
+  });
+}
 
 // Initialize Supabase client with retry logic
 let supabaseClient = null;
@@ -60,96 +74,39 @@ async function tryInitializeSupabase() {
     console.warn('⚠️ Supabase initialization skipped - not enabled. Check:', {
       supabaseUrl: supabaseUrl || 'MISSING',
       supabaseAnonKey: supabaseAnonKey ? 'SET' : 'MISSING',
+      note: 'Environment variables must be set at BUILD TIME in Render dashboard',
     });
     return null;
   }
 
-  // CRITICAL: Polyfill Response.headers BEFORE importing Supabase
-  // This must happen before any Supabase code runs
-  if (typeof Response !== 'undefined' && Response.prototype) {
-    try {
-      const originalDescriptor = Object.getOwnPropertyDescriptor(Response.prototype, 'headers');
-      
-      // Only override if it doesn't exist or is broken
-      if (!originalDescriptor || !originalDescriptor.get) {
-        Object.defineProperty(Response.prototype, 'headers', {
-          get: function() {
-            if (!this || typeof this !== 'object') {
-              return new Headers();
-            }
-            try {
-              // Try to get original headers if available
-              if (originalDescriptor && originalDescriptor.get) {
-                const headers = originalDescriptor.get.call(this);
-                if (headers) return headers;
-              }
-              // Check for internal headers property
-              if (this._headers) {
-                return this._headers;
-              }
-            } catch (e) {
-              // Silently handle errors
-            }
-            // Always return a valid Headers object
-            return new Headers();
-          },
-          configurable: true,
-          enumerable: true
-        });
-        console.log('✅ Response.headers polyfill installed');
-      }
-    } catch (e) {
-      console.warn('⚠️ Could not install Response.headers polyfill:', e);
-    }
-  }
-
   try {
     console.log('🔄 Attempting to initialize Supabase client...');
+    // Dynamic import to prevent module-level initialization errors
+    const { createClient } = await import('@supabase/supabase-js');
     
-    // Use dynamic import with error handling
-    let createClient;
-    try {
-      const supabaseModule = await import('@supabase/supabase-js');
-      createClient = supabaseModule.createClient;
-    } catch (importError) {
-      console.error('❌ Failed to import Supabase module:', importError);
-      throw importError;
-    }
+    // Create client with custom fetch to avoid response.headers errors
+    supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        flowType: 'pkce',
+      },
+      global: {
+        fetch: createSafeFetch(),
+      },
+    });
     
-    // Create client with minimal config first
-    try {
-      supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
-        auth: {
-          persistSession: true,
-          autoRefreshToken: true,
-        },
-        global: {
-          fetch: createSafeFetch(),
-        },
-      });
-      
-      // Test the client by getting session (this will trigger any initialization issues)
-      const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
-      if (sessionError && sessionError.message?.includes('headers')) {
-        throw new Error('Headers error detected in getSession');
-      }
-      
-      console.log('✅ Supabase client initialized successfully');
-      return supabaseClient;
-    } catch (createError) {
-      console.error('❌ Error creating Supabase client:', createError);
-      throw createError;
-    }
+    console.log('✅ Supabase client initialized successfully');
+    return supabaseClient;
   } catch (error) {
     console.error('❌ Failed to initialize Supabase client:', error);
     console.error('Error details:', {
       message: error.message,
-      stack: error.stack?.substring(0, 500), // Limit stack trace
+      stack: error.stack,
       url: supabaseUrl,
       keyLength: supabaseAnonKey?.length,
-      errorName: error.name,
     });
-    
     return null;
   }
 }
