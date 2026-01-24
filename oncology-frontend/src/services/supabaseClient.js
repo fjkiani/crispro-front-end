@@ -63,12 +63,13 @@ async function tryInitializeSupabase() {
     return null;
   }
 
-  try {
-    console.log('🔄 Attempting to initialize Supabase client...');
-    
-    // Ensure Response.headers protection is in place before importing Supabase
-    if (typeof Response !== 'undefined' && Response.prototype) {
+  // CRITICAL: Polyfill Response.headers BEFORE importing Supabase
+  // This must happen before any Supabase code runs
+  if (typeof Response !== 'undefined' && Response.prototype) {
+    try {
       const originalDescriptor = Object.getOwnPropertyDescriptor(Response.prototype, 'headers');
+      
+      // Only override if it doesn't exist or is broken
       if (!originalDescriptor || !originalDescriptor.get) {
         Object.defineProperty(Response.prototype, 'headers', {
           get: function() {
@@ -76,75 +77,77 @@ async function tryInitializeSupabase() {
               return new Headers();
             }
             try {
+              // Try to get original headers if available
               if (originalDescriptor && originalDescriptor.get) {
                 const headers = originalDescriptor.get.call(this);
-                return headers || new Headers();
+                if (headers) return headers;
               }
+              // Check for internal headers property
               if (this._headers) {
                 return this._headers;
               }
             } catch (e) {
-              console.warn('[Response.headers] Error accessing headers:', e);
+              // Silently handle errors
             }
+            // Always return a valid Headers object
             return new Headers();
           },
           configurable: true,
           enumerable: true
         });
+        console.log('✅ Response.headers polyfill installed');
       }
+    } catch (e) {
+      console.warn('⚠️ Could not install Response.headers polyfill:', e);
+    }
+  }
+
+  try {
+    console.log('🔄 Attempting to initialize Supabase client...');
+    
+    // Use dynamic import with error handling
+    let createClient;
+    try {
+      const supabaseModule = await import('@supabase/supabase-js');
+      createClient = supabaseModule.createClient;
+    } catch (importError) {
+      console.error('❌ Failed to import Supabase module:', importError);
+      throw importError;
     }
     
-    // Dynamic import to prevent module-level initialization errors
-    const supabaseModule = await import('@supabase/supabase-js');
-    const { createClient } = supabaseModule;
-    
-    // Create client with custom fetch to avoid response.headers errors
-    supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
-        flowType: 'pkce',
-      },
-      global: {
-        fetch: createSafeFetch(),
-      },
-    });
-    
-    console.log('✅ Supabase client initialized successfully');
-    return supabaseClient;
+    // Create client with minimal config first
+    try {
+      supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+        },
+        global: {
+          fetch: createSafeFetch(),
+        },
+      });
+      
+      // Test the client by getting session (this will trigger any initialization issues)
+      const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
+      if (sessionError && sessionError.message?.includes('headers')) {
+        throw new Error('Headers error detected in getSession');
+      }
+      
+      console.log('✅ Supabase client initialized successfully');
+      return supabaseClient;
+    } catch (createError) {
+      console.error('❌ Error creating Supabase client:', createError);
+      throw createError;
+    }
   } catch (error) {
     console.error('❌ Failed to initialize Supabase client:', error);
     console.error('Error details:', {
       message: error.message,
-      stack: error.stack,
+      stack: error.stack?.substring(0, 500), // Limit stack trace
       url: supabaseUrl,
       keyLength: supabaseAnonKey?.length,
       errorName: error.name,
-      errorConstructor: error.constructor?.name,
     });
-    
-    // Try one more time with a longer delay
-    if (error.message?.includes('headers')) {
-      console.log('🔄 Retrying Supabase initialization after delay...');
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      try {
-        const { createClient } = await import('@supabase/supabase-js');
-        supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
-          auth: {
-            persistSession: true,
-            autoRefreshToken: true,
-          },
-          global: {
-            fetch: createSafeFetch(),
-          },
-        });
-        console.log('✅ Supabase client initialized on retry');
-        return supabaseClient;
-      } catch (retryError) {
-        console.error('❌ Retry also failed:', retryError);
-      }
-    }
     
     return null;
   }
