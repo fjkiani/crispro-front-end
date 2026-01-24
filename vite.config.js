@@ -4,8 +4,25 @@ import { defineConfig } from "vite";
 import { Buffer } from 'buffer';
 
 export default defineConfig({
-  plugins: [react()],
-  logLevel: 'warn', // Reduce build output noise (suppresses 'use client' warnings)
+  plugins: [
+    react({
+      // Suppress 'use client' directive warnings from dependencies
+      babel: {
+        plugins: [],
+      },
+    }),
+  ],
+  logLevel: 'warn', // Reduce build output noise
+  build: {
+    rollupOptions: {
+      onwarn(warning, warn) {
+        // Suppress 'use client' directive warnings from dependencies
+        if (warning.message && warning.message.includes("'use client'")) {
+          return;
+        }
+        warn(warning);
+      },
+    },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
