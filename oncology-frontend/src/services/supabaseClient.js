@@ -9,16 +9,19 @@ const supabaseAnonKey = (typeof import.meta.env.VITE_SUPABASE_ANON_KEY === 'stri
   ? import.meta.env.VITE_SUPABASE_ANON_KEY.trim() 
   : null) || null;
 
-// Debug logging (only in development)
-if (import.meta.env.DEV) {
-  console.log('🔍 Supabase Config Check:', {
-    hasUrl: !!supabaseUrl,
-    hasKey: !!supabaseAnonKey,
-    urlLength: supabaseUrl?.length || 0,
-    keyLength: supabaseAnonKey?.length || 0,
-    urlPreview: supabaseUrl ? `${supabaseUrl.substring(0, 30)}...` : 'missing',
-  });
-}
+// Debug logging (works in both dev and production)
+console.log('🔍 Supabase Config Check:', {
+  hasUrl: !!supabaseUrl,
+  hasKey: !!supabaseAnonKey,
+  urlLength: supabaseUrl?.length || 0,
+  keyLength: supabaseAnonKey?.length || 0,
+  urlPreview: supabaseUrl ? `${supabaseUrl.substring(0, 30)}...` : 'missing',
+  urlValue: supabaseUrl || 'MISSING',
+  keyPreview: supabaseAnonKey ? `${supabaseAnonKey.substring(0, 20)}...` : 'MISSING',
+  rawUrl: import.meta.env.VITE_SUPABASE_URL,
+  rawKey: import.meta.env.VITE_SUPABASE_ANON_KEY ? 'SET' : 'MISSING',
+  isEnabled: !!(supabaseUrl && supabaseAnonKey),
+});
 
 // Check if environment variables are present
 export const isSupabaseEnabled = !!(supabaseUrl && supabaseAnonKey);
@@ -28,10 +31,15 @@ let supabaseClient = null;
 
 async function tryInitializeSupabase() {
   if (!isSupabaseEnabled) {
+    console.warn('⚠️ Supabase initialization skipped - not enabled. Check:', {
+      supabaseUrl: supabaseUrl || 'MISSING',
+      supabaseAnonKey: supabaseAnonKey ? 'SET' : 'MISSING',
+    });
     return null;
   }
 
   try {
+    console.log('🔄 Attempting to initialize Supabase client...');
     // Dynamic import to prevent module-level initialization errors
     const { createClient } = await import('@supabase/supabase-js');
     
@@ -47,6 +55,12 @@ async function tryInitializeSupabase() {
     return supabaseClient;
   } catch (error) {
     console.error('❌ Failed to initialize Supabase client:', error);
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      url: supabaseUrl,
+      keyLength: supabaseAnonKey?.length,
+    });
     return null;
   }
 }
