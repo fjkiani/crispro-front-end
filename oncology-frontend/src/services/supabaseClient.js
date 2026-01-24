@@ -29,16 +29,12 @@ console.log('🔍 Supabase Config Check:', {
   prod: import.meta.env.PROD,
 });
 
-// TEMPORARY: Supabase disabled - bypass authentication
+// TEMPORARY: Supabase disabled - bypass authentication to avoid response.headers errors
 export const isSupabaseEnabled = false; // Set to !!(supabaseUrl && supabaseAnonKey) to re-enable
 
-// If not enabled, show helpful error message
+// If not enabled, show helpful message
 if (!isSupabaseEnabled) {
-  console.error('❌ Supabase not configured!', {
-    reason: !supabaseUrl ? 'VITE_SUPABASE_URL missing' : 'VITE_SUPABASE_ANON_KEY missing',
-    availableEnvVars: Object.keys(import.meta.env).filter(k => k.startsWith('VITE_')),
-    instructions: 'Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to Render environment variables and REBUILD the service',
-  });
+  console.log('ℹ️ Supabase disabled - using mock authentication');
 }
 
 // Initialize Supabase client with retry logic

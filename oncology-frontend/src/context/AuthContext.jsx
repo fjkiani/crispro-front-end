@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+// Supabase disabled - using mock authentication that bypasses Supabase
 
 const AuthContext = createContext({});
 
@@ -10,9 +11,6 @@ export const useAuth = () => {
   return context;
 };
 
-// TEMPORARY: Supabase authentication disabled - using mock authentication
-const BYPASS_AUTH = true; // Set to false to re-enable Supabase
-
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [session, setSession] = useState(null);
@@ -22,26 +20,30 @@ export const AuthProvider = ({ children }) => {
 
   const API_ROOT = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 
-  // Fetch user profile with session token (or email for mock auth)
-  const fetchUserProfile = async (sessionToken, userId, email) => {
+  // Fetch user profile - try with email if no token, fallback to mock if backend unavailable
+  const fetchUserProfile = async (email, sessionToken = null) => {
     setProfileLoading(true);
     try {
-      // TEMPORARY: Backend doesn't have auth endpoints - use mock profile
-      // Try to get profile by email if no token
-      const url = sessionToken 
-        ? `${API_ROOT}/api/auth/profile`
-        : `${API_ROOT}/api/auth/profile?email=${encodeURIComponent(email)}`;
-      
-      const headers = sessionToken 
-        ? {
+      // Try to get profile - backend may need JWT, but we'll try email first
+      let response;
+      if (sessionToken) {
+        response = await fetch(`${API_ROOT}/api/auth/profile`, {
+          headers: {
             'Authorization': `Bearer ${sessionToken}`,
             'Content-Type': 'application/json'
           }
-        : {
+        });
+      } else if (email) {
+        // Try without auth first (may not work, but worth trying)
+        response = await fetch(`${API_ROOT}/api/auth/profile?email=${encodeURIComponent(email)}`, {
+          headers: {
             'Content-Type': 'application/json'
-          };
-
-      const response = await fetch(url, { headers });
+          }
+        });
+      } else {
+        setProfileLoading(false);
+        return;
+      }
 
       if (response.ok) {
         const data = await response.json();
@@ -51,7 +53,7 @@ export const AuthProvider = ({ children }) => {
         // Backend auth endpoint doesn't exist - use mock profile
         console.log('ℹ️ Backend auth endpoint not found - using mock profile');
         const mockProfile = {
-          user_id: userId || `mock-user-${email?.replace('@', '-at-')}`,
+          user_id: `mock-user-${email?.replace('@', '-at-')}`,
           email: email || 'ak@ak.com',
           tier: 'free',
           role: 'patient',
@@ -60,10 +62,10 @@ export const AuthProvider = ({ children }) => {
         };
         setProfile(mockProfile);
       } else {
-        console.error('Failed to fetch profile:', response.status, response.statusText);
+        console.warn('⚠️ Could not fetch profile (may need backend auth endpoint):', response.status);
         // Use mock profile as fallback
         const mockProfile = {
-          user_id: userId || `mock-user-${email?.replace('@', '-at-')}`,
+          user_id: `mock-user-${email?.replace('@', '-at-')}`,
           email: email || 'ak@ak.com',
           tier: 'free',
           role: 'patient',
@@ -73,10 +75,10 @@ export const AuthProvider = ({ children }) => {
         setProfile(mockProfile);
       }
     } catch (error) {
-      console.error('Failed to fetch user profile:', error);
+      console.warn('⚠️ Profile fetch failed (backend may require auth):', error.message);
       // Use mock profile as fallback
       const mockProfile = {
-        user_id: userId || `mock-user-${email?.replace('@', '-at-')}`,
+        user_id: `mock-user-${email?.replace('@', '-at-')}`,
         email: email || 'ak@ak.com',
         tier: 'free',
         role: 'patient',
@@ -89,111 +91,139 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Check for existing mock session in localStorage
   useEffect(() => {
-    if (BYPASS_AUTH) {
-      // Mock authentication - auto-login with default user
-      console.log('🔓 Auth bypass enabled - using mock authentication');
-      
-      const mockUser = {
-        id: 'mock-user-id',
-        email: 'ak@ak.com',
-      };
-      
-      const mockSession = {
-        access_token: 'mock-token',
-        user: mockUser,
-      };
-      
-      setUser(mockUser);
-      setSession(mockSession);
-      
-      // Try to fetch profile
-      fetchUserProfile(null, mockUser.id, mockUser.email);
-      
-      setLoading(false);
-      return;
-    }
+    const checkMockSession = async () => {
+      try {
+        const storedSession = localStorage.getItem('mock_auth_session');
+        if (storedSession) {
+          const sessionData = JSON.parse(storedSession);
+          // Check if session is still valid
+          if (sessionData.expires_at && Date.now() < sessionData.expires_at) {
+            setSession(sessionData);
+            setUser(sessionData.user);
+            if (sessionData.user?.email) {
+              await fetchUserProfile(sessionData.user.email, sessionData.access_token);
+            }
+          } else {
+            localStorage.removeItem('mock_auth_session');
+          }
+        }
+      } catch (error) {
+        console.error('Error checking mock session:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    // Original Supabase auth code (disabled)
-    // if (!isSupabaseEnabled) {
-    //   console.warn('Supabase not configured - auth disabled');
-    //   setLoading(false);
-    //   setProfileLoading(false);
-    //   return;
-    // }
-    // ... rest of Supabase code
-    setLoading(false);
+    checkMockSession();
   }, []);
 
   const signIn = async (email, password) => {
-    if (BYPASS_AUTH) {
-      // Mock login - always succeeds
-      console.log('🔓 Auth bypass: Mock login for', email);
+    try {
+      console.log('🔐 Mock authentication - signing in:', email);
       
+      // Create mock user object
       const mockUser = {
-        id: 'mock-user-id',
-        email: email || 'ak@ak.com',
+        id: `mock-user-${email.replace('@', '-at-')}`,
+        email: email,
+        user_metadata: {
+          email: email,
+        },
+        created_at: new Date().toISOString(),
       };
-      
+
+      // Create mock session with a simple token
+      // Backend may not accept this, but it allows the app to work
       const mockSession = {
-        access_token: 'mock-token',
+        access_token: `mock-token-${Date.now()}-${email}`,
+        refresh_token: `mock-refresh-${Date.now()}`,
+        expires_in: 3600,
+        expires_at: Date.now() + 3600000,
+        token_type: 'bearer',
         user: mockUser,
       };
-      
-      setUser(mockUser);
-      setSession(mockSession);
-      
-      // Fetch profile
-      await fetchUserProfile(null, mockUser.id, mockUser.email);
-      
-      return { data: { user: mockUser, session: mockSession }, error: null };
-    }
 
-    // Original Supabase signIn code would go here
-    return { data: null, error: { message: 'Supabase authentication disabled' } };
+      // Store session in localStorage
+      localStorage.setItem('mock_auth_session', JSON.stringify(mockSession));
+
+      // Set state
+      setSession(mockSession);
+      setUser(mockUser);
+
+      // Try to fetch profile from backend (may fail if backend requires real JWT)
+      await fetchUserProfile(email, mockSession.access_token);
+
+      console.log('✅ Mock authentication successful');
+      return { data: { user: mockUser, session: mockSession }, error: null };
+    } catch (error) {
+      console.error('❌ Mock authentication failed:', error);
+      return { data: null, error };
+    }
   };
 
   const signUp = async (email, password, metadata = {}) => {
-    if (BYPASS_AUTH) {
-      // Mock signup - always succeeds
-      console.log('🔓 Auth bypass: Mock signup for', email);
-      return signIn(email, password);
-    }
-
-    return { data: null, error: { message: 'Supabase authentication disabled' } };
+    // For mock, signup is same as signin
+    return await signIn(email, password);
   };
 
   const signOut = async () => {
-    if (BYPASS_AUTH) {
-      console.log('🔓 Auth bypass: Mock signout');
+    try {
+      localStorage.removeItem('mock_auth_session');
       setUser(null);
       setSession(null);
       setProfile(null);
-      return;
+      console.log('✅ Signed out');
+    } catch (error) {
+      console.error('Sign out error:', error);
+      throw error;
     }
-
-    // Original Supabase signOut code would go here
   };
 
   const resetPassword = async (email) => {
-    if (BYPASS_AUTH) {
-      console.log('🔓 Auth bypass: Mock password reset for', email);
-      return { error: null };
-    }
-
-    return { error: { message: 'Supabase authentication disabled' } };
+    console.log('🔐 Mock password reset requested for:', email);
+    return { error: null };
   };
 
   const updateProfile = async (updates) => {
-    if (BYPASS_AUTH) {
-      console.log('🔓 Auth bypass: Mock profile update', updates);
-      // Update local profile state
+    if (!user?.email) {
+      throw new Error('Not authenticated');
+    }
+
+    try {
+      const url = session?.access_token
+        ? `${API_ROOT}/api/auth/profile`
+        : `${API_ROOT}/api/auth/profile?email=${encodeURIComponent(user.email)}`;
+      
+      const headers = session?.access_token
+        ? {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json'
+          }
+        : {
+            'Content-Type': 'application/json'
+          };
+
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(updates)
+      });
+
+      if (!response.ok) {
+        // If backend fails, update local state
+        setProfile(prev => ({ ...prev, ...updates }));
+        return { data: { ...profile, ...updates }, error: null };
+      }
+
+      const data = await response.json();
+      setProfile(data.data);
+      return { data, error: null };
+    } catch (error) {
+      // If backend fails, update local state
       setProfile(prev => ({ ...prev, ...updates }));
       return { data: { ...profile, ...updates }, error: null };
     }
-
-    // Original Supabase updateProfile code would go here
-    return { data: null, error: { message: 'Supabase authentication disabled' } };
   };
 
   const value = {
@@ -202,18 +232,16 @@ export const AuthProvider = ({ children }) => {
     profile,
     loading,
     profileLoading,
-    authenticated: BYPASS_AUTH ? !!user : !!user, // Always true when bypassed and user is set
-    isSupabaseEnabled: !BYPASS_AUTH, // Return false when bypassed
+    authenticated: !!user,
+    isSupabaseEnabled: false, // Supabase disabled
     signIn,
     signUp,
     signOut,
     resetPassword,
     updateProfile,
     refreshProfile: async () => {
-      if (user && session?.access_token) {
-        await fetchUserProfile(session.access_token, user.id);
-      } else if (user) {
-        await fetchUserProfile(null, user.id, user.email);
+      if (user?.email) {
+        await fetchUserProfile(user.email, session?.access_token);
       }
     }
   };
