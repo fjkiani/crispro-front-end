@@ -29,6 +29,31 @@ export const isSupabaseEnabled = !!(supabaseUrl && supabaseAnonKey);
 // Initialize Supabase client with retry logic
 let supabaseClient = null;
 
+// Custom fetch that ensures response.headers is always defined
+function createSafeFetch() {
+  const originalFetch = window.fetch.bind(window);
+  
+  return async function safeFetch(...args) {
+    try {
+      const response = await originalFetch(...args);
+      
+      // Ensure headers is accessible
+      if (response && !response.headers) {
+        Object.defineProperty(response, 'headers', {
+          value: new Headers(),
+          writable: false,
+          configurable: true
+        });
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('[SafeFetch] Error:', error);
+      throw error;
+    }
+  };
+}
+
 async function tryInitializeSupabase() {
   if (!isSupabaseEnabled) {
     console.warn('⚠️ Supabase initialization skipped - not enabled. Check:', {
@@ -43,11 +68,16 @@ async function tryInitializeSupabase() {
     // Dynamic import to prevent module-level initialization errors
     const { createClient } = await import('@supabase/supabase-js');
     
-    // Create client with error handling
+    // Create client with custom fetch to avoid response.headers errors
     supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
+        detectSessionInUrl: true,
+        flowType: 'pkce',
+      },
+      global: {
+        fetch: createSafeFetch(),
       },
     });
     
