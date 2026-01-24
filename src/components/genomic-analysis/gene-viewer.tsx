@@ -1,4 +1,3 @@
-"use client";
 
 import { useState, useRef, useCallback } from "react";
 import { type GeneFromSearch, type GeneBounds, type ClinvarVariant, type GeneInfo, type GeneData } from "./utils/genome-api";
