@@ -13,16 +13,6 @@ export default defineConfig({
     }),
   ],
   logLevel: 'warn', // Reduce build output noise
-  build: {
-    rollupOptions: {
-      onwarn(warning, warn) {
-        // Suppress 'use client' directive warnings from dependencies
-        if (warning.message && warning.message.includes("'use client'")) {
-          return;
-        }
-        warn(warning);
-      },
-    },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -54,10 +44,11 @@ export default defineConfig({
         if (warning.message && warning.message.includes("'use client'")) {
           return;
         }
-        // Suppress other module directive warnings
+        // Suppress 'Module level directives' warnings
         if (warning.message && warning.message.includes('Module level directives')) {
           return;
         }
+        // Show all other warnings
         warn(warning);
       },
       output: {
