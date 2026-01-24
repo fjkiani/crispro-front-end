@@ -49,6 +49,17 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       external: [],
+      onwarn(warning, warn) {
+        // Suppress 'use client' directive warnings from dependencies (e.g., @radix-ui)
+        if (warning.message && warning.message.includes("'use client'")) {
+          return;
+        }
+        // Suppress other module directive warnings
+        if (warning.message && warning.message.includes('Module level directives')) {
+          return;
+        }
+        warn(warning);
+      },
       output: {
         // Disable manual chunking to avoid circular dependency issues
         // Let Vite handle chunking automatically - it's better at preserving module order
