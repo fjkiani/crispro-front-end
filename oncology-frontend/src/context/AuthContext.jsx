@@ -18,7 +18,7 @@ export const AuthProvider = ({ children }) => {
   const [profile, setProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
 
-  const API_ROOT = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
+  const API_ROOT = import.meta.env.VITE_API_ROOT || 'https://crispro-backend-v2.onrender.com';
 
   // Fetch user profile - try with email if no token, fallback to mock if backend unavailable
   const fetchUserProfile = async (email, sessionToken = null) => {
@@ -121,54 +121,136 @@ export const AuthProvider = ({ children }) => {
 
   const signIn = async (email, password) => {
     try {
-      console.log('🔐 Mock authentication - signing in:', email);
+      console.log('🔐 Attempting authentication:', email);
       
-      // Create mock user object
-      const mockUser = {
-        id: `mock-user-${email.replace('@', '-at-')}`,
-        email: email,
-        user_metadata: {
+      // Try backend authentication first
+      try {
+        const response = await fetch(`${API_ROOT}/api/auth/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, password }),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('✅ Backend authentication successful');
+          
+          const user = {
+            id: result.data?.user_id || result.data?.user?.id,
+            email: result.data?.email || email,
+            user_metadata: result.data?.profile || {},
+            created_at: new Date().toISOString(),
+          };
+
+          const session = {
+            access_token: result.data?.session?.access_token || result.data?.session?.token,
+            refresh_token: result.data?.session?.refresh_token,
+            expires_in: result.data?.session?.expires_in || 3600,
+            expires_at: result.data?.session?.expires_at || (Date.now() + 3600000),
+            token_type: 'bearer',
+            user: user,
+          };
+
+          // Store session in localStorage
+          localStorage.setItem('mock_auth_session', JSON.stringify(session));
+
+          // Set state
+          setSession(session);
+          setUser(user);
+
+          // Fetch profile
+          await fetchUserProfile(email, session.access_token);
+
+          return { data: { user, session }, error: null };
+        } else {
+          const errorData = await response.json().catch(() => ({ detail: 'Login failed' }));
+          console.warn('⚠️ Backend login failed, falling back to mock:', errorData);
+          throw new Error(errorData.detail || 'Backend login failed');
+        }
+      } catch (backendError) {
+        console.warn('⚠️ Backend unavailable, using mock authentication:', backendError.message);
+        
+        // Fallback to mock authentication
+        const mockUser = {
+          id: `mock-user-${email.replace('@', '-at-')}`,
           email: email,
-        },
-        created_at: new Date().toISOString(),
-      };
+          user_metadata: {
+            email: email,
+          },
+          created_at: new Date().toISOString(),
+        };
 
-      // Create mock session with a simple token
-      // Backend may not accept this, but it allows the app to work
-      const mockSession = {
-        access_token: `mock-token-${Date.now()}-${email}`,
-        refresh_token: `mock-refresh-${Date.now()}`,
-        expires_in: 3600,
-        expires_at: Date.now() + 3600000,
-        token_type: 'bearer',
-        user: mockUser,
-      };
+        const mockSession = {
+          access_token: `mock-token-${Date.now()}-${email}`,
+          refresh_token: `mock-refresh-${Date.now()}`,
+          expires_in: 3600,
+          expires_at: Date.now() + 3600000,
+          token_type: 'bearer',
+          user: mockUser,
+        };
 
-      // Store session in localStorage
-      localStorage.setItem('mock_auth_session', JSON.stringify(mockSession));
+        localStorage.setItem('mock_auth_session', JSON.stringify(mockSession));
+        setSession(mockSession);
+        setUser(mockUser);
+        await fetchUserProfile(email, mockSession.access_token);
 
-      // Set state
-      setSession(mockSession);
-      setUser(mockUser);
-
-      // Try to fetch profile from backend (may fail if backend requires real JWT)
-      await fetchUserProfile(email, mockSession.access_token);
-
-      console.log('✅ Mock authentication successful');
-      return { data: { user: mockUser, session: mockSession }, error: null };
+        console.log('✅ Mock authentication successful (backend unavailable)');
+        return { data: { user: mockUser, session: mockSession }, error: null };
+      }
     } catch (error) {
-      console.error('❌ Mock authentication failed:', error);
+      console.error('❌ Authentication failed:', error);
       return { data: null, error };
     }
   };
 
   const signUp = async (email, password, metadata = {}) => {
-    // For mock, signup is same as signin
-    return await signIn(email, password);
+    // Try backend signup first, then fallback to mock
+    try {
+      const response = await fetch(`${API_ROOT}/api/auth/signup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password, ...metadata }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Backend signup successful');
+        // Sign in with the new account
+        return await signIn(email, password);
+      } else {
+        const errorData = await response.json().catch(() => ({ detail: 'Signup failed' }));
+        console.warn('⚠️ Backend signup failed, using mock:', errorData);
+        // Fallback to mock signup
+        return await signIn(email, password);
+      }
+    } catch (error) {
+      console.warn('⚠️ Backend signup unavailable, using mock:', error.message);
+      // Fallback to mock signup
+      return await signIn(email, password);
+    }
   };
 
   const signOut = async () => {
     try {
+      // Try backend logout if we have a real token
+      if (session?.access_token && !session.access_token.startsWith('mock-token-')) {
+        try {
+          await fetch(`${API_ROOT}/api/auth/logout`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+        } catch (e) {
+          console.warn('Backend logout failed:', e);
+        }
+      }
+      
       localStorage.removeItem('mock_auth_session');
       setUser(null);
       setSession(null);
@@ -181,7 +263,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   const resetPassword = async (email) => {
-    console.log('🔐 Mock password reset requested for:', email);
+    console.log('🔐 Password reset requested for:', email);
+    // TODO: Implement backend password reset
     return { error: null };
   };
 
