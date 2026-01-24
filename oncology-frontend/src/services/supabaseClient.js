@@ -65,8 +65,38 @@ async function tryInitializeSupabase() {
 
   try {
     console.log('🔄 Attempting to initialize Supabase client...');
+    
+    // Ensure Response.headers protection is in place before importing Supabase
+    if (typeof Response !== 'undefined' && Response.prototype) {
+      const originalDescriptor = Object.getOwnPropertyDescriptor(Response.prototype, 'headers');
+      if (!originalDescriptor || !originalDescriptor.get) {
+        Object.defineProperty(Response.prototype, 'headers', {
+          get: function() {
+            if (!this || typeof this !== 'object') {
+              return new Headers();
+            }
+            try {
+              if (originalDescriptor && originalDescriptor.get) {
+                const headers = originalDescriptor.get.call(this);
+                return headers || new Headers();
+              }
+              if (this._headers) {
+                return this._headers;
+              }
+            } catch (e) {
+              console.warn('[Response.headers] Error accessing headers:', e);
+            }
+            return new Headers();
+          },
+          configurable: true,
+          enumerable: true
+        });
+      }
+    }
+    
     // Dynamic import to prevent module-level initialization errors
-    const { createClient } = await import('@supabase/supabase-js');
+    const supabaseModule = await import('@supabase/supabase-js');
+    const { createClient } = supabaseModule;
     
     // Create client with custom fetch to avoid response.headers errors
     supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
@@ -90,7 +120,32 @@ async function tryInitializeSupabase() {
       stack: error.stack,
       url: supabaseUrl,
       keyLength: supabaseAnonKey?.length,
+      errorName: error.name,
+      errorConstructor: error.constructor?.name,
     });
+    
+    // Try one more time with a longer delay
+    if (error.message?.includes('headers')) {
+      console.log('🔄 Retrying Supabase initialization after delay...');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      try {
+        const { createClient } = await import('@supabase/supabase-js');
+        supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+          auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+          },
+          global: {
+            fetch: createSafeFetch(),
+          },
+        });
+        console.log('✅ Supabase client initialized on retry');
+        return supabaseClient;
+      } catch (retryError) {
+        console.error('❌ Retry also failed:', retryError);
+      }
+    }
+    
     return null;
   }
 }
