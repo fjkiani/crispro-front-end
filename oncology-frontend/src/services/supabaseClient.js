@@ -23,8 +23,9 @@ console.log('🔍 Supabase Config Check:', {
   isEnabled: !!(supabaseUrl && supabaseAnonKey),
 });
 
+// DISABLE SUPABASE FOR NOW - Use mock authentication instead
 // Check if environment variables are present
-export const isSupabaseEnabled = !!(supabaseUrl && supabaseAnonKey);
+export const isSupabaseEnabled = false; // Temporarily disabled to bypass Supabase initialization errors
 
 // Initialize Supabase client with retry logic
 let supabaseClient = null;
