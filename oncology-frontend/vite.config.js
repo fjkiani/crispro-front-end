@@ -1,34 +1,34 @@
-import path from "path";
-import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
-import { Buffer } from 'buffer';
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
+// https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-      'buffer': 'buffer',
-      'path': 'path-browserify',
-      '~': path.resolve(__dirname, "./src"),
-      '#minpath': path.resolve(__dirname, "./node_modules/vfile/lib/minpath.js"),
-      '#minproc': path.resolve(__dirname, "./node_modules/vfile/lib/minproc.js"),
-      '#minurl': path.resolve(__dirname, "./node_modules/vfile/lib/minurl.js"),
-      'node:url': 'url',
-    },
-  },
   define: {
-    'global.Buffer': Buffer,
-    global: "globalThis",
-    "process.env": {},
+    'process.env': process.env,
   },
-  base: "/",
-  server: {
-    // No proxy needed for standalone frontend deployment
-  },
+  plugins: [
+    react({
+      // Use the new JSX runtime (automatic)
+      jsxRuntime: 'automatic',
+      // Include JSX helpers in the bundle
+      jsxImportSource: 'react',
+    }),
+  ],
   build: {
+    // Ensure React JSX runtime is included
     rollupOptions: {
-      external: [],
+      output: {
+        // Ensure React JSX runtime helpers are included
+        manualChunks: undefined, // Let Vite handle chunking automatically
+      },
     },
+    // Increase chunk size warning limit
+    chunkSizeWarningLimit: 1000,
   },
+  // Optimize dependencies
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react/jsx-runtime'],
+  },
+  // Log level
+  logLevel: 'warn',
 });

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
@@ -7,8 +7,37 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn } = useAuth();
+  const { signIn, profile, authenticated, profileLoading } = useAuth();
   const navigate = useNavigate();
+
+  // Redirect after profile loads or after a short delay if profile doesn't load
+  useEffect(() => {
+    if (authenticated && !profileLoading) {
+      const redirect = () => {
+        const intendedPath = new URLSearchParams(window.location.search).get('redirect');
+        // Check profile role, or default based on email (ak@ak.com = patient)
+        const isPatient = profile?.role === 'patient' || email?.toLowerCase().includes('ak@ak.com');
+        if (isPatient) {
+          navigate('/ayesha-trials', { replace: true });
+        } else if (intendedPath) {
+          navigate(intendedPath, { replace: true });
+        } else {
+          navigate('/home', { replace: true });
+        }
+      };
+      
+      // If profile is loaded, redirect immediately
+      if (profile) {
+        redirect();
+      } else {
+        // If no profile after 2 seconds, redirect anyway (profile might be loading or not available)
+        const timeout = setTimeout(() => {
+          redirect();
+        }, 2000);
+        return () => clearTimeout(timeout);
+      }
+    }
+  }, [authenticated, profile, profileLoading, navigate, email]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,9 +54,10 @@ const Login = () => {
       }
 
       if (data?.user) {
-        // Redirect to home or intended destination
-        const intendedPath = new URLSearchParams(window.location.search).get('redirect') || '/';
-        navigate(intendedPath);
+        // Profile will be loaded asynchronously by AuthContext
+        // Redirect will happen via useEffect when profile is available
+        // Just wait here - don't navigate yet
+        console.log('✅ Login successful, waiting for profile to load...');
       }
     } catch (err) {
       setError(err.message || 'An unexpected error occurred');
@@ -35,6 +65,18 @@ const Login = () => {
       setLoading(false);
     }
   };
+
+  // Show loading while profile is being fetched after login
+  if (authenticated && profileLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading your profile...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">

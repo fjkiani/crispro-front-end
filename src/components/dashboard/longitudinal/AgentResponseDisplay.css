@@ -1,0 +1,82 @@
+.agent-response-container {
+  background-color: #f0f4ff; /* A light blue/purple tint */
+  border-left: 4px solid #6c5ce7; /* A vibrant purple */
+  border-radius: 8px;
+  padding: 1rem 1.5rem;
+  margin-top: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+  transition: all 0.3s ease;
+}
+
+.response-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.response-icon {
+  color: #6c5ce7;
+  width: 20px;
+  height: 20px;
+  margin-right: 0.75rem;
+  flex-shrink: 0;
+}
+
+.response-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.response-content {
+  font-size: 0.95rem;
+  color: #555;
+  line-height: 1.6;
+}
+
+.response-summary {
+  margin-bottom: 0.5rem;
+}
+
+.response-details ul {
+  list-style-position: inside;
+  padding-left: 0.5rem;
+}
+
+.agent-response-container.loading {
+  text-align: center;
+  padding: 2rem 1.5rem;
+}
+
+.loading-text {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  color: #6c5ce7;
+  font-weight: 500;
+}
+
+/* Simple CSS Spinner */
+.spinner-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 40px;
+}
+
+.spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border-left-color: #6c5ce7;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+} 

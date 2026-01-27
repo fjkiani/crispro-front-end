@@ -20,6 +20,8 @@ import {
   ChevronDownIcon,
   MapPinIcon,
 } from '@heroicons/react/24/solid';
+import HolisticScoreCard from './HolisticScoreCard';
+import TrialHolisticScoreCard from '../holistic/TrialHolisticScoreCard';
 
 const TrialMatchCard = ({ trial, rank }) => {
   const [expanded, setExpanded] = useState(false);
@@ -30,13 +32,27 @@ const TrialMatchCard = ({ trial, rank }) => {
     nct_id,
     title,
     phase,
+    phases, // Backend might use 'phases' instead of 'phase'
     status,
-    interventions,
+    interventions: interventionsRaw,
     locations,
     match_score,
+    score, // Backend might use 'score' instead of 'match_score'
+    total_score, // Backend might use 'total_score'
     reasoning,
     source_url,
   } = trial;
+
+  // Normalize phase - use 'phase' if available, otherwise 'phases'
+  const normalizedPhase = phase || phases || 'Unknown Phase';
+
+  // Normalize match_score - use match_score if available, otherwise score or total_score
+  const normalizedMatchScore = match_score ?? score ?? total_score ?? 0;
+
+  // Normalize interventions - handle both array of strings and array of objects
+  const interventions = Array.isArray(interventionsRaw)
+    ? interventionsRaw.map(int => typeof int === 'string' ? int : int.name || int.drug || String(int))
+    : (typeof interventionsRaw === 'string' ? [interventionsRaw] : []);
 
   // Get match score color
   const getScoreColor = (score) => {
@@ -46,7 +62,7 @@ const TrialMatchCard = ({ trial, rank }) => {
   };
 
   // Format match score as percentage
-  const scorePercent = Math.round(match_score * 100);
+  const scorePercent = Math.round(normalizedMatchScore * 100);
 
   const reasoningObj = typeof reasoning === 'object' && reasoning !== null ? reasoning : null;
   const reasoningText = typeof reasoning === 'string' ? reasoning : null;
@@ -69,7 +85,7 @@ const TrialMatchCard = ({ trial, rank }) => {
               </Typography>
             </Box>
             <Box display="flex" gap={1} flexWrap="wrap" mb={1}>
-              <Chip label={phase || 'Unknown Phase'} size="small" variant="outlined" />
+              <Chip label={normalizedPhase} size="small" variant="outlined" />
               <Chip
                 label={status || 'Unknown Status'}
                 size="small"
@@ -88,7 +104,7 @@ const TrialMatchCard = ({ trial, rank }) => {
             </Box>
           </Box>
           <Box textAlign="right">
-            <Typography variant="h5" color={getScoreColor(match_score)}>
+            <Typography variant="h5" color={getScoreColor(normalizedMatchScore)}>
               {scorePercent}%
             </Typography>
             <Typography variant="caption" color="text.secondary">
@@ -97,7 +113,7 @@ const TrialMatchCard = ({ trial, rank }) => {
             <LinearProgress
               variant="determinate"
               value={scorePercent}
-              color={getScoreColor(match_score)}
+              color={getScoreColor(normalizedMatchScore)}
               sx={{ mt: 0.5, height: 6, borderRadius: 3 }}
             />
           </Box>
@@ -258,6 +274,18 @@ const TrialMatchCard = ({ trial, rank }) => {
             {reasoningText}
           </Alert>
         )}
+
+        {/* Holistic Score Card (Legacy - if trial has holistic_score field) */}
+        {trial.holistic_score !== undefined && (
+          <HolisticScoreCard trial={trial} />
+        )}
+
+        {/* New Holistic Clinical Benefit Score (D/P/M/T/S) */}
+        <TrialHolisticScoreCard
+          trial={trial}
+          useCase="trial_enrollment"
+          showDetails={expanded}
+        />
 
         {/* Locations */}
         {locations && locations.length > 0 && (
