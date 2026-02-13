@@ -73,8 +73,8 @@ export const useTimingChemoFeatures = () => {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ 
-          detail: `HTTP ${response.status}: ${response.statusText}` 
+        const errorData = await response.json().catch(() => ({
+          detail: `HTTP ${response.status}: ${response.statusText}`
         }));
         throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
       }
@@ -107,11 +107,11 @@ export const useTimingChemoFeatures = () => {
     setError(null);
   }, []);
 
-  return { 
-    timingFeatures, 
-    loading, 
-    error, 
+  return {
+    timingFeatures,
+    loading,
+    error,
     computeTimingFeatures,
-    reset 
+    reset
   };
 };

@@ -24,7 +24,8 @@ const CoPilot = () => {
     handleSendMessage,
     handleSuggestionClick,
     handleQuickAction,
-    getContextSuggestions
+    getContextSuggestions,
+    handleFileUpload // ⚔️ Phase 9
   } = useCoPilotLogic();
 
   // Current tab state
@@ -41,6 +42,7 @@ const CoPilot = () => {
             onSendMessage={handleSendMessage}
             onSuggestionClick={handleSuggestionClick}
             onQuickAction={handleQuickAction}
+            onFileUpload={handleFileUpload} // ⚔️ Phase 9
             messagesEndRef={messagesEndRef}
           />
         );

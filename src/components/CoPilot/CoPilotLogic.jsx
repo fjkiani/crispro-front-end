@@ -38,7 +38,7 @@ export const useCoPilotLogic = () => {
     // ⚔️ TREATMENT LINE INTEGRATION - Get treatment history from context
     treatmentHistory
   } = useCoPilot();
-  
+
   // ⚔️ SPORADIC CANCER INTEGRATION - Get sporadic context
   const { germlineStatus, tumorContext } = useSporadic();
 
@@ -239,12 +239,15 @@ export const useCoPilotLogic = () => {
         backend_badges: data.drugs?.[0]?.badges || data.badges || [],
         evidence_tier: data.drugs?.[0]?.evidence_tier || data.evidence_tier,
         top_citations: data.drugs?.[0]?.evidence_manifest?.citations?.slice(0, 3) ||
-                      data.evidence_manifest?.citations?.slice(0, 3) || [],
+          data.evidence_manifest?.citations?.slice(0, 3) || [],
 
         // Q2C Router data (Phase 1)
         intent: intent?.intent,
         intent_confidence: intent?.confidence,
-        suggested_actions: suggestedActions,
+        // Q2C Router data (Phase 1)
+        intent: intent?.intent,
+        intent_confidence: intent?.confidence,
+        suggested_actions: data.suggested_actions || suggestedActions,
         suggestions: getContextSuggestions().slice(0, 3)
       };
 
@@ -400,13 +403,17 @@ export const useCoPilotLogic = () => {
         return `📋 **Evidence Bundle Generated**\n\n${result.bundle_summary || 'Comprehensive evidence bundle created.'}`;
 
       case '/api/guidance/radonc':
-        return `☢️ **Radiation Guidance**\n\nTier: ${result.tier || '—'}${result.on_label ? ' (On‑label)' : ''}\nRadiosensitivity: ${typeof result.radiosensitivity_score === 'number' ? result.radiosensitivity_score.toFixed(2) : '—'}\nConfidence: ${typeof result.confidence === 'number' ? result.confidence.toFixed(2) : '—'}\nStrength: ${result.strength || '—'}\nCitations: ${(result.citations || []).slice(0,3).join(', ')}`;
+        return `☢️ **Radiation Guidance**\n\nTier: ${result.tier || '—'}${result.on_label ? ' (On‑label)' : ''}\nRadiosensitivity: ${typeof result.radiosensitivity_score === 'number' ? result.radiosensitivity_score.toFixed(2) : '—'}\nConfidence: ${typeof result.confidence === 'number' ? result.confidence.toFixed(2) : '—'}\nStrength: ${result.strength || '—'}\nCitations: ${(result.citations || []).slice(0, 3).join(', ')}`;
 
       case '/api/guidance/chemo':
-        return `💊 **Chemo Guidance**\n\nTherapy: ${result.therapy || '—'}${result.on_label ? ' (On‑label)' : ''}\nTier: ${result.tier || '—'}\nEfficacy: ${typeof result.efficacy_score === 'number' ? result.efficacy_score.toFixed(2) : '—'}\nConfidence: ${typeof result.confidence === 'number' ? result.confidence.toFixed(2) : '—'}\nStrength: ${result.strength || '—'}\nCitations: ${(result.citations || []).slice(0,3).join(', ')}`;
+        return `💊 **Chemo Guidance**\n\nTherapy: ${result.therapy || '—'}${result.on_label ? ' (On‑label)' : ''}\nTier: ${result.tier || '—'}\nEfficacy: ${typeof result.efficacy_score === 'number' ? result.efficacy_score.toFixed(2) : '—'}\nConfidence: ${typeof result.confidence === 'number' ? result.confidence.toFixed(2) : '—'}\nStrength: ${result.strength || '—'}\nCitations: ${(result.citations || []).slice(0, 3).join(', ')}`;
 
       case '/api/design/guide_rna':
         return `🎯 **Guide RNA Design**\n\n${result.design_summary || 'CRISPR guide RNA design completed.'}`;
+
+      case '/api/copilot/confirm_update':
+        return `✅ **Profile Updated**\n\nThe patient profile has been updated with the extracted clinical data. You can now proceed to Generate Scenarios or View Evidence.`;
+
       default:
         return `✅ **${action.label}**\n\n${result.summary || result.message || 'Action completed successfully.'}`;
     }

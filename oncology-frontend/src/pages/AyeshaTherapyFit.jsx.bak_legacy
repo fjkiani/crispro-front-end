@@ -1,0 +1,427 @@
+import React, { useState } from 'react';
+import {
+    Box,
+    Typography,
+    Card,
+    CardContent,
+    Grid,
+    Chip,
+    Button,
+    CircularProgress,
+    LinearProgress,
+    Alert,
+    Divider,
+    Stack,
+    Tab,
+    Tabs,
+    Paper,
+    Tooltip,
+} from '@mui/material';
+import {
+    LocalHospital,
+    Science,
+    CompareArrows,
+    Lock,
+    Bolt,
+    Info,
+    Layers,
+    CheckCircle,
+} from '@mui/icons-material';
+import { useQuery } from '@tanstack/react-query';
+
+// Sub-components
+import MutationScoringPipeline from '../components/ayesha/MutationScoringPipeline';
+import DrugRankingPanel from '../components/ayesha/DrugRankingPanel';
+import { SyntheticLethalityCard } from '../components/orchestrator/Analysis/SyntheticLethalityCard';
+import IntegratedConfidenceBar from '../components/ayesha/IntegratedConfidenceBar';
+import PanelCatalog from '../components/ayesha/PanelCatalog';
+import StrictDrugSearch from '../components/ayesha/StrictDrugSearch';
+
+const API_ROOT = import.meta.env.VITE_API_ROOT || 'http://127.0.0.1:8000';
+
+/**
+ * Ayesha Therapy Fit - Multi-Level Analysis Page
+ * 
+ * Provides:
+ * 1. L1 Analysis: Confirmed clinical data (MBD4 germline, p53 IHC)
+ * 2. L2/L3 Previews: "Glass Box" scenarios showing how NGS/Expression data unlocks confidence.
+ */
+export default function AyeshaTherapyFit() {
+    const [activeTab, setActiveTab] = useState(0); // 0: L1, 1: L2, 2: L3
+    const [selectedL2, setSelectedL2] = useState('L2K_BestCase_Kinetic');
+    const [selectedL3, setSelectedL3] = useState('S1_VEGFhigh_CA125high');
+
+    // Fetch Scenarios Catalog
+    const { data: scenarios, isLoading: loadingScenarios } = useQuery({
+        queryKey: ['ayesha_scenarios'],
+        queryFn: async () => {
+            const res = await fetch(`${API_ROOT}/api/ayesha/therapy-fit/scenarios`);
+            if (!res.ok) throw new Error('Failed to fetch scenarios');
+            return res.json();
+        },
+    });
+
+
+
+    const { data: bundle, isLoading: loadingBundle, isFetching: fetchingBundle, error } = useQuery({
+        queryKey: ['ayesha_bundle_all', selectedL2, selectedL3],
+        queryFn: async () => {
+            const url = new URL(`${API_ROOT}/api/ayesha/therapy-fit/bundle`);
+            url.searchParams.append('level', 'all'); // Fetch ALL levels
+            url.searchParams.append('scenario_id', selectedL2);
+            url.searchParams.append('l3_scenario_id', selectedL3);
+
+            const res = await fetch(url.toString(), { method: 'POST' });
+            if (!res.ok) throw new Error('Analysis failed');
+            return res.json();
+        },
+        keepPreviousData: true,
+    });
+
+    const handleTabChange = (event, newValue) => {
+        setActiveTab(newValue);
+    };
+
+    const currentLevelKey = activeTab === 0 ? 'L1' : activeTab === 1 ? 'L2' : 'L3';
+    const currentResult = bundle?.levels?.[currentLevelKey];
+
+    // Safety fix: If fetching 'all', bundle.levels has L1, L2, L3.
+    // currentResult will point to the active tab's data.
+
+    return (
+        <Box sx={{ p: 4, maxWidth: 1400, mx: 'auto' }}>
+            {/* Header with Glassmorphism Effect */}
+            <Paper
+                elevation={0}
+                sx={{
+                    p: 4,
+                    mb: 4,
+                    borderRadius: 4,
+                    background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
+                    color: 'white',
+                    position: 'relative',
+                    overflow: 'hidden'
+                }}
+            >
+                <Box sx={{ position: 'relative', zIndex: 1 }}>
+                    <Stack direction="row" spacing={2} alignItems="center">
+                        <Box
+                            sx={{
+                                p: 1.5,
+                                bgcolor: 'rgba(255,255,255,0.2)',
+                                borderRadius: 2,
+                                backdropFilter: 'blur(10px)'
+                            }}
+                        >
+                            <Science sx={{ fontSize: 40 }} />
+                        </Box>
+                        <Box>
+                            <Typography variant="h3" sx={{ fontWeight: 800, letterSpacing: -1 }}>
+                                Therapy Fit
+                            </Typography>
+                            <Typography variant="h6" sx={{ opacity: 0.9, fontWeight: 400 }}>
+                                Ayesha (AK) • Stage IVB HGSOC • Multi-Level Analysis
+                            </Typography>
+                        </Box>
+                    </Stack>
+                </Box>
+                {/* Decorative background element */}
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        top: -50,
+                        right: -50,
+                        width: 200,
+                        height: 200,
+                        borderRadius: '50%',
+                        bgcolor: 'rgba(255,255,255,0.05)'
+                    }}
+                />
+            </Paper>
+
+            {/* Tabs / Multi-Level Selection */}
+            <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 4 }}>
+                <Tabs value={activeTab} onChange={handleTabChange} textColor="primary" indicatorColor="primary">
+                    <Tab
+                        icon={<CheckCircle sx={{ fontSize: 18 }} />}
+                        label="L1: Clinical Reality"
+                        iconPosition="start"
+                        sx={{ fontWeight: 'bold' }}
+                    />
+                    <Tab
+                        icon={<Layers sx={{ fontSize: 18 }} />}
+                        label="L2: NGS Prediction"
+                        iconPosition="start"
+                        sx={{ fontWeight: activeTab === 1 ? 'bold' : 'normal' }}
+                    />
+                    <Tab
+                        icon={<Bolt sx={{ fontSize: 18 }} />}
+                        label="L3: Expression Preview"
+                        iconPosition="start"
+                        sx={{ fontWeight: activeTab === 2 ? 'bold' : 'normal' }}
+                    />
+                    <Tab
+                        icon={<Lock sx={{ fontSize: 18 }} />}
+                        label="Auditing & Verification"
+                        iconPosition="start"
+                        sx={{ fontWeight: activeTab === 3 ? 'bold' : 'normal', ml: 'auto' }}
+                    />
+                </Tabs>
+            </Box>
+
+            {/* When switching scenarios, keepPreviousData keeps old results on screen.
+                Show an explicit "updating" indicator so it doesn't look static. */}
+            {fetchingBundle && !loadingBundle && activeTab < 3 && (
+                <Box sx={{ mb: 3 }}>
+                    <LinearProgress />
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                        Updating results for selected scenario…
+                    </Typography>
+                </Box>
+            )}
+
+            <Grid container spacing={4}>
+                {/* Left Column: Context & Selection */}
+                <Grid item xs={12} md={4}>
+                    <Stack spacing={3}>
+                        {/* Level Description Card */}
+                        <Card sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+                            <CardContent>
+                                <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Info color="primary" />
+                                    {activeTab === 3 ? 'System Audit' : activeTab === 0 ? 'Verified Clinical Context' : 'Research Preview Parameters'}
+                                </Typography>
+                                <Divider sx={{ my: 1.5 }} />
+                                <Typography variant="body2" color="text.secondary">
+                                    {activeTab === 0 && 'Base Tier. Confirmed by Pathology & Germline testing. (Data: MBD4, p53).'}
+                                    {activeTab === 1 && 'Prognostic Tier. Unlocked by Somatic NGS Panel. (Data: Mutations, TMB, HRD).'}
+                                    {activeTab === 2 && 'Predictive Tier. Unlocked by RNA-seq & Longitudinal sampling. (Data: Expression, Kinetic deltas).'}
+                                    {activeTab === 3 && 'Verification Tools. valid only for "No Model Hallucination" compliance. Audit the raw catalog and verify strict drug lookups.'}
+                                </Typography>
+
+                                {/* Scenario Selectors for L2/L3 (Only visible in analysis tabs) */}
+                                {activeTab === 1 && scenarios && (
+                                    <Box sx={{ mt: 3 }}>
+                                        <Typography variant="caption" sx={{ fontWeight: 'bold', mb: 1, display: 'block' }}>
+                                            Select L2 Scenario:
+                                        </Typography>
+                                        <Stack spacing={1}>
+                                            {scenarios.l2_scenarios.map(s => (
+                                                <Button
+                                                    key={s.id}
+                                                    variant={selectedL2 === s.id ? 'contained' : 'outlined'}
+                                                    onClick={() => setSelectedL2(s.id)}
+                                                    sx={{ justifyContent: 'flex-start', textAlign: 'left', borderRadius: 2 }}
+                                                    size="small"
+                                                >
+                                                    {s.name}
+                                                </Button>
+                                            ))}
+                                        </Stack>
+                                        {/* Scenario Description Delta */}
+                                        {(() => {
+                                            const activeScen = scenarios.l2_scenarios.find(s => s.id === selectedL2);
+                                            return activeScen ? (
+                                                <Paper variant="outlined" sx={{ mt: 2, p: 1.5, bgcolor: 'primary.50', borderColor: 'primary.200' }}>
+                                                    <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'primary.main', display: 'block' }}>
+                                                        SIMULATION CONTEXT:
+                                                    </Typography>
+                                                    <Typography variant="caption" color="text.primary">
+                                                        {activeScen.description}
+                                                    </Typography>
+                                                </Paper>
+                                            ) : null;
+                                        })()}
+
+                                        {fetchingBundle && (
+                                            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                                                Recomputing L2…
+                                            </Typography>
+                                        )}
+                                    </Box>
+                                )}{activeTab === 2 && scenarios && (
+                                    <Box sx={{ mt: 3 }}>
+                                        <Typography variant="caption" sx={{ fontWeight: 'bold', mb: 1, display: 'block' }}>
+                                            Select L3 Scenario:
+                                        </Typography>
+                                        <Stack spacing={1}>
+                                            {scenarios.l3_scenarios.map(s => (
+                                                <Button
+                                                    key={s.id}
+                                                    variant={selectedL3 === s.id ? 'contained' : 'outlined'}
+                                                    onClick={() => setSelectedL3(s.id)}
+                                                    sx={{ justifyContent: 'flex-start', textAlign: 'left', borderRadius: 2 }}
+                                                    size="small"
+                                                >
+                                                    {s.name}
+                                                </Button>
+                                            ))}
+                                        </Stack>
+                                        {/* Scenario Description Delta */}
+                                        {(() => {
+                                            const activeScen = scenarios.l3_scenarios.find(s => s.id === selectedL3);
+                                            return activeScen ? (
+                                                <Paper variant="outlined" sx={{ mt: 2, p: 1.5, bgcolor: 'secondary.50', borderColor: 'secondary.200' }}>
+                                                    <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'secondary.main', display: 'block' }}>
+                                                        EXPRESSION CONTEXT:
+                                                    </Typography>
+                                                    <Typography variant="caption" color="text.primary">
+                                                        {activeScen.description}
+                                                    </Typography>
+                                                </Paper>
+                                            ) : null;
+                                        })()}
+
+                                        {fetchingBundle && (
+                                            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                                                Recomputing L3…
+                                            </Typography>
+                                        )}
+                                    </Box>
+                                )}{/* End of L2/L3 Scenario Selectors */}
+                            </CardContent>
+                        </Card>
+
+                        {/* Inputs Used List (Hidden in Audit Tab) */}
+                        {currentResult && activeTab < 3 && (
+                            <Card sx={{ borderRadius: 3, bgcolor: 'grey.50' }}>
+                                <CardContent>
+                                    <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'text.secondary', display: 'block', mb: 2 }}>
+                                        ACTIVE INPUTS
+                                    </Typography>
+                                    <Stack spacing={1}>
+                                        {currentResult.inputs_used.mutations.map((m, i) => (
+                                            <Chip
+                                                key={i}
+                                                label={`${m.gene} ${m.hgvs_p || '(IHC)'}`}
+                                                size="small"
+                                                color="error"
+                                                variant="soft"
+                                                sx={{ fontWeight: 'bold', borderRadius: 1.5 }}
+                                            />
+                                        ))}
+                                        {currentResult.inputs_used.tumor_context.hrd_score && (
+                                            <Chip label={`HRD: ${currentResult.inputs_used.tumor_context.hrd_score}`} size="small" variant="outlined" />
+                                        )}
+                                        {currentResult.inputs_used.tumor_context.tmb && (
+                                            <Chip label={`TMB: ${currentResult.inputs_used.tumor_context.tmb}`} size="small" variant="outlined" />
+                                        )}
+                                    </Stack>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </Stack>
+                </Grid>
+
+                {/* Right Column: Results Bundle OR Auditing Tools */}
+                <Grid item xs={12} md={8}>
+                    {activeTab === 3 ? (
+                        /* AUDITING TOOLS TAB */
+                        <Stack spacing={4}>
+                            <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+                                Panel Auditing & Verification
+                            </Typography>
+                            <Alert severity="info" variant="outlined">
+                                Use these tools to verify that the "Therapy Fit" engine is adhering to the <strong>Strict No-Hallucination Policy</strong>.
+                                You can check if a drug exists in the catalog (Ground Truth) and verify its properties.
+                            </Alert>
+                            <Grid container spacing={4}>
+                                <Grid item xs={12}>
+                                    <StrictDrugSearch />
+                                </Grid>
+                                <Grid item xs={12}>
+                                    <Paper elevation={0} variant="outlined" sx={{ p: 2 }}>
+                                        <PanelCatalog />
+                                    </Paper>
+                                </Grid>
+                            </Grid>
+                        </Stack>
+                    ) : (
+                        /* ANALYSIS VIEW */
+                        <>
+                            {loadingBundle ? (
+                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 10 }}>
+                                    <CircularProgress size={60} thickness={4} />
+                                    <Typography variant="body1" sx={{ mt: 2, fontWeight: 500 }} color="text.secondary">
+                                        Running Multi-Agent Orchestration...
+                                    </Typography>
+                                </Box>
+                            ) : error ? (
+                                <Alert severity="error" variant="filled" sx={{ borderRadius: 3 }}>
+                                    Analysis Pipeline Error: {error.message}
+                                </Alert>
+                            ) : currentResult ? (
+                                <Stack spacing={4}>
+                                    {/* Primary Confidence Bar */}
+                                    <Box>
+                                        <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>
+                                            Integrated Confidence
+                                        </Typography>
+                                        <IntegratedConfidenceBar
+                                            integratedConfidence={currentResult.efficacy?.drugs?.[0]?.confidence || 0.4}
+                                            confidenceBreakdown={{
+                                                drug_component: currentResult.efficacy?.drugs?.[0]?.confidence || 0.4,
+                                                data_depth: currentResult.completeness?.completeness_score || 0,
+                                                pathway_fit: currentResult.efficacy?.drugs?.[0]?.efficacy_score || 0.5
+                                            }}
+                                        />
+                                    </Box>
+
+                                    {/* Genomic Drivers / Evo2 Analysis */}
+                                    {currentResult.inputs_used?.mutations?.length > 0 && (
+                                        <Box>
+                                            <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>
+                                                Genomic Drivers & Evo2 Analysis
+                                            </Typography>
+                                            <MutationScoringPipeline
+                                                mutations={currentResult.inputs_used.mutations}
+                                                essentialityScores={currentResult.synthetic_lethality?.essentiality_scores || []}
+                                            />
+                                        </Box>
+                                    )}
+
+                                    {/* Drug Rankings */}
+                                    <DrugRankingPanel
+                                        drugs={currentResult.efficacy.drugs}
+                                        title="Therapy Fit Rankings"
+                                        context={{
+                                            level: currentLevelKey,
+                                            scenario: activeTab === 1 ? selectedL2 : activeTab === 2 ? selectedL3 : "L1 (Clinical Baseline)",
+                                            inputs: currentResult.inputs_used,
+                                            provenance: currentResult.efficacy.provenance
+                                        }}
+                                    />
+
+                                    {/* Synthetic Lethality (SL) Panel */}
+                                    {currentResult.synthetic_lethality && (
+                                        <SyntheticLethalityCard
+                                            slResult={currentResult.synthetic_lethality}
+                                            loading={false}
+                                            compact={false}
+                                        />
+                                    )}
+
+                                    {/* Level Transition Alert */}
+                                    {activeTab < 2 && (
+                                        <Alert
+                                            severity="info"
+                                            icon={<CompareArrows />}
+                                            sx={{ borderRadius: 3, py: 2 }}
+                                        >
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+                                                Unlock Higher Confidence
+                                            </Typography>
+                                            <Typography variant="body2">
+                                                Click the <strong>{activeTab === 0 ? 'L2' : 'L3'}</strong> tab to see how {activeTab === 0 ? 'NGS data' : 'Expression kinetics'} could refine these rankings and reduce uncertainty.
+                                            </Typography>
+                                        </Alert>
+                                    )}
+                                </Stack>
+                            ) : null}
+                        </>
+                    )}
+                </Grid>
+            </Grid>
+        </Box >
+    );
+}

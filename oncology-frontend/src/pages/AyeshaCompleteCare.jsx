@@ -649,7 +649,7 @@ export default function AyeshaCompleteCare() {
         <Box>
           {/* Integrated Confidence Bar - Only show if not awaiting NGS */}
           {result.wiwfm_status !== "awaiting_ngs" && (result.integrated_confidence || result.summary?.confidence_level) && (
-          <IntegratedConfidenceBar
+            <IntegratedConfidenceBar
               integratedConfidence={result.integrated_confidence || 0.7}
               confidenceBreakdown={result.confidence_breakdown || {
                 drug_component: 0.7,
@@ -676,7 +676,7 @@ export default function AyeshaCompleteCare() {
           {/* PLUMBER 8: Synthetic Lethality Analysis */}
           {result.synthetic_lethality && (
             <Box sx={{ mb: 3 }}>
-              <SyntheticLethalityCard 
+              <SyntheticLethalityCard
                 slResult={result.synthetic_lethality}
                 loading={false}
               />
@@ -713,7 +713,7 @@ export default function AyeshaCompleteCare() {
           {/* Phase 3: Essentiality Score Display */}
           {((result.essentiality_scores && result.essentiality_scores.length > 0) || (result.synthetic_lethality?.essentiality_scores && result.synthetic_lethality.essentiality_scores.length > 0)) && (
             <Box sx={{ mb: 3 }}>
-              <EssentialityScoreDisplay 
+              <EssentialityScoreDisplay
                 essentialityScores={(result.essentiality_scores && result.essentiality_scores.length > 0) ? result.essentiality_scores : result.synthetic_lethality.essentiality_scores}
                 title="Gene Essentiality Analysis"
               />
@@ -752,7 +752,7 @@ export default function AyeshaCompleteCare() {
           {result.trials && (
             <Box sx={{ mb: 3 }}>
               {result.trials.trials && result.trials.trials.length > 0 ? (
-                <TrialMatchesCard 
+                <TrialMatchesCard
                   trialMatches={result.trials.trials}
                   loading={false}
                 />
@@ -800,7 +800,7 @@ export default function AyeshaCompleteCare() {
 
           {/* Phase 3: Genomics 101 - Patient-Friendly Explanations */}
           {(patientProfile.germline?.mutations?.length > 0 || patientProfile.tumor_context?.somatic_mutations?.length > 0) && (
-            <Box sx={{ mb: 3 }}>
+          <Box sx={{ mb: 3 }}>
               <Card sx={{ p: 3 }}>
                 <Typography variant="h6" gutterBottom>
                   🧬 Understanding Your Genetics
@@ -890,7 +890,7 @@ export default function AyeshaCompleteCare() {
                   </Box>
                 )}
               </Card>
-            </Box>
+          </Box>
           )}
 
           {/* Summary Stats */}

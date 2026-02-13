@@ -187,8 +187,8 @@ const ChemosensitivityFeaturesCard = ({
           {/* Explanation */}
           <Alert severity="info" sx={{ mt: 1 }}>
             <Typography variant="caption">
-              <strong>KELIM:</strong> CA-125 Kinetic-ELIMination rate constant. 
-              Measures how quickly CA-125 declines under effective therapy. 
+              <strong>KELIM:</strong> CA-125 Kinetic-ELIMination rate constant.
+              Measures how quickly CA-125 declines under effective therapy.
               Higher K = better chemosensitivity. K ≥ 1.0 suggests favorable response.
             </Typography>
           </Alert>

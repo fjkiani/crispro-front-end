@@ -1,13 +1,13 @@
 /**
- * Mechanism Chips Component
+ * Mechanism Chips Component (CIC v1)
  * 
  * Displays 6 pathway mechanism chips:
  * - DDR | MAPK | PI3K | VEGF | IO | Efflux
  * - Pre-NGS: All gray with "Awaiting NGS" tooltip
- * - Post-NGS: Color-coded (green ≥0.7, yellow 0.4-0.7, gray <0.4)
- * - Click to expand and show contributing genes
+ * - Post-NGS: Color-coded based on burden value
+ * - Honest UI: Explicitly handles missing inputs/null values
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Chip,
@@ -15,85 +15,65 @@ import {
   Tooltip,
   Popover,
   Paper,
-  List,
-  ListItem,
-  ListItemText,
+  Stack,
+  Alert
 } from '@mui/material';
+import { MechanismMapSchema } from '../../schemas/cic_v1';
 
+// CIC v1: Component expects `mechanism_map` with `chips` list (Manager C9)
 const MechanismChips = ({ mechanism_map = {} }) => {
   const [anchorEl, setAnchorEl] = useState(null);
-  const [selectedPathway, setSelectedPathway] = useState(null);
+  const [selectedAxis, setSelectedAxis] = useState(null);
 
-  // Extract chips from mechanism_map
-  const chips = mechanism_map?.chips || [];
-  const status = mechanism_map?.status || 'awaiting_ngs';
+  // Runtime Validation (Dev Mode / Console Warning)
+  useEffect(() => {
+    const result = MechanismMapSchema.safeParse(mechanism_map);
+    if (!result.success) {
+      console.warn('❌ MechanismChips: CIC v1 Contract Violation', result.error);
+    }
+  }, [mechanism_map]);
 
-  // If no chips, create default gray chips
-  const displayChips = chips.length > 0 ? chips : [
-    { pathway: 'DDR', burden: 0.0, color: 'default', label: '--', status: 'awaiting_ngs', tooltip: 'Awaiting NGS' },
-    { pathway: 'MAPK', burden: 0.0, color: 'default', label: '--', status: 'awaiting_ngs', tooltip: 'Awaiting NGS' },
-    { pathway: 'PI3K', burden: 0.0, color: 'default', label: '--', status: 'awaiting_ngs', tooltip: 'Awaiting NGS' },
-    { pathway: 'VEGF', burden: 0.0, color: 'default', label: '--', status: 'awaiting_ngs', tooltip: 'Awaiting NGS' },
-    { pathway: 'IO', burden: 0.0, color: 'default', label: '--', status: 'awaiting_ngs', tooltip: 'Awaiting NGS' },
-    { pathway: 'Efflux', burden: 0.0, color: 'default', label: '--', status: 'awaiting_ngs', tooltip: 'Awaiting NGS' },
-  ];
+  const { chips = [], status = 'awaiting_ngs', message } = mechanism_map || {};
 
   const handleChipClick = (event, chip) => {
     setAnchorEl(event.currentTarget);
-    setSelectedPathway(chip);
+    setSelectedAxis(chip);
   };
 
   const handleClose = () => {
     setAnchorEl(null);
-    setSelectedPathway(null);
-  };
-
-  const getChipColor = (chip) => {
-    if (chip.status === 'awaiting_ngs') {
-      return 'default';
-    }
-    return chip.color || 'default';
-  };
-
-  const getChipVariant = (chip) => {
-    if (chip.status === 'awaiting_ngs') {
-      return 'outlined';
-    }
-    return 'filled';
-  };
-
-  const getChipSx = (chip) => {
-    if (chip.status === 'awaiting_ngs') {
-      return {
-        borderStyle: 'dashed',
-        opacity: 0.6,
-      };
-    }
-    return {};
+    setSelectedAxis(null);
   };
 
   return (
     <Box>
       <Box display="flex" flexWrap="wrap" gap={1} alignItems="center">
-        {displayChips.map((chip, index) => (
-          <Tooltip
-            key={index}
-            title={chip.tooltip || chip.pathway}
-            arrow
-          >
-            <Chip
-              label={`${chip.pathway}: ${chip.label || '--'}`}
-              color={getChipColor(chip)}
-              variant={getChipVariant(chip)}
-              onClick={(e) => handleChipClick(e, chip)}
-              sx={{
-                minWidth: 100,
-                cursor: 'pointer',
-                ...getChipSx(chip),
-              }}
-            />
-          </Tooltip>
-        ))}
+        {chips.map((chip, idx) => {
+          const axisName = chip.pathway || `Axis ${idx}`;
+          const isAwaiting = chip.status === 'awaiting_ngs';
+
+          return (
+            <Tooltip
+              key={axisName}
+              title={chip.tooltip || `${axisName} Pathway details`}
+              arrow
+            >
+              <Chip
+                label={chip.label || `${axisName}`}
+                color={chip.color || 'default'}
+                variant={isAwaiting ? 'outlined' : 'filled'}
+                onClick={(e) => handleChipClick(e, chip)}
+                sx={{
+                  minWidth: 100,
+                  cursor: 'pointer',
+                  borderStyle: isAwaiting ? 'dashed' : 'solid',
+                  opacity: isAwaiting ? 0.6 : 1,
+                  fontWeight: isAwaiting ? 'normal' : 'bold',
+                }}
+              />
+            </Tooltip>
+          );
+        })}
       </Box>
 
       {/* Popover for expanded details */}
@@ -111,33 +91,48 @@ const MechanismChips = ({ mechanism_map = {} }) => {
         }}
       >
         <Paper sx={{ p: 2, minWidth: 300, maxWidth: 400 }}>
-          {selectedPathway && (
-            <>
-              <Typography variant="h6" gutterBottom>
-                {selectedPathway.pathway} Pathway
+          {selectedAxis && (
+            <Stack spacing={1}>
+              <Typography variant="h6">
+                {selectedAxis.pathway} Pathway
               </Typography>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                {selectedPathway.tooltip || 'No additional details available'}
+
+              <Typography variant="body2">
+                {selectedAxis.tooltip}
               </Typography>
-              {selectedPathway.status === 'computed' && (
-                <Box mt={2}>
-                  <Typography variant="caption" color="text.secondary">
-                    Burden Score: {(selectedPathway.burden * 100).toFixed(0)}%
-                  </Typography>
-                  <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 1 }}>
-                    Status: {selectedPathway.status === 'computed' ? 'Computed from NGS data' : 'Awaiting NGS'}
-                  </Typography>
-                </Box>
+
+              <Box display="flex" alignItems="center" gap={1} mt={1}>
+                <Chip
+                  label={selectedAxis.label}
+                  color={selectedAxis.color}
+                  size="small"
+                  variant={selectedAxis.status === 'awaiting_ngs' ? 'outlined' : 'filled'}
+                />
+                <Typography variant="caption" color="text.secondary">
+                  Status: {selectedAxis.status}
+                </Typography>
+              </Box>
+
+              {selectedAxis.status === 'computed' && (
+                <Typography variant="caption" color="text.secondary">
+                  Burden: {(selectedAxis.burden * 100).toFixed(0)}%
+                </Typography>
               )}
-            </>
+            </Stack>
           )}
         </Paper>
       </Popover>
 
       {/* Status Message */}
-      {status === 'awaiting_ngs' && (
+      {status === 'awaiting_ngs' && chips.length === 0 && (
+        <Alert severity="info" sx={{ mt: 2 }}>
+          {message || "Global mechanism map awaiting NGS data."}
+        </Alert>
+      )}
+      {/* Explicit Message (if chips present but status is awaiting/error) */}
+      {message && chips.length > 0 && (
         <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
-          🧬 All pathways awaiting NGS results
+          {message}
         </Typography>
       )}
     </Box>

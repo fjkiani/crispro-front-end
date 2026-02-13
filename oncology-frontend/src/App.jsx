@@ -19,13 +19,13 @@
  */
 
 import React, { useEffect } from "react";
-import { Routes, useNavigate } from "react-router-dom";
+import { Routes, useNavigate, useLocation } from "react-router-dom";
 import { Sidebar, Navbar, MobileNavbar } from "./components";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { useStateContext } from "./context";
 import { ActivityProvider } from "./context/ActivityContext";
 import { AnalysisHistoryProvider } from "./context/AnalysisHistoryContext";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import { PatientProvider } from "./context/PatientContext";
 import { PersonaProvider } from "./context/PersonaContext";
 import { CoPilotProvider } from "./components/CoPilot/context";
@@ -33,97 +33,122 @@ import { SporadicProvider } from "./context/SporadicContext";
 import { AgentProvider } from "./context/AgentContext";
 import { CoPilot } from "./components/CoPilot/index.js";
 import { Box } from "@mui/material";
+import { getAllSessionKeys, isSessionValid, loadFromStorage, SESSION_KEYS } from "./utils/sessionPersistence";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 // Import modular routes
 import { getAllRoutes } from "./routes";
 
-
-const App = () => {
-  const { user, authenticated, ready, login, currentUser } = useStateContext();
+// INNER COMPONENT: Consumes Contexts
+const AppContent = () => {
+  const { currentUser } = useStateContext();
+  const { user, authenticated, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
+  // Redirect to login if not authenticated
   useEffect(() => {
-    if (ready && !authenticated) {
-      login();
-    } else if (user && !currentUser) {
-      navigate("/onboarding");
+    if (!loading && !authenticated) {
+      // Only redirect if trying to access a protected route (exclude login/signup)
+      if (location.pathname !== '/login' && location.pathname !== '/signup' && location.pathname !== '/forgot-password') {
+        navigate('/login');
+      }
     }
-  }, [user, authenticated, ready, login, currentUser, navigate]);
+  }, [authenticated, loading, navigate, location.pathname]);
+
+  // Session health check on app startup (Moved inside logic)
+  useEffect(() => {
+    const performSessionHealthCheck = () => {
+      console.log('🔍 Performing session health check...');
+      const authSession = loadFromStorage(SESSION_KEYS.AUTH_SESSION);
+      if (authSession) console.log('✅ Auth session is valid');
+      else console.log('ℹ️ No auth session found');
+    };
+
+    const timeout = setTimeout(performSessionHealthCheck, 3000);
+    return () => clearTimeout(timeout);
+  }, []);
 
   return (
-    <ErrorBoundary>
-      <AuthProvider>
-        <PersonaProvider>
-          <PatientProvider>
-            <AgentProvider>
-              <SporadicProvider>
-                <CoPilotProvider>
-                  <AnalysisHistoryProvider>
-                    <ActivityProvider>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          flexDirection: { xs: 'column', md: 'row' },
-                          minHeight: '100vh',
-                          bgcolor: 'background.default',
-                        }}
-                      >
-                        {/* Desktop Sidebar */}
-                        <Box
-                          sx={{
-                            display: { xs: 'none', md: 'block' },
-                          }}
-                        >
-                          <Sidebar />
-                        </Box>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: { xs: 'column', md: 'row' },
+        minHeight: '100vh',
+        bgcolor: 'background.default',
+      }}
+    >
+      {/* Desktop Sidebar */}
+      <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+        <Sidebar />
+      </Box>
 
-                        {/* Main Content */}
-                        <Box
-                          sx={{
-                            flex: 1,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            width: { xs: '100%', md: 'auto' },
-                            pb: { xs: 8, md: 0 }, // Padding bottom for mobile navbar
-                          }}
-                        >
-                          {/* Desktop Top Navbar */}
-                          <Navbar />
+      {/* Main Content */}
+      <Box
+        sx={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          width: { xs: '100%', md: 'auto' },
+          pb: { xs: 8, md: 0 },
+        }}
+      >
+        {/* Desktop Top Navbar */}
+        <Navbar />
 
-                          {/* Page Content */}
-                          <Box
-                            component="main"
-                            sx={{
-                              flex: 1,
-                              p: { xs: 2, md: 3 },
-                              maxWidth: { md: '1400px' },
-                              width: '100%',
-                              mx: 'auto',
-                              minHeight: { xs: 'calc(100vh - 56px)', md: 'auto' }, // Account for mobile nav height
-                            }}
-                          >
-                            <Routes>
-                              {/* Modular Routes - Organized by category */}
-                              {getAllRoutes().map((route) => route)}
-                            </Routes>
-                          </Box>
-                        </Box>
+        {/* Page Content */}
+        <Box
+          component="main"
+          sx={{
+            flex: 1,
+            p: { xs: 2, md: 3 },
+            maxWidth: { md: '1400px' },
+            width: '100%',
+            mx: 'auto',
+            minHeight: { xs: 'calc(100vh - 56px)', md: 'auto' },
+          }}
+        >
+          <Routes>
+            {getAllRoutes().map((route) => route)}
+          </Routes>
+        </Box>
+      </Box>
 
-                        {/* Mobile Bottom Navigation */}
-                        <MobileNavbar />
-                      </Box>
+      {/* Mobile Bottom Navigation */}
+      <MobileNavbar />
 
-                      {/* Clinical CoPilot - AI Assistant */}
-                      <CoPilot />
-                    </ActivityProvider>
-                  </AnalysisHistoryProvider>
-                </CoPilotProvider>
-              </SporadicProvider>
-            </AgentProvider>
-          </PatientProvider>
-        </PersonaProvider>
-      </AuthProvider>
-    </ErrorBoundary>
+      {/* Clinical CoPilot - AI Assistant */}
+      <CoPilot />
+    </Box>
+  );
+};
+
+// MAIN COMPONENT: Provides Contexts
+const App = () => {
+  const queryClient = new QueryClient();
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ErrorBoundary>
+        <AuthProvider>
+          <PersonaProvider>
+            <PatientProvider>
+              <AgentProvider>
+                <SporadicProvider>
+                  <CoPilotProvider>
+                    <AnalysisHistoryProvider>
+                      <ActivityProvider>
+                        <AppContent />
+                      </ActivityProvider>
+                    </AnalysisHistoryProvider>
+                  </CoPilotProvider>
+                </SporadicProvider>
+              </AgentProvider>
+            </PatientProvider>
+          </PersonaProvider>
+        </AuthProvider>
+      </ErrorBoundary>
+    </QueryClientProvider>
   );
 };
 

@@ -220,7 +220,7 @@ const CohortLab = () => {
                   <td className="px-2 py-1 text-gray-200">{r.sample_id}</td>
                   <td className="px-2 py-1 text-gray-200">{r.gene}</td>
                   <td className="px-2 py-1 text-gray-300">{r.hgvs_p || '—'}</td>
-                  <td className="px-2 py-1 text-gray-300">{r.chrom}:{r.pos} {r.ref}>{r.alt}</td>
+                  <td className="px-2 py-1 text-gray-300">{r.chrom}:{r.pos} {r.ref}{'>'}{r.alt}</td>
                   <td className="px-2 py-1 text-gray-200">{Number(r.outcome_platinum) === 1 ? 'Yes' : 'No'}</td>
                 </tr>
               ))}

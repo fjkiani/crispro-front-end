@@ -1,16 +1,16 @@
 /**
- * Resistance Alert Banner Component (P1.2)
+ * Resistance Alert Banner Component (CIC v1)
  * 
  * Displays resistance detection alerts from SAE service:
  * - 2-of-3 trigger logic (HRD drop, DNA repair drop, CA-125 inadequate)
- * - Recommended actions (ATR/CHK1 trials, re-biopsy, imaging)
- * - RUO label for research use
+ * - HR Restoration patterns (Immediate Alert)
+ * - Honest UI: Explicitly handles missing baselines/inputs
  * 
- * Manager Policy: MANAGER_ANSWERS_TO_ZO_SAE_QUESTIONS.md (C1, C3)
+ * Manager Policy: MANAGER_ANSWERS_TO_ZO_SAE_QUESTIONS.md (C1, C3, C7)
  * Owner: Zo
- * Date: January 13, 2025
+ * Date: February 10, 2026 (CIC v1 Update)
  */
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Alert,
   AlertTitle,
@@ -25,26 +25,59 @@ import {
 import WarningIcon from '@mui/icons-material/Warning';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import { ResistanceAlertSchema } from '../../schemas/cic_v1';
 
 const ResistanceAlertBanner = ({ resistance_alert }) => {
   const [expanded, setExpanded] = React.useState(false);
 
-  // Don't render if no alert or alert not triggered
-  if (!resistance_alert || !resistance_alert.alert_triggered) {
+  // Runtime Validation
+  useEffect(() => {
+    if (resistance_alert) {
+      const result = ResistanceAlertSchema.safeParse(resistance_alert);
+      if (!result.success) {
+        console.warn('❌ ResistanceAlertBanner: CIC v1 Contract Violation', result.error);
+      }
+    }
+  }, [resistance_alert]);
+
+  // CIC v1: Check status instead of boolean flags
+  if (!resistance_alert || resistance_alert.status === 'clear' || resistance_alert.status === 'awaiting_ngs') {
     return null;
   }
 
+  // Extract signals and metadata
   const {
-    triggers = [],
-    recommended_actions = [],
-    detection_time,
-    confidence,
-    mechanism_suspected,
+    status,
+    rule,
+    signals = [],
+    provenance = {}
   } = resistance_alert;
+
+  // Identify met signals and missing inputs
+  const metSignals = signals.filter(s => s.met === true);
+  const unknownSignals = signals.filter(s => s.met === null);
+
+  // If we are awaiting baseline but have no active alerts, show a different message
+  if (status === 'awaiting_baseline' && metSignals.length === 0) {
+    return (
+      <Alert severity="info" variant="outlined" sx={{ mb: 2 }}>
+        <AlertTitle>Resistance Monitoring: Awaiting Baselines</AlertTitle>
+        <Typography variant="caption">
+          Cannot fully evaluate resistance risk due to missing baseline data:
+          {unknownSignals.map(s => ` ${s.name} (${s.missing_inputs.join(', ')})`).join('; ')}
+        </Typography>
+      </Alert>
+    );
+  }
 
   const handleToggle = () => {
     setExpanded(!expanded);
   };
+
+  // Determine title based on rule
+  const title = rule === 'hr_restoration_pattern'
+    ? '🚨 CRITICAL: HR Restoration Pattern Detected'
+    : '⚠️ Resistance Signal Detected (SAE)';
 
   return (
     <Alert
@@ -62,7 +95,7 @@ const ResistanceAlertBanner = ({ resistance_alert }) => {
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="flex-start">
         <AlertTitle sx={{ mb: 1, fontWeight: 'bold' }}>
-          ⚠️ Resistance Signal Detected (SAE)
+          {title}
         </AlertTitle>
         <Chip
           label="RESEARCH USE ONLY"
@@ -74,24 +107,29 @@ const ResistanceAlertBanner = ({ resistance_alert }) => {
 
       {/* Triggers */}
       <Typography variant="body2" sx={{ mb: 1 }}>
-        <strong>Detected Signals ({triggers.length} of 3):</strong>
+        <strong>Detected Signals ({metSignals.length} active):</strong>
       </Typography>
       <Box sx={{ mb: 1, pl: 2 }}>
-        {triggers.map((trigger, index) => (
-          <Typography key={index} variant="body2" sx={{ mb: 0.5 }}>
-            • {trigger}
-          </Typography>
+        {metSignals.map((signal, index) => (
+          <Box key={index} mb={0.5}>
+            <Typography variant="body2" fontWeight="medium">
+              • {signal.name.replace(/_/g, ' ').toUpperCase()}
+            </Typography>
+            {signal.details?.message && (
+              <Typography variant="caption" color="text.secondary" display="block" sx={{ ml: 2 }}>
+                {signal.details.message}
+              </Typography>
+            )}
+          </Box>
         ))}
+        {unknownSignals.length > 0 && (
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+            <em>* {unknownSignals.length} signals evaluating (awaiting data)</em>
+          </Typography>
+        )}
       </Box>
 
-      {/* Mechanism Suspected (if available) */}
-      {mechanism_suspected && (
-        <Typography variant="body2" sx={{ mb: 1, fontStyle: 'italic' }}>
-          <strong>Suspected Mechanism:</strong> {mechanism_suspected}
-        </Typography>
-      )}
-
-      {/* Expand/Collapse for Recommended Actions */}
+      {/* Expand/Collapse for Policy Details */}
       <Box
         onClick={handleToggle}
         sx={{
@@ -105,51 +143,31 @@ const ResistanceAlertBanner = ({ resistance_alert }) => {
         }}
       >
         <Typography variant="body2" fontWeight="bold">
-          Recommended Actions
+          Policy & Provenance
         </Typography>
         {expanded ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
       </Box>
 
       <Collapse in={expanded}>
-        <List dense sx={{ py: 0 }}>
-          {recommended_actions.map((action, index) => (
-            <ListItem key={index} sx={{ py: 0.5 }}>
-              <ListItemText
-                primary={action}
-                primaryTypographyProps={{
-                  variant: 'body2',
-                  color: 'text.secondary',
-                }}
-              />
-            </ListItem>
-          ))}
-        </List>
-
         {/* Detection Details */}
-        {(detection_time || confidence) && (
-          <Box sx={{ mt: 1, pt: 1, borderTop: '1px solid', borderColor: 'divider' }}>
-            <Typography variant="caption" color="text.secondary">
-              Detection Time: {detection_time || 'N/A'} |
-              Confidence: {confidence ? `${(confidence * 100).toFixed(0)}%` : 'N/A'}
-            </Typography>
-          </Box>
-        )}
+        <Box sx={{ mt: 1, pt: 1, borderTop: '1px solid', borderColor: 'divider' }}>
+          <Typography variant="caption" color="text.secondary">
+            Detection Method: {rule === 'hr_restoration_pattern' ? 'HR Restoration Logic (R2)' : '2-of-3 Trigger Rule (C7)'}
+            <br />
+            Policy: {provenance.policy || 'Manager C7 + CIC v1'}
+            <br />
+            Timestamp: {provenance.timestamp || 'N/A'}
+          </Typography>
+        </Box>
 
-        {/* Provenance & RUO Disclaimer */}
+        {/* RUO Disclaimer */}
         <Box sx={{ mt: 1, pt: 1, borderTop: '1px solid', borderColor: 'divider' }}>
           <Typography variant="caption" color="text.secondary">
             <strong>Important:</strong> This is a research-grade signal based on SAE (Sparse Autoencoder) analysis.
-            Clinical decisions should be made in consultation with the oncology team and confirmed with clinical/imaging evidence.
+            Clinical decisions should be made in consultation with the oncology team.
           </Typography>
         </Box>
       </Collapse>
-
-      {/* Quick Action Hint (Collapsed State) */}
-      {!expanded && recommended_actions.length > 0 && (
-        <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-          Click to view {recommended_actions.length} recommended action(s)
-        </Typography>
-      )}
     </Alert>
   );
 };

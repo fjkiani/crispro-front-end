@@ -5,7 +5,11 @@
  * Displays top 10 ranked trials with transparent reasoning.
  */
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Alert, CircularProgress, Paper, Grid, Tabs, Tab, Chip } from '@mui/material';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+const queryClient = new QueryClient();
+
+import { Box, Typography, Alert, CircularProgress, Paper, Grid, Tabs, Tab, Chip, Switch, FormControlLabel, Stack } from '@mui/material';
 import TrialMatchCard from '../components/trials/TrialMatchCard';
 import TrialSafetyGate from '../components/safety/TrialSafetyGate';
 import SafetyGateCard from '../components/safety/SafetyGateCard';
@@ -26,6 +30,7 @@ import {
   EssentialPathwaysCard,
   SLDrugRecommendations,
 } from '../components/ayesha';
+
 import { SyntheticLethalityCard } from '../components/orchestrator/Analysis/SyntheticLethalityCard';
 import { useSyntheticLethality } from '../hooks/useSyntheticLethality';
 import { useTimingChemoFeatures } from '../hooks/useTimingChemoFeatures';
@@ -41,9 +46,10 @@ const API_ROOT = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 const AyeshaTrialExplorer = () => {
   // Tab state
   const [activeTab, setActiveTab] = useState(0);
-  
+
   // Core data
   const [trials, setTrials] = useState([]);
+  const [showAllTrials, setShowAllTrials] = useState(false);
   const [ca125Intelligence, setCa125Intelligence] = useState(null);
   const [socRecommendation, setSocRecommendation] = useState(null);
   const [nextTestRecommender, setNextTestRecommender] = useState(null);
@@ -52,15 +58,15 @@ const AyeshaTrialExplorer = () => {
   const [resistanceAlert, setResistanceAlert] = useState(null);
   const [resistancePlaybook, setResistancePlaybook] = useState(null);
   const [saeFeatures, setSaeFeatures] = useState(null);
-  
+
   // NEW: Drug efficacy (WIWFM) and Food validation
   const [wiwfm, setWiwfm] = useState(null);
   const [foodValidation, setFoodValidation] = useState(null);
   const [resistancePrediction, setResistancePrediction] = useState(null);
-  
+
   // NEW: Synthetic Lethality (SL) analysis
   const { slResult, loading: slLoading, error: slError, analyzeSL } = useSyntheticLethality();
-  
+
   // NEW: Timing & Chemosensitivity Features
   const {
     timingFeatures,
@@ -68,12 +74,36 @@ const AyeshaTrialExplorer = () => {
     error: timingError,
     computeTimingFeatures,
   } = useTimingChemoFeatures();
-  
+
   // Meta
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [provenance, setProvenance] = useState(null);
   const [summary, setSummary] = useState(null);
+
+  // State for pagination
+  const [visibleCount, setVisibleCount] = useState(10);
+
+  // Trial filtering: default = show only trials that are tagged AND a reasonable fit (RUO).
+  // We keep a "Show all trials" toggle for auditing/debug.
+  const trialScore01 = (t) => {
+    const raw = t?.holistic_score ?? t?.match_score ?? t?.score ?? 0;
+    const n = Number(raw);
+    if (!Number.isFinite(n)) return 0;
+    return n > 1 ? n / 100 : n;
+  };
+
+  const isFitTrial = (t) => {
+    const score = trialScore01(t);
+    const eligRaw = t?.eligibility_score ?? 0;
+    const eligN = Number(eligRaw);
+    const elig01 = Number.isFinite(eligN) ? (eligN > 1 ? eligN / 100 : eligN) : 0;
+    return score >= 0.6 && elig01 >= 0.5;
+  };
+
+  const taggedFitTrials = trials.filter((t) => Boolean(t?.is_tagged) && isFitTrial(t));
+  const baseList = showAllTrials ? trials : taggedFitTrials;
+  const trialsToRender = baseList.slice(0, visibleCount);
 
   // Extract PGx-flagged drugs from WIWFM response (post-orchestrator enrichment)
   const getPGxDrugs = () => {
@@ -85,6 +115,14 @@ const AyeshaTrialExplorer = () => {
       const af = typeof pgx.adjustment_factor === 'number' ? pgx.adjustment_factor : 1.0;
       return tier === 'HIGH' || tier === 'MODERATE' || af < 1.0;
     });
+  };
+
+  const handleShowMore = () => {
+    setVisibleCount((prev) => Math.min(prev + 10, baseList.length));
+  };
+
+  const handleShowRemaining = () => {
+    setVisibleCount(baseList.length);
   };
 
   useEffect(() => {
@@ -100,11 +138,11 @@ const AyeshaTrialExplorer = () => {
     try {
       // Use patient profile from source-of-truth constant
       const profile = AYESHA_11_17_25_PROFILE;
-      
+
       // Map treatment_line: 0 = frontline, >0 = recurrent
       const treatmentLineValue = profile.inferred_fields?.treatment_line?.value ?? 0;
       const treatmentLine = treatmentLineValue === 0 ? "frontline" : "recurrent";
-      
+
       // Build tumor context from profile
       const biomarkers = profile.tumor_context?.biomarkers || {};
       const tumorContext = {
@@ -130,12 +168,29 @@ const AyeshaTrialExplorer = () => {
         })) || []
       };
 
+      // Get auth token
+      let token = null;
+      try {
+        const sessionStr = localStorage.getItem('mock_auth_session');
+        if (sessionStr) {
+          const session = JSON.parse(sessionStr);
+          token = session.access_token;
+        }
+      } catch (e) {
+        console.warn('Failed to parse auth session', e);
+      }
+
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       // Use unified complete_care_v2 endpoint with ALL capabilities enabled
       const response = await fetch(`${API_ROOT}/api/ayesha/complete_care_v2`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
           // Ayesha's profile from source-of-truth constant (Patient 11-17-25)
           stage: profile.disease?.stage || "IVB",
@@ -155,7 +210,8 @@ const AyeshaTrialExplorer = () => {
           include_food: true,
           include_resistance: true,
           include_resistance_prediction: true,
-          max_trials: 10,
+          // Backend can return many more; we want to show all tagged/fit trials (UI can still paginate locally)
+          max_trials: 200,
           // Ayesha's tumor context from pathology report (11-17-25)
           tumor_context: tumorContext
         }),
@@ -166,9 +222,18 @@ const AyeshaTrialExplorer = () => {
       }
 
       const data = await response.json();
-      
+
       // Extract ALL sections from unified response
-      setTrials(data.trials?.trials || []);
+      let loadedTrials = data.trials?.trials || [];
+
+      // CRITICAL: Enforce strict sorting by holistic score (desc) to ensure Top 10 are actually the best
+      loadedTrials.sort((a, b) => {
+        const scoreA = trialScore01(a);
+        const scoreB = trialScore01(b);
+        return scoreB - scoreA;
+      });
+
+      setTrials(loadedTrials);
       setCa125Intelligence(data.ca125_intelligence);
       setSocRecommendation(data.soc_recommendation || null);
       setNextTestRecommender(data.next_test_recommender || null);
@@ -177,12 +242,12 @@ const AyeshaTrialExplorer = () => {
       setResistanceAlert(data.resistance_alert || null);
       setResistancePlaybook(data.resistance_playbook || null);
       setSaeFeatures(data.sae_features || null);
-      
+
       // NEW: Extract WIWFM, Food, Resistance Prophet
       setWiwfm(data.wiwfm || null);
       setFoodValidation(data.food_validation || null);
       setResistancePrediction(data.resistance_prediction || null);
-      
+
       // Meta
       setProvenance(data.provenance);
       setSummary(data.summary);
@@ -220,25 +285,25 @@ const AyeshaTrialExplorer = () => {
   const calculateOpportunityScore = () => {
     let score = 0;
     let maxScore = 0;
-    
+
     // Trials (20 points max)
     if (trials.length > 0) {
       score += Math.min(trials.length * 2, 20);
     }
     maxScore += 20;
-    
+
     // SOC (15 points)
     if (socRecommendation?.confidence) {
       score += socRecommendation.confidence * 15;
     }
     maxScore += 15;
-    
+
     // CA-125 trackable (10 points)
     if (ca125Intelligence?.burden_class) {
       score += 10;
     }
     maxScore += 10;
-    
+
     // Drug efficacy available (20 points)
     if (wiwfm?.drugs?.length > 0 || wiwfm?.status !== 'awaiting_ngs') {
       score += 20;
@@ -246,25 +311,25 @@ const AyeshaTrialExplorer = () => {
       score += 5; // Partial credit for pathway-only
     }
     maxScore += 20;
-    
+
     // SAE features (15 points)
     if (saeFeatures?.dna_repair_capacity !== undefined) {
       score += 15;
     }
     maxScore += 15;
-    
+
     // Resistance playbook (10 points)
     if (resistancePlaybook?.risks?.length > 0) {
       score += 10;
     }
     maxScore += 10;
-    
+
     // Resistance prediction (10 points)
     if (resistancePrediction?.risk_level) {
       score += 10;
     }
     maxScore += 10;
-    
+
     return Math.round((score / maxScore) * 100);
   };
 
@@ -279,10 +344,10 @@ const AyeshaTrialExplorer = () => {
             {AYESHA_11_17_25_PROFILE.patient?.display_name || 'Ayesha'}'s Complete Care Dashboard
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Stage {AYESHA_11_17_25_PROFILE.disease?.stage || 'IVB'} {AYESHA_11_17_25_PROFILE.disease?.histology?.replace(/_/g, ' ') || 'High-Grade Serous Carcinoma'} ({AYESHA_11_17_25_PROFILE.disease?.primary_site || 'Mullerian origin'}) • 
-            {AYESHA_11_17_25_PROFILE.tumor_context?.biomarkers?.pd_l1_status === 'POSITIVE' 
-              ? ` PD-L1+ (CPS ${AYESHA_11_17_25_PROFILE.tumor_context.biomarkers.pd_l1_cps || 'N/A'})` 
-              : ' PD-L1-'} • 
+            Stage {AYESHA_11_17_25_PROFILE.disease?.stage || 'IVB'} {AYESHA_11_17_25_PROFILE.disease?.histology?.replace(/_/g, ' ') || 'High-Grade Serous Carcinoma'} ({AYESHA_11_17_25_PROFILE.disease?.primary_site || 'Mullerian origin'}) •
+            {AYESHA_11_17_25_PROFILE.tumor_context?.biomarkers?.pd_l1_status === 'POSITIVE'
+              ? ` PD-L1+ (CPS ${AYESHA_11_17_25_PROFILE.tumor_context.biomarkers.pd_l1_cps || 'N/A'})`
+              : ' PD-L1-'} •
             {AYESHA_11_17_25_PROFILE.tumor_context?.biomarkers?.p53_status === 'MUTANT_TYPE' ? ' p53 mutant type' : ''}
           </Typography>
         </Box>
@@ -302,29 +367,29 @@ const AyeshaTrialExplorer = () => {
           Patient Profile ({AYESHA_11_17_25_PROFILE.meta?.last_updated?.split('-').slice(1).join('/') || '11-17-25'})
         </Typography>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-          <Chip 
-            label={`Stage ${AYESHA_11_17_25_PROFILE.disease?.stage || 'IVB'}`} 
-            color="error" 
-            size="small" 
+          <Chip
+            label={`Stage ${AYESHA_11_17_25_PROFILE.disease?.stage || 'IVB'}`}
+            color="error"
+            size="small"
           />
-          <Chip 
-            label={AYESHA_11_17_25_PROFILE.labs?.ca125_value 
-              ? `CA-125: ${AYESHA_11_17_25_PROFILE.labs.ca125_value.toLocaleString()} ${AYESHA_11_17_25_PROFILE.labs.ca125_units || 'U/mL'}` 
-              : "CA-125: not provided"} 
-            variant={AYESHA_11_17_25_PROFILE.labs?.ca125_value ? "filled" : "outlined"} 
-            color={AYESHA_11_17_25_PROFILE.labs?.ca125_value ? "success" : "warning"} 
-            size="small" 
+          <Chip
+            label={AYESHA_11_17_25_PROFILE.labs?.ca125_value
+              ? `CA-125: ${AYESHA_11_17_25_PROFILE.labs.ca125_value.toLocaleString()} ${AYESHA_11_17_25_PROFILE.labs.ca125_units || 'U/mL'}`
+              : "CA-125: not provided"}
+            variant={AYESHA_11_17_25_PROFILE.labs?.ca125_value ? "filled" : "outlined"}
+            color={AYESHA_11_17_25_PROFILE.labs?.ca125_value ? "success" : "warning"}
+            size="small"
           />
-          <Chip 
-            label={`Germline: ${AYESHA_11_17_25_PROFILE.germline_status === 'positive' ? 'Positive (MBD4)' : 'Negative'}`} 
-            color={AYESHA_11_17_25_PROFILE.germline_status === 'positive' ? 'error' : 'default'} 
-            size="small" 
+          <Chip
+            label={`Germline: ${AYESHA_11_17_25_PROFILE.germline_status === 'positive' ? 'Positive (MBD4)' : 'Negative'}`}
+            color={AYESHA_11_17_25_PROFILE.germline_status === 'positive' ? 'error' : 'default'}
+            size="small"
           />
           {AYESHA_11_17_25_PROFILE.tumor_context?.biomarkers?.pd_l1_status === 'POSITIVE' && (
-            <Chip 
-              label={`PD-L1+ (CPS ${AYESHA_11_17_25_PROFILE.tumor_context.biomarkers.pd_l1_cps || 'N/A'})`} 
-              color="success" 
-              size="small" 
+            <Chip
+              label={`PD-L1+ (CPS ${AYESHA_11_17_25_PROFILE.tumor_context.biomarkers.pd_l1_cps || 'N/A'})`}
+              color="success"
+              size="small"
             />
           )}
           {AYESHA_11_17_25_PROFILE.tumor_context?.biomarkers?.p53_status === 'MUTANT_TYPE' && (
@@ -334,9 +399,9 @@ const AyeshaTrialExplorer = () => {
             <Chip label="MMR Preserved" size="small" />
           )}
           {AYESHA_11_17_25_PROFILE.tumor_context?.biomarkers?.er_status && (
-            <Chip 
-              label={`ER ${AYESHA_11_17_25_PROFILE.tumor_context.biomarkers.er_status.replace('_', ' ')}`} 
-              size="small" 
+            <Chip
+              label={`ER ${AYESHA_11_17_25_PROFILE.tumor_context.biomarkers.er_status.replace('_', ' ')}`}
+              size="small"
             />
           )}
           {AYESHA_11_17_25_PROFILE.tumor_context?.biomarkers?.her2_status === 'NEGATIVE' && (
@@ -384,24 +449,29 @@ const AyeshaTrialExplorer = () => {
         <Box>
           {/* NEW: Mechanism Intelligence Section */}
           <Box mb={3}>
-            <Typography 
-              variant="h5" 
-              gutterBottom 
-              sx={{ 
+            <Typography
+              variant="h5"
+              gutterBottom
+              sx={{
                 mb: 2,
                 fontSize: { xs: '1.25rem', sm: '1.5rem' }
               }}
             >
               🧬 Mechanism Intelligence
             </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Identifying active drivers (Left) and functional vulnerabilities (Right).
+            </Typography>
             <Grid container spacing={{ xs: 2, sm: 2 }}>
               <Grid item xs={12} md={6}>
                 <MechanismVectorVisualization
-                  mechanismVector={[0.88, 0.12, 0.15, 0.10, 0.05, 0.2, 0.0]}
+                  mechanismVector={saeFeatures?.mechanism_vector}
+                  provenance={saeFeatures?.provenance}
                   mutations={[
                     ...(AYESHA_11_17_25_PROFILE.germline?.mutations || []),
                     ...(AYESHA_11_17_25_PROFILE.tumor_context?.somatic_mutations || [])
                   ]}
+                  isEstimated={!saeFeatures?.mechanism_vector && !!AYESHA_11_17_25_PROFILE}
                 />
               </Grid>
               <Grid item xs={12} md={6}>
@@ -457,19 +527,39 @@ const AyeshaTrialExplorer = () => {
       {activeTab === 1 && (
         <Box>
           <Typography variant="h5" gutterBottom>
-            Top {trials.length} Clinical Trials
+            Clinical Trials
           </Typography>
           <Typography variant="body2" color="text.secondary" gutterBottom>
             Ranked by match score with transparent reasoning • PD-L1+ and p53 mutant boost IO and DDR trials
           </Typography>
-          
-          {trials.length === 0 ? (
+
+          <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2, flexWrap: 'wrap' }}>
+            <FormControlLabel
+              control={<Switch checked={showAllTrials} onChange={(e) => setShowAllTrials(e.target.checked)} />}
+              label="Show all trials (debug)"
+            />
+            <Chip
+              label={`Showing ${trialsToRender.length} of ${trials.length}`}
+              variant="outlined"
+              size="small"
+            />
+            {!showAllTrials && (
+              <Chip
+                label="Filtered: tagged + fit (holistic ≥ 0.60 AND eligibility ≥ 0.50)"
+                color="success"
+                variant="outlined"
+                size="small"
+              />
+            )}
+          </Stack>
+
+          {trialsToRender.length === 0 ? (
             <Alert severity="info">
               No trials found matching {AYESHA_11_17_25_PROFILE.patient?.display_name || 'Patient'}'s profile. Try adjusting filters or check back later.
             </Alert>
           ) : (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {trials.map((trial, index) => (
+              {trialsToRender.map((trial, index) => (
                 <Box key={trial.nct_id || index}>
                   <TrialMatchCard
                     trial={trial}
@@ -505,14 +595,14 @@ const AyeshaTrialExplorer = () => {
               // Check if patient has treatment history
               const treatmentHistory = AYESHA_11_17_25_PROFILE.treatment_history || [];
               const treatmentLine = AYESHA_11_17_25_PROFILE.inferred_fields?.treatment_line?.value || 0;
-              
+
               // If treatment-naive, show helpful message
               if (treatmentLine === 0 && (!treatmentHistory || treatmentHistory.length === 0)) {
                 return (
                   <Alert severity="info">
                     <Typography variant="body2">
-                      <strong>Treatment-Naive Patient:</strong> Timing features (PFI, PTPI, TFI, PFS, OS, KELIM) 
-                      will be available once treatment begins. These metrics help assess treatment response 
+                      <strong>Treatment-Naive Patient:</strong> Timing features (PFI, PTPI, TFI, PFS, OS, KELIM)
+                      will be available once treatment begins. These metrics help assess treatment response
                       and guide future therapy decisions.
                     </Typography>
                   </Alert>
@@ -724,8 +814,8 @@ const AyeshaTrialExplorer = () => {
                 ) : (
                   <Box>
                     <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                      <Chip 
-                        label={`Risk: ${resistancePrediction.risk_level || 'UNKNOWN'}`} 
+                      <Chip
+                        label={`Risk: ${resistancePrediction.risk_level || 'UNKNOWN'}`}
                         color={resistancePrediction.risk_level === 'HIGH' ? 'error' : resistancePrediction.risk_level === 'MEDIUM' ? 'warning' : 'success'}
                       />
                       {resistancePrediction.probability !== undefined && (
@@ -843,8 +933,8 @@ const AyeshaTrialExplorer = () => {
       {provenance && (
         <Paper sx={{ p: 2, mt: 3, bgcolor: 'grey.100' }}>
           <Typography variant="caption" color="text.secondary">
-            <strong>Run ID:</strong> {provenance.run_id} • 
-            <strong> Components:</strong> {provenance.endpoints_called?.join(', ')} • 
+            <strong>Run ID:</strong> {provenance.run_id} •
+            <strong> Components:</strong> {provenance.endpoints_called?.join(', ')} •
             <strong> NGS Status:</strong> {provenance.ngs_status}
           </Typography>
         </Paper>
@@ -853,7 +943,7 @@ const AyeshaTrialExplorer = () => {
       {/* RUO Disclaimer */}
       <Alert severity="info" sx={{ mt: 3 }}>
         <Typography variant="caption">
-          <strong>Research Use Only (RUO):</strong> This tool is for research purposes only. 
+          <strong>Research Use Only (RUO):</strong> This tool is for research purposes only.
           All trial recommendations should be reviewed by a qualified oncologist before making treatment decisions.
         </Typography>
       </Alert>
@@ -861,5 +951,12 @@ const AyeshaTrialExplorer = () => {
   );
 };
 
-export default AyeshaTrialExplorer;
+const AyeshaTrialExplorerWrapped = () => (
+  <QueryClientProvider client={queryClient}>
+    <AyeshaTrialExplorer />
+  </QueryClientProvider>
+);
+
+export default AyeshaTrialExplorerWrapped;
+
 

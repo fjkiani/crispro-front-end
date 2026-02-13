@@ -2,9 +2,11 @@
  * HolisticScoreCard Component
  * 
  * Displays holistic feasibility score breakdown for a trial.
- * Shows: Mechanism Fit (50%) + Eligibility (30%) + PGx Safety (20%)
+ * Shows: Mechanism Fit + Eligibility + PGx Safety (+ Resistance Risk when available)
  * 
- * Formula: Holistic Score = (0.5 × Mechanism Fit) + (0.3 × Eligibility) + (0.2 × PGx Safety)
+ * NOTE: The backend HolisticScoreService supports 4-component scoring. This UI renders
+ * weights dynamically when `trial.holistic_weights` is present, otherwise falls back
+ * to the legacy 3-component display for backward compatibility.
  */
 
 import React from 'react';
@@ -33,10 +35,30 @@ export default function HolisticScoreCard({ trial }) {
     mechanism_fit_score,
     eligibility_score,
     pgx_safety_score,
+    resistance_risk_score,
     holistic_interpretation,
     holistic_recommendation,
     holistic_caveats = [],
+    holistic_weights,
   } = trial;
+
+  // Normalize backend weight keys to UI-friendly keys.
+  // Backend may return:
+  // - { mechanism_fit, eligibility, pgx_safety, resistance_risk }
+  // plus aliases: { mechanism, pgx, resistance }
+  const weightsRaw = (holistic_weights && typeof holistic_weights === 'object')
+    ? holistic_weights
+    : null;
+
+  const weights = {
+    mechanism: weightsRaw?.mechanism ?? weightsRaw?.mechanism_fit ?? 0.5,
+    eligibility: weightsRaw?.eligibility ?? 0.3,
+    pgx: weightsRaw?.pgx ?? weightsRaw?.pgx_safety ?? 0.2,
+    resistance: weightsRaw?.resistance ?? weightsRaw?.resistance_risk ?? 0,
+  };
+
+  const hasResistance = typeof resistance_risk_score === 'number' && Number.isFinite(resistance_risk_score);
+  const resistanceWeight = typeof weights.resistance === 'number' ? weights.resistance : 0;
 
   const getInterpretationColor = (interpretation) => {
     if (interpretation === 'HIGH') return 'success';
@@ -93,12 +115,12 @@ export default function HolisticScoreCard({ trial }) {
 
       {/* Breakdown */}
       <Stack spacing={1.5} sx={{ mb: 2 }}>
-        {/* Mechanism Fit (50%) */}
+        {/* Mechanism Fit */}
         {mechanism_fit_score !== undefined && (
           <Box>
             <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
               <Typography variant="caption" color="text.secondary">
-                Mechanism Fit (50% weight)
+                Mechanism Fit ({Math.round(weights.mechanism * 100)}% weight)
               </Typography>
               <Typography variant="caption" fontWeight={600}>
                 {(mechanism_fit_score * 100).toFixed(1)}%
@@ -113,12 +135,12 @@ export default function HolisticScoreCard({ trial }) {
           </Box>
         )}
 
-        {/* Eligibility (30%) */}
+        {/* Eligibility */}
         {eligibility_score !== undefined && (
           <Box>
             <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
               <Typography variant="caption" color="text.secondary">
-                Eligibility (30% weight)
+                Eligibility ({Math.round(weights.eligibility * 100)}% weight)
               </Typography>
               <Typography variant="caption" fontWeight={600}>
                 {(eligibility_score * 100).toFixed(1)}%
@@ -133,12 +155,12 @@ export default function HolisticScoreCard({ trial }) {
           </Box>
         )}
 
-        {/* PGx Safety (20%) */}
+        {/* PGx Safety */}
         {pgx_safety_score !== undefined && (
           <Box>
             <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
               <Typography variant="caption" color="text.secondary">
-                PGx Safety (20% weight)
+                PGx Safety ({Math.round(weights.pgx * 100)}% weight)
               </Typography>
               <Typography variant="caption" fontWeight={600}>
                 {(pgx_safety_score * 100).toFixed(1)}%
@@ -148,6 +170,26 @@ export default function HolisticScoreCard({ trial }) {
               variant="determinate"
               value={pgx_safety_score * 100}
               color={pgx_safety_score >= 0.8 ? 'success' : pgx_safety_score >= 0.5 ? 'warning' : 'error'}
+              sx={{ height: 6, borderRadius: 1 }}
+            />
+          </Box>
+        )}
+
+        {/* Resistance Risk (optional; only when backend provided it) */}
+        {hasResistance && resistanceWeight > 0 && (
+          <Box>
+            <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
+              <Typography variant="caption" color="text.secondary">
+                Resistance Risk ({Math.round(resistanceWeight * 100)}% weight)
+              </Typography>
+              <Typography variant="caption" fontWeight={600}>
+                {(resistance_risk_score * 100).toFixed(1)}%
+              </Typography>
+            </Stack>
+            <LinearProgress
+              variant="determinate"
+              value={resistance_risk_score * 100}
+              color={getScoreColor(resistance_risk_score)}
               sx={{ height: 6, borderRadius: 1 }}
             />
           </Box>
@@ -184,7 +226,8 @@ export default function HolisticScoreCard({ trial }) {
       {/* Formula note */}
       <Box sx={{ mt: 2, pt: 1, borderTop: `1px solid ${alpha('#667eea', 0.1)}` }}>
         <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-          Score = (0.5 × Mechanism Fit) + (0.3 × Eligibility) + (0.2 × PGx Safety)
+          Score = ({weights.mechanism} × Mechanism) + ({weights.eligibility} × Eligibility) + ({weights.pgx} × PGx)
+          {hasResistance && resistanceWeight > 0 ? ` + (${resistanceWeight} × Resistance)` : ''}
         </Typography>
       </Box>
 

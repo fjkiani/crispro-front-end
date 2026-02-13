@@ -21,7 +21,7 @@ import {
   MapPinIcon,
 } from '@heroicons/react/24/solid';
 import HolisticScoreCard from './HolisticScoreCard';
-import TrialHolisticScoreCard from '../holistic/TrialHolisticScoreCard';
+import { InformationCircleIcon } from '@heroicons/react/24/solid';
 
 const TrialMatchCard = ({ trial, rank }) => {
   const [expanded, setExpanded] = useState(false);
@@ -41,13 +41,29 @@ const TrialMatchCard = ({ trial, rank }) => {
     total_score, // Backend might use 'total_score'
     reasoning,
     source_url,
+    holistic_score,
+    mechanism_fit_score,
+    eligibility_score,
+    pgx_safety_score,
+    holistic_interpretation,
+    holistic_caveats,
+    llm_assessment,
+    is_tagged,
+    moa_source,
+    moa_confidence,
+    keyword_matches,
   } = trial;
 
   // Normalize phase - use 'phase' if available, otherwise 'phases'
   const normalizedPhase = phase || phases || 'Unknown Phase';
 
-  // Normalize match_score - use match_score if available, otherwise score or total_score
-  const normalizedMatchScore = match_score ?? score ?? total_score ?? 0;
+  // Normalize "match score" for display.
+  // Prefer backend holistic_score (already composite), otherwise fall back to match_score/score.
+  const rawDisplayScore = (typeof holistic_score === 'number' ? holistic_score : (match_score ?? score ?? total_score ?? 0));
+  const normalizedMatchScore =
+    (typeof rawDisplayScore === 'number' && rawDisplayScore > 1)
+      ? rawDisplayScore / 100
+      : rawDisplayScore;
 
   // Normalize interventions - handle both array of strings and array of objects
   const interventions = Array.isArray(interventionsRaw)
@@ -66,6 +82,7 @@ const TrialMatchCard = ({ trial, rank }) => {
 
   const reasoningObj = typeof reasoning === 'object' && reasoning !== null ? reasoning : null;
   const reasoningText = typeof reasoning === 'string' ? reasoning : null;
+  const assessmentObj = typeof llm_assessment === 'object' && llm_assessment !== null ? llm_assessment : null;
 
   return (
     <Card sx={{ mb: 2, border: '1px solid', borderColor: 'grey.300' }}>
@@ -128,45 +145,80 @@ const TrialMatchCard = ({ trial, rank }) => {
           </Box>
         )}
 
-        {/* Eligibility Checklist */}
-        {reasoningObj && (
+        {/* Tagging / MoA (why it is tagged) */}
+        {(is_tagged || moa_source || typeof moa_confidence === 'number' || (keyword_matches && Object.keys(keyword_matches).length > 0)) && (
+          <Box mb={2}>
+            <Typography variant="subtitle2" gutterBottom>
+              Tagging
+            </Typography>
+            <Box display="flex" gap={1} flexWrap="wrap">
+              {is_tagged ? (
+                <Chip size="small" color="success" variant="outlined" label="Tagged (MoA vector available)" />
+              ) : (
+                <Chip size="small" variant="outlined" label="Not tagged" />
+              )}
+              {moa_source ? (
+                <Chip size="small" variant="outlined" label={`MoA source: ${moa_source}`} />
+              ) : null}
+              {typeof moa_confidence === 'number' ? (
+                <Chip size="small" variant="outlined" label={`MoA confidence: ${Math.round(moa_confidence * 100)}%`} />
+              ) : null}
+              {keyword_matches && Object.keys(keyword_matches).length > 0 ? (
+                Object.keys(keyword_matches).slice(0, 6).map((k) => (
+                  <Chip key={k} size="small" color="info" variant="outlined" label={k} />
+                ))
+              ) : null}
+            </Box>
+          </Box>
+        )}
+
+        {/* Eligibility Checklist (prefer deterministic llm_assessment contract when present) */}
+        {(assessmentObj || reasoningObj) && (
           <Box mb={2}>
             <Typography variant="subtitle2" gutterBottom>
               Eligibility Checklist
             </Typography>
             <Box display="flex" gap={1} flexWrap="wrap">
               <Chip
-                icon={<CheckCircleIcon className="h-4 w-4" />}
-                label={`Hard: ✅ ${reasoningObj.why_eligible?.length || 0} met`}
+                icon={<CheckCircleIcon style={{ width: 16, height: 16 }} />}
+                label={`Hard: ✅ ${assessmentObj ? (assessmentObj.met_criteria?.length || 0) : (reasoningObj?.why_eligible?.length || 0)} met`}
                 size="small"
                 color="success"
                 variant="outlined"
               />
               <Chip
-                icon={<CheckCircleIcon className="h-4 w-4" />}
-                label={`Soft: ${reasoningObj.why_good_fit?.length || 0} boosts`}
+                icon={<CheckCircleIcon style={{ width: 16, height: 16 }} />}
+                label={`Soft: ${assessmentObj ? (assessmentObj.unclear_criteria?.length || 0) : (reasoningObj?.why_good_fit?.length || 0)} boosts`}
                 size="small"
                 color="info"
                 variant="outlined"
               />
-              {reasoningObj.conditional_requirements?.length > 0 && (
+              {reasoningObj?.conditional_requirements?.length > 0 && (
                 <Chip
-                  icon={<ExclamationTriangleIcon className="h-4 w-4" />}
+                  icon={<ExclamationTriangleIcon style={{ width: 16, height: 16 }} />}
                   label={`Conditional: ${reasoningObj.conditional_requirements.length}`}
                   size="small"
                   color="warning"
                   variant="outlined"
                 />
               )}
-              {reasoningObj.red_flags?.length > 0 && (
+              {reasoningObj?.red_flags?.length > 0 && (
                 <Chip
-                  icon={<XCircleIcon className="h-4 w-4" />}
+                  icon={<XCircleIcon style={{ width: 16, height: 16 }} />}
                   label={`Red Flags: ${reasoningObj.red_flags.length}`}
                   size="small"
                   color="error"
                   variant="outlined"
                 />
               )}
+              {assessmentObj?.eligibility_status ? (
+                <Chip
+                  size="small"
+                  variant="outlined"
+                  icon={<InformationCircleIcon style={{ width: 16, height: 16 }} />}
+                  label={assessmentObj.eligibility_status}
+                />
+              ) : null}
             </Box>
           </Box>
         )}
@@ -174,7 +226,7 @@ const TrialMatchCard = ({ trial, rank }) => {
         {/* Reasoning Sections (Expandable) */}
         {reasoningObj && (
           <Accordion expanded={expanded} onChange={() => setExpanded(!expanded)}>
-            <AccordionSummary expandIcon={<ChevronDownIcon className="h-5 w-5" />}>
+            <AccordionSummary expandIcon={<ChevronDownIcon style={{ width: 20, height: 20 }} />}>
               <Typography variant="subtitle2">
                 Match Reasoning {expanded ? '(Hide)' : '(Show Details)'}
               </Typography>
@@ -259,8 +311,8 @@ const TrialMatchCard = ({ trial, rank }) => {
                     reasoningObj.enrollment_likelihood === 'HIGH'
                       ? 'success'
                       : reasoningObj.enrollment_likelihood === 'MEDIUM'
-                      ? 'warning'
-                      : 'default'
+                        ? 'warning'
+                        : 'default'
                   }
                 />
               </Box>
@@ -275,23 +327,21 @@ const TrialMatchCard = ({ trial, rank }) => {
           </Alert>
         )}
 
-        {/* Holistic Score Card (Legacy - if trial has holistic_score field) */}
+        {/* Holistic Score Card (backend-computed) */}
         {trial.holistic_score !== undefined && (
           <HolisticScoreCard trial={trial} />
         )}
-
-        {/* New Holistic Clinical Benefit Score (D/P/M/T/S) */}
-        <TrialHolisticScoreCard
-          trial={trial}
-          useCase="trial_enrollment"
-          showDetails={expanded}
-        />
+        {trial.holistic_score === undefined && (
+          <Alert severity="info" sx={{ mt: 2 }}>
+            Holistic score not attached in this response.
+          </Alert>
+        )}
 
         {/* Locations */}
         {locations && locations.length > 0 && (
           <Box mt={2}>
             <Typography variant="subtitle2" gutterBottom>
-              <MapPinIcon className="h-4 w-4 inline mr-1" />
+              <MapPinIcon style={{ width: 16, height: 16, display: 'inline', marginRight: 4, verticalAlign: 'text-bottom' }} />
               Locations
             </Typography>
             <Box display="flex" gap={1} flexWrap="wrap">

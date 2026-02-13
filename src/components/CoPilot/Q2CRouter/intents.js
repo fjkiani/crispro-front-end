@@ -20,6 +20,19 @@ export const Q2C_INTENTS = {
     description: 'Find matching clinical trials',
     confidence: 'high'
   },
+  ocr_analysis: {
+    patterns: [
+      /analyze.*(report|text|note)/i,
+      /extract.*(data|clinical)/i,
+      /read.*(this|report)/i,
+      /parse.*(report|text)/i,
+      /upload.*(report|file)/i,
+      /copy.*paste/i
+    ],
+    endpoint: '/api/copilot/analyze_report',
+    description: 'Analyze clinical text/report',
+    confidence: 'high'
+  },
   chemo_guidance: {
     patterns: [
       /chemotherapy/i,
@@ -209,6 +222,13 @@ export const generatePayload = (intent, context) => {
         variant_info: variant?.variant_info
       };
 
+    case 'ocr_analysis':
+      return {
+        ...basePayload,
+        text: context.text || question, // Expect text to be in context if uploaded, or uses question if pasted
+        context: page || 'onboarding'
+      };
+
     case 'drug_efficacy':
       // ⚔️ TREATMENT LINE INTEGRATION - Include treatment history in efficacy payload
       return {
@@ -304,37 +324,37 @@ export const generatePayload = (intent, context) => {
         use_llm: true
       };
 
-  case 'trials':
-  return {
-    ...basePayload,
-    patient_summary: generatePatientSummary(context),
-    disease: disease,
-    biomarkers: context.biomarkers || {},
-    location: context.location || null,
-    germline_status: context.germlineStatus,  // ⚔️ NEW: Sporadic filtering
-    tumor_context: context.tumorContext        // ⚔️ NEW: Biomarker boost
-  };
+    case 'trials':
+      return {
+        ...basePayload,
+        patient_summary: generatePatientSummary(context),
+        disease: disease,
+        biomarkers: context.biomarkers || {},
+        location: context.location || null,
+        germline_status: context.germlineStatus,  // ⚔️ NEW: Sporadic filtering
+        tumor_context: context.tumorContext        // ⚔️ NEW: Biomarker boost
+      };
 
-  case 'complete_care':
-  return {
-    ...basePayload,
-    patient_context: {
-      disease: disease,
-      mutations: variant ? [{
-        gene: variant.gene,
-        hgvs_p: variant.hgvs_p,
-        chrom: variant.chrom,
-        pos: variant.pos,
-        ref: variant.ref,
-        alt: variant.alt,
-        build: variant.build
-      }] : [],
-      biomarkers: context.biomarkers || {},
-      treatment_history: treatmentHistory || {},
-      germline_status: context.germlineStatus,  // ⚔️ NEW: Sporadic cancer support
-      tumor_context: context.tumorContext        // ⚔️ NEW: Sporadic cancer support
-    }
-  };
+    case 'complete_care':
+      return {
+        ...basePayload,
+        patient_context: {
+          disease: disease,
+          mutations: variant ? [{
+            gene: variant.gene,
+            hgvs_p: variant.hgvs_p,
+            chrom: variant.chrom,
+            pos: variant.pos,
+            ref: variant.ref,
+            alt: variant.alt,
+            build: variant.build
+          }] : [],
+          biomarkers: context.biomarkers || {},
+          treatment_history: treatmentHistory || {},
+          germline_status: context.germlineStatus,  // ⚔️ NEW: Sporadic cancer support
+          tumor_context: context.tumorContext        // ⚔️ NEW: Sporadic cancer support
+        }
+      };
 
     case 'synthetic_lethality':
       return {
@@ -416,26 +436,26 @@ export const extractCompound = (question) => {
 // ⚔️ NEW HELPER - Generate patient summary for trials agent
 export const generatePatientSummary = (context) => {
   const { variant, disease, biomarkers, treatmentHistory } = context;
-  
+
   let summary = [];
-  
+
   // Add demographics if available
   if (context.age) summary.push(`${context.age}yo`);
   if (context.sex) summary.push(context.sex);
-  
+
   // Add disease
   if (disease) summary.push(disease);
-  
+
   // Add key variant
   if (variant?.gene && variant?.hgvs_p) {
     summary.push(`${variant.gene} ${variant.hgvs_p}`);
   }
-  
+
   // Add biomarkers
   if (biomarkers?.HRD) summary.push(`HRD${biomarkers.HRD === 'POSITIVE' ? '+' : '-'}`);
   if (biomarkers?.TMB) summary.push(`TMB ${biomarkers.TMB}`);
   if (biomarkers?.TP53) summary.push(`TP53 ${biomarkers.TP53}`);
-  
+
   // Add treatment history
   if (treatmentHistory?.current_line) {
     summary.push(`Line ${treatmentHistory.current_line}`);
@@ -443,7 +463,7 @@ export const generatePatientSummary = (context) => {
   if (treatmentHistory?.prior_therapies && treatmentHistory.prior_therapies.length > 0) {
     summary.push(`post-${treatmentHistory.prior_therapies.join(', ')}`);
   }
-  
+
   return summary.join(', ') || 'Patient with unspecified condition';
 };
 

@@ -29,8 +29,23 @@ export const AgentProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const [alerts, setAlerts] = useState([]);
   const [unreadAlertsCount, setUnreadAlertsCount] = useState(0);
+  const [pollingEnabled, setPollingEnabled] = useState(true);
 
   const API_BASE = import.meta.env.VITE_API_ROOT || 'http://127.0.0.1:8000';
+
+  // Helper to get auth token
+  const _getAuthToken = () => {
+    try {
+      const sessionStr = localStorage.getItem('mock_auth_session');
+      if (sessionStr) {
+        const session = JSON.parse(sessionStr);
+        return session.access_token;
+      }
+    } catch (e) {
+      console.warn('Failed to parse auth session', e);
+    }
+    return localStorage.getItem('supabase_auth_token'); // Fallback
+  };
 
   // Fetch all agents for current user
   const fetchAgents = useCallback(async () => {
@@ -43,19 +58,46 @@ export const AgentProvider = ({ children }) => {
     setError(null);
 
     try {
-      const token = localStorage.getItem('supabase_auth_token');
+      const sessionStr = localStorage.getItem('mock_auth_session');
+      let token = null;
+      if (sessionStr) {
+        try {
+          const session = JSON.parse(sessionStr);
+          token = session.access_token;
+        } catch (e) {
+          console.warn('Failed to parse auth session', e);
+        }
+      }
+
+      // Try fallback if mock session token is missing
+      if (!token) {
+        token = localStorage.getItem('supabase_auth_token');
+      }
+
+      if (!token) {
+        // Silent return to avoid 401 spam
+        setAgents([]);
+        setLoading(false);
+        return;
+      }
+
       const headers = {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
       };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
 
       const response = await fetch(`${API_BASE}/api/agents`, {
         headers,
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          console.warn('AgentContext: 401 Unauthorized - stopping polling');
+          // Start fresh
+          setAgents([]);
+          setPollingEnabled(false);
+          return;
+        }
         throw new Error(`Failed to fetch agents: ${response.statusText}`);
       }
 
@@ -78,19 +120,28 @@ export const AgentProvider = ({ children }) => {
     }
 
     try {
-      const token = localStorage.getItem('supabase_auth_token');
+      const token = _getAuthToken();
+
+      if (!token) {
+        setAlerts([]);
+        setUnreadAlertsCount(0);
+        return;
+      }
+
       const headers = {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
       };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
 
       const response = await fetch(`${API_BASE}/api/agents/alerts?unread_only=true&limit=50`, {
         headers,
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          setPollingEnabled(false);
+          return;
+        }
         throw new Error(`Failed to fetch alerts: ${response.statusText}`);
       }
 
@@ -112,7 +163,7 @@ export const AgentProvider = ({ children }) => {
     setError(null);
 
     try {
-      const token = localStorage.getItem('supabase_auth_token');
+      const token = _getAuthToken();
       const headers = {
         'Content-Type': 'application/json',
       };
@@ -153,7 +204,7 @@ export const AgentProvider = ({ children }) => {
     setError(null);
 
     try {
-      const token = localStorage.getItem('supabase_auth_token');
+      const token = _getAuthToken();
       const headers = {
         'Content-Type': 'application/json',
       };
@@ -194,7 +245,7 @@ export const AgentProvider = ({ children }) => {
     setError(null);
 
     try {
-      const token = localStorage.getItem('supabase_auth_token');
+      const token = _getAuthToken();
       const headers = {
         'Content-Type': 'application/json',
       };
@@ -229,7 +280,17 @@ export const AgentProvider = ({ children }) => {
 
   // Resume agent
   const resumeAgent = async (agentId) => {
-    const token = localStorage.getItem('supabase_auth_token');
+    const sessionStr = localStorage.getItem('mock_auth_session');
+    let token = null;
+    if (sessionStr) {
+      try {
+        const session = JSON.parse(sessionStr);
+        token = session.access_token;
+      } catch (e) {
+        console.warn('Failed to parse auth session', e);
+      }
+    }
+
     const headers = {
       'Content-Type': 'application/json',
     };
@@ -261,7 +322,7 @@ export const AgentProvider = ({ children }) => {
     setError(null);
 
     try {
-      const token = localStorage.getItem('supabase_auth_token');
+      const token = _getAuthToken();
       const headers = {
         'Content-Type': 'application/json',
       };
@@ -280,13 +341,13 @@ export const AgentProvider = ({ children }) => {
       }
 
       const result = await response.json();
-      
+
       // Refresh agents to get updated last_run_at
       await fetchAgents();
-      
+
       // Refresh alerts (new results may have generated alerts)
       await fetchAlerts();
-      
+
       return result;
     } catch (err) {
       console.error('Error running agent:', err);
@@ -304,7 +365,7 @@ export const AgentProvider = ({ children }) => {
     }
 
     try {
-      const token = localStorage.getItem('supabase_auth_token');
+      const token = _getAuthToken();
       const headers = {
         'Content-Type': 'application/json',
       };
@@ -336,7 +397,7 @@ export const AgentProvider = ({ children }) => {
     }
 
     try {
-      const token = localStorage.getItem('supabase_auth_token');
+      const token = _getAuthToken();
       const headers = {
         'Content-Type': 'application/json',
       };
@@ -367,7 +428,7 @@ export const AgentProvider = ({ children }) => {
     }
 
     try {
-      const token = localStorage.getItem('supabase_auth_token');
+      const token = _getAuthToken();
       const headers = {
         'Content-Type': 'application/json',
       };
@@ -402,7 +463,7 @@ export const AgentProvider = ({ children }) => {
 
   // Poll for updates every 30 seconds
   useEffect(() => {
-    if (!user) return;
+    if (!user || !pollingEnabled) return;
 
     const interval = setInterval(() => {
       fetchAgents();
@@ -410,7 +471,7 @@ export const AgentProvider = ({ children }) => {
     }, 30000); // 30 seconds
 
     return () => clearInterval(interval);
-  }, [user, fetchAgents, fetchAlerts]);
+  }, [user, fetchAgents, fetchAlerts, pollingEnabled]);
 
   const value = {
     agents,

@@ -25,6 +25,39 @@ export const AYESHA_11_17_25_PROFILE = {
   patient: {
     patient_id: "AK",
     display_name: "AK",
+    // Treatment history (added to match dashboard "source-of-truth" profile expectations)
+    // Note: These entries should be updated only when explicitly supported by records.
+    treatment_history: [
+      {
+        drug: "Carboplatin + Bevacizumab",
+        date: "2025-11-25",
+        type: "Systemic",
+        outcome: "Completed",
+        regimen_details: "Cycle 1: Carboplatin AUC 5 + Bevacizumab 15mg/kg",
+      },
+      {
+        drug: "Carboplatin + Bevacizumab",
+        date: "2025-12-16",
+        type: "Systemic",
+        outcome: "Completed",
+        regimen_details: "Cycle 2: Carboplatin AUC 5 + Bevacizumab 15mg/kg",
+      },
+      {
+        drug: "Carboplatin + Bevacizumab",
+        date: "2026-01-06",
+        type: "Systemic",
+        outcome: "Completed",
+        regimen_details: "Cycle 3: Carboplatin AUC 5 + Bevacizumab 15mg/kg",
+      },
+      {
+        drug: "Carboplatin",
+        date: "2026-01-27",
+        type: "Systemic",
+        outcome: "Completed - Avastin held",
+        regimen_details:
+          "Cycle 4: Carboplatin AUC 5 only (Bevacizumab held due to proteinuria)",
+      },
+    ],
     demographics: {
       sex: "F", // From genetic test report (11/24/2025)
       age: 40, // From genetic test report (DOB 6/25/1985, Age 40 as of 11/24/2025)
@@ -80,7 +113,18 @@ export const AYESHA_11_17_25_PROFILE = {
       {
         gene: "TP53",
         variant: null,
-        evidence: "IHC: p53 positive, favor mutant type (from surgical pathology GP25-3371)",
+        // RUO: p53 IHC "mutant pattern" proxy — we carry a canonical hotspot form + GRCh38
+        // so sequence engines can run without asking the clinician to hand-enter coords.
+        hgvs_p: "p.R175H",
+        hgvs_c: "c.524G>A",
+        chrom: "17",
+        pos: 7577120,
+        ref: "G",
+        alt: "A",
+        build: "GRCh38",
+        consequence: "missense_variant",
+        source: "IHC_proxy_hotspot",
+        evidence: "IHC: p53 positive, favor mutant type (from surgical pathology GP25-3371) — hotspot proxy p.R175H (RUO)",
         provenance: { source_file: "Pathology Report GP25-3371", inferred: true },
       },
     ],
@@ -145,6 +189,18 @@ export const AYESHA_11_17_25_PROFILE = {
         gene: "MBD4",
         variant: "c.1293delA",
         protein_change: "p.K431Nfs*54",
+        // IMPORTANT (Manager-aligned): do NOT store ad-hoc indel allele encodings (e.g. alt="") in the
+        // patient profile. That is not standard VCF and may be mishandled end-to-end.
+        //
+        // We *do* have a receipt-backed GRCh38 locus candidate, but until we implement a proper HGVS→VCF
+        // allele resolution step (left-padding, transcript mapping, ref validation), this remains
+        // "unscorable-by-sequence-engines" and must be explicitly excluded (with reason) rather than coerced.
+        //
+        // Coordinate receipt (Ensembl REST, GRCh38 single-base query):
+        // - chr3:129149435 base == "A" ✅ consistent with delA
+        // - chr3:129430456 base == "G" ❌ inconsistent with delA
+        build: "GRCh38",
+        consequence: "frameshift_variant",
         zygosity: "homozygous",
         classification: "pathogenic",
         inheritance: "autosomal_recessive",
@@ -155,6 +211,13 @@ export const AYESHA_11_17_25_PROFILE = {
         gene: "PDGFRA",
         variant: "c.2263T>C",
         protein_change: "p.S755P",
+        // Receipt-backed GRCh38 normalization from MOAT dossier: PDGFRA p.S755P → chr4:54280422 T>C
+        chrom: "4",
+        pos: 54280422,
+        ref: "T",
+        alt: "C",
+        build: "GRCh38",
+        consequence: "missense_variant",
         zygosity: "heterozygous",
         classification: "VUS",
         inheritance: "unknown",

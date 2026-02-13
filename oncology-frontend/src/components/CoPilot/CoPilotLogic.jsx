@@ -3,6 +3,7 @@ import { Q2C_ROUTER } from './Q2CRouter';
 import { processEvidenceData } from './utils';
 import { useCoPilot } from './context';
 import { useSporadic } from '../../context/SporadicContext'; // ⚔️ NEW: Sporadic Cancer Integration
+import { usePatient } from '../../context/PatientContext'; // ⚔️ Phase 9: Real Patient Data
 import { CoPilotUtils } from './utils/CoPilotUtils';
 
 /**
@@ -38,9 +39,13 @@ export const useCoPilotLogic = () => {
     // ⚔️ TREATMENT LINE INTEGRATION - Get treatment history from context
     treatmentHistory
   } = useCoPilot();
-  
+
   // ⚔️ SPORADIC CANCER INTEGRATION - Get sporadic context
   const { germlineStatus, tumorContext } = useSporadic();
+
+  // ⚔️ Phase 9: REAL PATIENT CONTEXT
+  const { currentPatient, patientProfile, setPatientProfile } = usePatient();
+  const activePatient = currentPatient || patientProfile;
 
   // API Root configuration
   const API_ROOT = import.meta.env.VITE_API_ROOT || '';
@@ -122,7 +127,8 @@ export const useCoPilotLogic = () => {
         analysisResults: null,
         treatmentHistory: treatmentHistory,  // ⚔️ Treatment line support
         germlineStatus: germlineStatus,      // ⚔️ NEW: Sporadic cancer support
-        tumorContext: tumorContext           // ⚔️ NEW: Sporadic cancer support
+        tumorContext: tumorContext,          // ⚔️ NEW: Sporadic cancer support
+        patientProfile: activePatient        // ⚔️ Phase 9: Real Patient Context
       };
 
       let payload, endpoint, suggestedActions;
@@ -239,7 +245,7 @@ export const useCoPilotLogic = () => {
         backend_badges: data.drugs?.[0]?.badges || data.badges || [],
         evidence_tier: data.drugs?.[0]?.evidence_tier || data.evidence_tier,
         top_citations: data.drugs?.[0]?.evidence_manifest?.citations?.slice(0, 3) ||
-                      data.evidence_manifest?.citations?.slice(0, 3) || [],
+          data.evidence_manifest?.citations?.slice(0, 3) || [],
 
         // Q2C Router data (Phase 1)
         intent: intent?.intent,
@@ -280,6 +286,61 @@ export const useCoPilotLogic = () => {
   // Handle suggestion click
   const handleSuggestionClick = (suggestion) => {
     handleSendMessage(suggestion);
+  };
+
+
+
+
+  // ⚔️ Phase 9: File Upload & OCR Analysis
+  const handleFileUpload = async (file) => {
+    if (!file) return;
+
+    const userMessage = {
+      id: Date.now(),
+      type: 'user',
+      content: `📄 Uploaded: ${file.name}`,
+      timestamp: new Date(),
+      isFileUpload: true
+    };
+    setMessages(prev => [...prev, userMessage]);
+    setIsTyping(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('context', 'onboarding');
+
+      const response = await fetch(`${API_ROOT}/api/copilot/analyze_file`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error('Failed to analyze file');
+
+      const data = await response.json();
+
+      const botMessage = {
+        id: Date.now() + 1,
+        type: 'bot',
+        content: `I've analyzed **${file.name}**. \n\n${data.reasoning}\n\nWould you like to update the patient profile with these findings?`,
+        timestamp: new Date(),
+        isConfirmationRequest: true,
+        confirmationData: data.profile_update,
+        suggested_actions: data.suggested_actions
+      };
+
+      setMessages(prev => [...prev, botMessage]);
+    } catch (error) {
+      console.error("OCR Error:", error);
+      setMessages(prev => [...prev, {
+        id: Date.now() + 1,
+        type: 'bot',
+        content: "❌ I couldn't read that file. Please make sure it's a clear PDF or Image.",
+        isError: true
+      }]);
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   // Phase 3: Quick Action Handlers - Real API Integration
@@ -326,6 +387,12 @@ export const useCoPilotLogic = () => {
       }
 
       const actionResult = await response.json();
+
+      // ⚔️ Phase 9: Auto-update Patient Context if action returns a profile
+      if (actionResult.success && actionResult.profile && setPatientProfile) {
+        console.log("🔄 Updating Patient Context from CoPilot Action");
+        setPatientProfile(prev => ({ ...prev, ...actionResult.profile }));
+      }
 
       // Create result message
       const resultMessage = {
@@ -400,10 +467,10 @@ export const useCoPilotLogic = () => {
         return `📋 **Evidence Bundle Generated**\n\n${result.bundle_summary || 'Comprehensive evidence bundle created.'}`;
 
       case '/api/guidance/radonc':
-        return `☢️ **Radiation Guidance**\n\nTier: ${result.tier || '—'}${result.on_label ? ' (On‑label)' : ''}\nRadiosensitivity: ${typeof result.radiosensitivity_score === 'number' ? result.radiosensitivity_score.toFixed(2) : '—'}\nConfidence: ${typeof result.confidence === 'number' ? result.confidence.toFixed(2) : '—'}\nStrength: ${result.strength || '—'}\nCitations: ${(result.citations || []).slice(0,3).join(', ')}`;
+        return `☢️ **Radiation Guidance**\n\nTier: ${result.tier || '—'}${result.on_label ? ' (On‑label)' : ''}\nRadiosensitivity: ${typeof result.radiosensitivity_score === 'number' ? result.radiosensitivity_score.toFixed(2) : '—'}\nConfidence: ${typeof result.confidence === 'number' ? result.confidence.toFixed(2) : '—'}\nStrength: ${result.strength || '—'}\nCitations: ${(result.citations || []).slice(0, 3).join(', ')}`;
 
       case '/api/guidance/chemo':
-        return `💊 **Chemo Guidance**\n\nTherapy: ${result.therapy || '—'}${result.on_label ? ' (On‑label)' : ''}\nTier: ${result.tier || '—'}\nEfficacy: ${typeof result.efficacy_score === 'number' ? result.efficacy_score.toFixed(2) : '—'}\nConfidence: ${typeof result.confidence === 'number' ? result.confidence.toFixed(2) : '—'}\nStrength: ${result.strength || '—'}\nCitations: ${(result.citations || []).slice(0,3).join(', ')}`;
+        return `💊 **Chemo Guidance**\n\nTherapy: ${result.therapy || '—'}${result.on_label ? ' (On‑label)' : ''}\nTier: ${result.tier || '—'}\nEfficacy: ${typeof result.efficacy_score === 'number' ? result.efficacy_score.toFixed(2) : '—'}\nConfidence: ${typeof result.confidence === 'number' ? result.confidence.toFixed(2) : '—'}\nStrength: ${result.strength || '—'}\nCitations: ${(result.citations || []).slice(0, 3).join(', ')}`;
 
       case '/api/design/guide_rna':
         return `🎯 **Guide RNA Design**\n\n${result.design_summary || 'CRISPR guide RNA design completed.'}`;
@@ -426,7 +493,9 @@ export const useCoPilotLogic = () => {
     getContextSuggestions,
 
     // Utils
-    scrollToBottom
+    scrollToBottom,
+
+    // Phase 9 Exports
+    handleFileUpload
   };
 };
-

@@ -14,7 +14,7 @@ import {
   Paper,
   Chip,
 } from '@mui/material';
-import { ArrowBack as ArrowBackIcon, Download as DownloadIcon } from '@mui/icons-material';
+import { ArrowBack as ArrowBackIcon, Download as DownloadIcon, Email as EmailIcon } from '@mui/icons-material';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -39,14 +39,14 @@ const UniversalDossierDetail = () => {
 
     try {
       const response = await fetch(`${API_ROOT}/api/dossiers/intelligence/${patientId}/${nct_id}`);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
       setDossier(data);
-      
+
     } catch (err) {
       setError(err.message);
       console.error('Failed to load dossier:', err);
@@ -57,7 +57,7 @@ const UniversalDossierDetail = () => {
 
   const handleExport = () => {
     if (!dossier) return;
-    
+
     const blob = new Blob([dossier.markdown], { type: 'text/markdown' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -123,26 +123,40 @@ const UniversalDossierDetail = () => {
           <Box display="flex" gap={1} flexWrap="wrap" mt={1}>
             <Chip label={`Patient: ${patientId}`} color="primary" />
             {dossier.metadata?.tier && (
-              <Chip 
-                label={dossier.metadata.tier} 
+              <Chip
+                label={dossier.metadata.tier}
                 color={dossier.metadata.tier === 'TOP_TIER' ? 'success' : 'info'}
               />
             )}
             {dossier.metadata?.match_score && (
-              <Chip 
+              <Chip
                 label={`Match: ${Math.round(dossier.metadata.match_score * 100)}%`}
                 variant="outlined"
               />
             )}
           </Box>
         </Box>
-        <Button
-          variant="outlined"
-          startIcon={<DownloadIcon />}
-          onClick={handleExport}
-        >
-          Export Markdown
-        </Button>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<EmailIcon />}
+            onClick={() => {
+              const subject = encodeURIComponent(`Review: Therapy Fit Dossier for ${patientId} (${nct_id})`);
+              const body = encodeURIComponent(`Review Attached Dossier.\n\nSummary:\n${dossier.metadata?.tier || 'N/A'} Match\nScore: ${Math.round(dossier.metadata?.match_score * 100)}%\n\nView Full Report: ${window.location.href}`);
+              window.location.href = `mailto:?subject=${subject}&body=${body}`;
+            }}
+          >
+            Email Doctor
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<DownloadIcon />}
+            onClick={handleExport}
+          >
+            Export Markdown
+          </Button>
+        </Box>
       </Box>
 
       {/* Dossier Content */}

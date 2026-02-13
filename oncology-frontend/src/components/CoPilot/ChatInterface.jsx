@@ -13,6 +13,7 @@ export const ChatInterface = ({
   isTyping,
   onSendMessage,
   onSuggestionClick,
+  onFileUpload, // ⚔️ Phase 9
   messagesEndRef
 }) => {
   return (
@@ -47,6 +48,7 @@ export const ChatInterface = ({
       <ChatInput
         onSendMessage={onSendMessage}
         onSuggestionClick={onSuggestionClick}
+        onFileUpload={onFileUpload} // ⚔️ Phase 9
         disabled={isTyping}
       />
     </>

@@ -57,7 +57,7 @@ const AyeshaSAEFeaturesCard = ({ sae_features }) => {
 
   // Helper: Get impact color
   const getImpactColor = (impact) => {
-    switch(impact) {
+    switch (impact) {
       case 'positive': return 'success';
       case 'negative': return 'error';
       default: return 'default';
@@ -109,19 +109,25 @@ const AyeshaSAEFeaturesCard = ({ sae_features }) => {
       {dna_repair_capacity !== undefined && (
         <Box sx={{ mb: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
           <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
-            DNA Repair Capacity
+            DNA Repair Deficiency Score
+            <Tooltip title="Higher score = Higher deficiency (More sensitive to PARPi). Lower score = Improved repair (Resistance risk).">
+              <InfoIcon fontSize="small" sx={{ ml: 1, verticalAlign: 'text-bottom', color: 'action.active' }} />
+            </Tooltip>
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <LinearProgress 
-              variant="determinate" 
-              value={Math.min(100, Math.max(0, (dna_repair_capacity * 100)))} 
+            <LinearProgress
+              variant="determinate"
+              value={Math.min(100, Math.max(0, (dna_repair_capacity * 100)))}
               sx={{ flex: 1, height: 8, borderRadius: 1 }}
               color={dna_repair_capacity > 0.7 ? 'success' : dna_repair_capacity > 0.4 ? 'warning' : 'error'}
             />
-            <Typography variant="body2" fontWeight="bold">
+            <Typography variant="body2" fontWeight="bold" color={dna_repair_capacity > 0.7 ? 'success.main' : dna_repair_capacity > 0.4 ? 'warning.main' : 'error.main'}>
               {(dna_repair_capacity * 100).toFixed(0)}%
             </Typography>
           </Box>
+          <Typography variant="caption" color="text.secondary">
+            {dna_repair_capacity > 0.7 ? 'High Deficiency (Sensitive)' : dna_repair_capacity < 0.4 ? 'Proficient (Resistant)' : 'Moderate Deficiency'}
+          </Typography>
         </Box>
       )}
 

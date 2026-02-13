@@ -33,9 +33,9 @@ const PFICategoryBadge = ({ pfiDays = null, pfiCategory = null }) => {
   // Map category to color and label
   const getCategoryInfo = (cat) => {
     if (!cat) return { color: 'default', label: 'Unknown', description: 'PFI category unknown' };
-    
+
     const normalized = cat.toLowerCase().replace(/[<>]/g, '');
-    
+
     if (normalized.includes('6m') || normalized.includes('resistant') || normalized.includes('<6')) {
       return {
         color: 'error',
@@ -55,17 +55,17 @@ const PFICategoryBadge = ({ pfiDays = null, pfiCategory = null }) => {
         description: 'PFI > 12 months - Platinum-sensitive. Platinum-based regimens likely effective.'
       };
     }
-    
+
     return { color: 'default', label: cat, description: `PFI category: ${cat}` };
   };
 
   const categoryInfo = getCategoryInfo(category);
-  const displayText = pfiDays !== null 
+  const displayText = pfiDays !== null
     ? `${categoryInfo.label} (${Math.round(pfiDays / 30.44)}m)`
     : categoryInfo.label;
 
   return (
-    <Tooltip 
+    <Tooltip
       title={
         <Box>
           <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>

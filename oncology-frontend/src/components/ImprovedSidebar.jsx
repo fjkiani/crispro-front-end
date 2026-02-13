@@ -39,6 +39,9 @@ import {
   Medication as DosingIcon,
   Assessment as MetastasisIcon,
   Brightness4 as ThemeIcon,
+  Person as PatientIcon,
+  AccountTree as DigitalTwinIcon,
+  Terminal as LabIcon,
 } from '@mui/icons-material';
 
 const iconMap = {
@@ -51,6 +54,16 @@ const iconMap = {
   'synthetic-lethality': SLIcon,
   'dosing-guidance': DosingIcon,
   'metastasis': MetastasisIcon,
+  'ayesha-dashboard': DashboardIcon,
+  'ayesha-complete-care': CareIcon,
+  'ayesha-trials': TrialIcon,
+  'ayesha-dossiers': DossierIcon,
+  'ayesha-digital-twin': DigitalTwinIcon,
+  'ayesha-resistance-lab': LabIcon,
+  'ayesha-therapy-fit': DosingIcon,
+  'ayesha-holistic-scoring': TrialIcon,
+  'ayesha-tests': CareIcon,
+  'mutation-explorer': GenomicsIcon,
 };
 
 export const ImprovedSidebar = () => {
@@ -145,7 +158,7 @@ export const ImprovedSidebar = () => {
         {navItems.map((item) => {
           const IconComponent = iconMap[item.name] || DashboardIcon;
           const isActive = activeItem === item.name;
-          
+
           return (
             <ListItem key={item.name} disablePadding sx={{ mb: 0.5 }}>
               <Tooltip title={item.description || item.label} placement="right" arrow>
@@ -174,7 +187,7 @@ export const ImprovedSidebar = () => {
                   <ListItemIcon
                     sx={{
                       minWidth: 40,
-                      color: isActive 
+                      color: isActive
                         ? (item.color || theme.palette.primary.main)
                         : 'text.secondary',
                     }}

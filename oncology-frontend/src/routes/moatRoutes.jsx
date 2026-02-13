@@ -19,6 +19,7 @@ import { SyntheticLethalityAnalyzer } from '../components/SyntheticLethality';
 import DosingGuidancePage from '../pages/DosingGuidancePage';
 import MetastasisDashboard from '../pages/MetastasisDashboard';
 import DDRStatusPage from '../pages/DDRStatusPage';
+import PrognosisSentinel from '../pages/ayesha/PrognosisSentinel';
 
 /**
  * MOAT Core Routes - Production Ready
@@ -28,130 +29,141 @@ import DDRStatusPage from '../pages/DDRStatusPage';
  */
 export const moatRoutes = [
   // Universal Complete Care - Full orchestration
-  <Route 
-    key="universal-complete-care" 
-    path="/universal-complete-care" 
+  <Route
+    key="universal-complete-care"
+    path="/universal-complete-care"
     element={
       <PersonaRoute allowedPersonas={['oncologist', 'researcher']}>
         <UniversalCompleteCare />
       </PersonaRoute>
-    } 
+    }
   />,
-  <Route 
-    key="universal-complete-care-patient" 
-    path="/universal-complete-care/:patientId" 
+  <Route
+    key="universal-complete-care-patient"
+    path="/universal-complete-care/:patientId"
     element={
       <PersonaRoute allowedPersonas={['oncologist', 'researcher']}>
         <UniversalCompleteCare />
       </PersonaRoute>
-    } 
+    }
   />,
-  
+
   // Universal Trial Intelligence - Trial matching
-  <Route 
-    key="universal-trial-intelligence" 
-    path="/universal-trial-intelligence" 
+  <Route
+    key="universal-trial-intelligence"
+    path="/universal-trial-intelligence"
     element={
       <PersonaRoute allowedPersonas={['oncologist', 'researcher']}>
         <UniversalTrialIntelligence />
       </PersonaRoute>
-    } 
+    }
   />,
-  
+
   // Universal Dossiers - Dossier management
-  <Route 
-    key="universal-dossiers" 
-    path="/universal-dossiers" 
+  <Route
+    key="universal-dossiers"
+    path="/universal-dossiers"
     element={
-      <PersonaRoute allowedPersonas={['oncologist', 'researcher']}>
+      <PersonaRoute allowedPersonas={['oncologist', 'researcher', 'patient']}>
         <UniversalDossierBrowser />
       </PersonaRoute>
-    } 
+    }
   />,
-  <Route 
-    key="universal-dossiers-detail" 
-    path="/universal-dossiers/:patientId/:nct_id" 
+  <Route
+    key="universal-dossiers-detail"
+    path="/universal-dossiers/:patientId/:nct_id"
     element={
-      <PersonaRoute allowedPersonas={['oncologist', 'researcher']}>
+      <PersonaRoute allowedPersonas={['oncologist', 'researcher', 'patient']}>
         <UniversalDossierDetail />
       </PersonaRoute>
-    } 
+    }
   />,
-  
+
   // Research Intelligence - Research orchestration
-  <Route 
-    key="research-intelligence" 
-    path="/research-intelligence" 
+  <Route
+    key="research-intelligence"
+    path="/research-intelligence"
     element={
       <PersonaRoute allowedPersonas={['oncologist', 'researcher', 'patient']}>
         <ResearchIntelligence />
       </PersonaRoute>
-    } 
+    }
   />,
-  
+
   // Orchestrator Dashboard - Researcher-only
-  <Route 
-    key="orchestrator" 
-    path="/orchestrator" 
+  <Route
+    key="orchestrator"
+    path="/orchestrator"
     element={
       <PersonaRoute allowedPersonas={['researcher']}>
         <OrchestratorDashboard />
       </PersonaRoute>
-    } 
+    }
   />,
-  
+
   // Clinical Genomics - VCF/genomic analysis
-  <Route 
-    key="clinical-genomics" 
-    path="/clinical-genomics" 
+  <Route
+    key="clinical-genomics"
+    path="/clinical-genomics"
     element={
       <PersonaRoute allowedPersonas={['oncologist', 'researcher', 'patient']}>
         <ClinicalGenomicsCommandCenter />
       </PersonaRoute>
-    } 
+    }
   />,
-  
+
   // Synthetic Lethality - SL analysis
-  <Route 
-    key="synthetic-lethality" 
-    path="/synthetic-lethality" 
+  <Route
+    key="synthetic-lethality"
+    path="/synthetic-lethality"
     element={
       <PersonaRoute allowedPersonas={['oncologist', 'researcher', 'patient']}>
         <SyntheticLethalityAnalyzer />
       </PersonaRoute>
-    } 
+    }
   />,
-  
+
   // Dosing Guidance - Drug dosing recommendations
-  <Route 
-    key="dosing-guidance" 
-    path="/dosing-guidance" 
+  <Route
+    key="dosing-guidance"
+    path="/dosing-guidance"
     element={
       <PersonaRoute allowedPersonas={['oncologist', 'researcher', 'patient']}>
         <DosingGuidancePage />
       </PersonaRoute>
-    } 
+    }
   />,
-  
+
   // Metastasis Dashboard - Metastasis analysis
-  <Route 
-    key="metastasis" 
-    path="/metastasis" 
+  <Route
+    key="metastasis"
+    path="/metastasis"
     element={
       <PersonaRoute allowedPersonas={['oncologist', 'researcher', 'patient']}>
         <MetastasisDashboard />
       </PersonaRoute>
-    } 
+    }
   />,
-  
+
   // DDR Status - DDR_bin classification
-  <Route 
-    key="ddr-status" 
-    path="/ddr-status" 
+  <Route
+    key="ddr-status"
+    path="/ddr-status"
     element={
       <PersonaRoute allowedPersonas={['oncologist', 'researcher', 'patient']}>
         <DDRStatusPage />
       </PersonaRoute>
-    } 
+    }
+  />,
+
+  // Prognosis Sentinel - Ayesha/Hybrid Engine View
+  <Route
+    key="prognosis-sentinel"
+    path="/sentinel"
+    element={
+      <PersonaRoute allowedPersonas={['oncologist', 'researcher', 'patient']}>
+        <PrognosisSentinel />
+      </PersonaRoute>
+    }
   />,
 ];

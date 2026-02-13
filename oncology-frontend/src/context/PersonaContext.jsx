@@ -29,6 +29,7 @@ const PERSONA_ACCESS = {
       '/dosing-guidance',
       '/metastasis',
       '/ddr-status',
+      '/sentinel',
     ],
     features: [
       'view_own_profile',
@@ -70,6 +71,7 @@ const PERSONA_ACCESS = {
       '/home',
       '/profile',
       '/dashboard',
+      '/sentinel',
     ],
     features: [
       'view_patient_profiles',

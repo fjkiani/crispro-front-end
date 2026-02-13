@@ -110,16 +110,6 @@ export const ACTION_BUTTONS = {
         className: "bg-blue-600 hover:bg-blue-700 text-white py-1 px-2 rounded text-xs",
         title: "Analyze Effect"
     },
-    wiwfm: {
-        label: "WIWFM",
-        className: "bg-purple-600 hover:bg-purple-700 text-white py-1 px-2 rounded text-xs",
-        title: "Run therapy fit (efficacy)"
-    },
-    dossier: {
-        label: "Send to Dossier",
-        className: "bg-slate-600 hover:bg-slate-700 text-white py-1 px-2 rounded text-xs",
-        title: "Send to Dossier"
-    },
     design: {
         label: "Design Guides",
         title: "Design CRISPR Guides",
@@ -174,22 +164,21 @@ export const RESEARCH_MODE_CONFIG = {
     disclaimer: "Results are research‑mode and cohort‑dependent."
 };
 
-// Insight chips labels, helpers, thresholds
 export const INSIGHT_LABELS = {
-    functionality: 'Functionality',
-    regulatory: 'Regulatory',
+    functionality: 'Functional Impact',
+    chromatin: 'Chromatin Access',
     essentiality: 'Essentiality',
-    chromatin: 'Chromatin'
+    regulatory: 'Regulatory Role'
 };
 
 export const INSIGHT_HELPERS = {
-    functionality: 'How likely the protein function is altered by the variant.',
-    regulatory: 'How much the variant may affect gene control (splicing/regulatory).',
-    essentiality: 'Whether the gene is critical for cancer survival (context‑aware hint).',
-    chromatin: 'How accessible the locus is (design feasibility and expression context).'
+    functionality: 'Predicted impact on protein function based on sequence conservation and structural analysis.',
+    chromatin: 'Accessibility of the genomic region, indicating potential for active transcription.',
+    essentiality: 'Importance of this gene for cell survival in relevant cancer cell lines.',
+    regulatory: 'Potential impact on gene regulation features like enhancers or promoters.'
 };
 
 export const INSIGHT_THRESHOLDS = {
-    high: 0.7,
+    high: 0.8,
     mid: 0.5
 };
