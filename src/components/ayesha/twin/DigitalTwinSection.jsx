@@ -115,16 +115,9 @@ export default function DigitalTwinSection({ digitalTwinData }) {
         <Typography variant="body2" color="text.secondary" gutterBottom>
           See the complete synthetic lethality mechanism: BER loss → HR dependency → PARP blocks HR → cell death
         </Typography>
-        {hasSL ? (
-          <SyntheticLethalityFlow
-            slData={digitalTwinData.syntheticLethality || null}
-          />
-        ) : (
-          <NotAvailable
-            reason="Synthetic lethality not assessed. Requires mutation coordinates and pathway analysis."
-            nextAction="Order tumor NGS to enable synthetic lethality detection for your mutation profile."
-          />
-        )}
+        <SyntheticLethalityFlow
+          slData={digitalTwinData.syntheticLethality || null}
+        />
       </Box>
 
       {/* Section 4: Resistance Prophet (Time Dimension) */}

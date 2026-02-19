@@ -141,8 +141,9 @@ function getSignalIcon(signalType, detected) {
 
 
 const SignalRow = ({ signal: rawSignal }) => {
-    const [expanded, setExpanded] = useState(false);
+    const [expanded, setExpanded] = useState(true);  // default expanded so rationale is always visible
     const signal = normalizeSignal(rawSignal);
+
 
     if (!signal) return null;
 

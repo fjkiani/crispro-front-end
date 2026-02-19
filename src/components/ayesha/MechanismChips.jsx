@@ -47,31 +47,49 @@ const MechanismChips = ({ mechanism_map = {} }) => {
 
   return (
     <Box>
-      <Box display="flex" flexWrap="wrap" gap={1} alignItems="center">
+      <Box display="flex" flexWrap="wrap" gap={1.5} alignItems="flex-start">
         {chips.map((chip, idx) => {
           const axisName = chip.pathway || `Axis ${idx}`;
           const isAwaiting = chip.status === 'awaiting_ngs';
 
           return (
-            <Tooltip
+            <Box
               key={axisName}
-              title={chip.tooltip || `${axisName} Pathway details`}
-              arrow
+              sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 100 }}
             >
               <Chip
-                label={chip.label || `${axisName}`}
+                label={chip.label || axisName}
                 color={chip.color || 'default'}
                 variant={isAwaiting ? 'outlined' : 'filled'}
                 onClick={(e) => handleChipClick(e, chip)}
                 sx={{
-                  minWidth: 100,
                   cursor: 'pointer',
                   borderStyle: isAwaiting ? 'dashed' : 'solid',
                   opacity: isAwaiting ? 0.6 : 1,
                   fontWeight: isAwaiting ? 'normal' : 'bold',
+                  width: '100%',
                 }}
               />
-            </Tooltip>
+              {/* Always-visible inline description — shown by default, no hover required */}
+              {!isAwaiting && chip.tooltip && (
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ mt: 0.4, textAlign: 'center', fontSize: '0.6rem', lineHeight: 1.2, maxWidth: 110 }}
+                >
+                  {chip.tooltip}
+                </Typography>
+              )}
+              {isAwaiting && (
+                <Typography
+                  variant="caption"
+                  color="text.disabled"
+                  sx={{ mt: 0.4, textAlign: 'center', fontSize: '0.6rem', lineHeight: 1.2 }}
+                >
+                  Awaiting NGS
+                </Typography>
+              )}
+            </Box>
           );
         })}
       </Box>
