@@ -138,16 +138,7 @@ export const moatNavigationItems = [
     personas: ['researcher']
   },
   // Ayesha Patient Pages
-  {
-    name: "ayesha-dashboard",
-    label: "Ayesha Dashboard",
-    shortLabel: "Dashboard",
-    imgUrl: apps,
-    link: '/ayesha',
-    description: 'Ayesha patient dashboard - main landing page',
-    color: '#6366f1', // Indigo
-    personas: ['patient', 'oncologist', 'researcher']
-  },
+  // NOTE: "ayesha-dashboard" (/ayesha) deprecated — consolidated into /ayesha-trials
   {
     name: "ayesha-complete-care",
     label: "Ayesha Care",

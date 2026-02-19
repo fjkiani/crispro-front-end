@@ -3,13 +3,14 @@
  * Mars rules: 876 lines → ~100 lines. Every section is a component.
  * Tells the patient a story, not a spreadsheet.
  */
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Box, Collapse, Container, Divider, IconButton, Stack, Typography } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 import { useTestsPageState } from "../../hooks/ayesha/useTestsPageState";
 import PatientStoryHero from "../../components/ayesha/tests/PatientStoryHero";
 import ScenarioSelector from "../../components/ayesha/tests/ScenarioSelector";
+import AxisSummaryStrip from "../../components/ayesha/tests/AxisSummaryStrip";
 import MechanismInsightPanel from "../../components/ayesha/tests/MechanismInsightPanel";
 import MissingDataRoadmap from "../../components/ayesha/tests/MissingDataRoadmap";
 import AxisCoverageTable from "../../components/ayesha/tests/AxisCoverageTable";
@@ -18,6 +19,20 @@ import SystemAlerts from "../../components/ayesha/tests/SystemAlerts";
 export default function TestsPage() {
   const state = useTestsPageState();
   const [showTechnical, setShowTechnical] = useState(false);
+  const reactiveRef = useRef<HTMLDivElement>(null);
+  const prevScenarioRef = useRef<string>("");
+
+  // Auto-scroll to reactive content when scenario changes
+  useEffect(() => {
+    const key = `${state.activeLevelKey}:${state.scenarioId}:${state.l3ScenarioId}`;
+    if (prevScenarioRef.current && prevScenarioRef.current !== key) {
+      // Small delay to let React render the new content
+      requestAnimationFrame(() => {
+        reactiveRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+    prevScenarioRef.current = key;
+  }, [state.activeLevelKey, state.scenarioId, state.l3ScenarioId]);
 
   // Loading
   if (state.isLoading) {
@@ -55,28 +70,7 @@ export default function TestsPage() {
           completenessMissing={state.completenessMissing}
         />
 
-        {/* 2. Pathway cards — what we know (and don't) */}
-        <MechanismInsightPanel
-          coverage={state.coverage}
-          expectedMechanism={state.expectedMechanism}
-          mechanismViewMode={state.mechanismViewMode}
-          onViewModeChange={state.setMechanismViewMode}
-          scenarioRequires={state.scenarioRequires}
-          activeScenarioCard={state.activeScenarioCard}
-          scenarioAlignment={state.scenarioAlignment}
-          isPreview={state.isPreview}
-          activeLevelKey={state.activeLevelKey}
-        />
-
-        {/* 3. Missing data roadmap — what tests to ask about */}
-        <MissingDataRoadmap
-          completenessMissing={state.completenessMissing}
-          monitoringBaselineMissing={state.monitoringBaselineMissing}
-          expressionTripwireError={state.expressionTripwireError}
-        />
-
-        {/* 4. Scenario explorer — what-if analysis */}
-        <Divider sx={{ my: 3 }} />
+        {/* 2. Scenario explorer — moved UP so user sees toggle before content */}
         <ScenarioSelector
           l2Options={state.l2Options}
           l3Options={state.l3Options}
@@ -90,7 +84,36 @@ export default function TestsPage() {
           onPairedL2Change={state.setPairedL2}
         />
 
-        {/* 5. Technical deep-dive — collapsible for oncologists */}
+        {/* 3. Axis summary strip — compact at-a-glance pathway overview */}
+        <div ref={reactiveRef}>
+          <AxisSummaryStrip
+            coverage={state.coverage}
+            activeLevelKey={state.activeLevelKey}
+          />
+        </div>
+
+        {/* 4. Pathway cards — what we know (and don't) */}
+        <MechanismInsightPanel
+          coverage={state.coverage}
+          expectedMechanism={state.expectedMechanism}
+          mechanismViewMode={state.mechanismViewMode}
+          onViewModeChange={state.setMechanismViewMode}
+          scenarioRequires={state.scenarioRequires}
+          activeScenarioCard={state.activeScenarioCard}
+          scenarioAlignment={state.scenarioAlignment}
+          isPreview={state.isPreview}
+          activeLevelKey={state.activeLevelKey}
+        />
+
+        {/* 5. Missing data roadmap — what tests to ask about */}
+        <MissingDataRoadmap
+          completenessMissing={state.completenessMissing}
+          monitoringBaselineMissing={state.monitoringBaselineMissing}
+          expressionTripwireError={state.expressionTripwireError}
+          testsNeeded={state.testsNeeded}
+        />
+
+        {/* 6. Technical deep-dive — collapsible for oncologists */}
         <Divider sx={{ my: 3 }} />
         <Stack
           direction="row"

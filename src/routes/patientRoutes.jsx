@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { Route } from 'react-router-dom';
+import { Route, Navigate } from 'react-router-dom';
 import PatientRoute from '../components/auth/PatientRoute';
 import PersonaRoute from '../components/auth/PersonaRoute';
 import AyeshaCompleteCare from '../pages/AyeshaCompleteCare';
@@ -91,15 +91,11 @@ export const patientRoutes = [
       </PatientRoute>
     }
   />,
-  // Ayesha Patient Dashboard - Main landing page
+  // Ayesha Patient Dashboard - DEPRECATED: redirect to /ayesha-trials
   <Route
     key="ayesha-dashboard"
     path="/ayesha"
-    element={
-      <PatientRoute>
-        <AyeshaPatientDashboard />
-      </PatientRoute>
-    }
+    element={<Navigate to="/ayesha-trials" replace />}
   />,
   <Route
     key="ayesha-dashboard-alt"

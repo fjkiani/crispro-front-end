@@ -1,6 +1,6 @@
 /**
  * AxisCoverageTable — the technical deep-dive table.
- * Extracted from TestsPage.tsx lines 749-841.
+ * Cleaned: no raw code paths. Human-readable evidence source descriptions.
  */
 import React from "react";
 import {
@@ -17,6 +17,7 @@ import {
     TableRow,
     ToggleButton,
     ToggleButtonGroup,
+    Tooltip,
     Typography,
 } from "@mui/material";
 import type { AxisCoverage } from "../../../logic/axisCoverage";
@@ -32,6 +33,35 @@ interface AxisCoverageTableProps {
 function renderStatusChip(row: AxisCoverage) {
     const { label, color } = renderStatusLabel(row);
     return <Chip size="small" label={label} color={color as any} sx={{ fontWeight: 900 }} />;
+}
+
+/** Human-readable source description instead of raw code paths */
+function getEvidenceDescription(row: AxisCoverage): { source: string; detail: string } {
+    if (row.evidence.kind === "pathway_scores") {
+        const val = row.evidence.rawValue;
+        return {
+            source: "Based on your current test results",
+            detail: `Signal strength: ${(val * 100).toFixed(1)}%`,
+        };
+    }
+    if (row.evidence.kind === "mechanism_panel") {
+        const val = row.evidence.rawValue;
+        return {
+            source: "Projected from scenario simulation",
+            detail: `Predicted signal: ${(val * 100).toFixed(1)}%`,
+        };
+    }
+    if (row.evidence.kind === "expected_mechanism") {
+        const val = row.evidence.rawValue;
+        return {
+            source: "Inferred from your tumor type and biomarkers",
+            detail: `Expected signal: ${(val * 100).toFixed(1)}%`,
+        };
+    }
+    return {
+        source: "Not enough data to evaluate",
+        detail: row.evidence.note || "",
+    };
 }
 
 export default function AxisCoverageTable({
@@ -74,61 +104,51 @@ export default function AxisCoverageTable({
                             <TableCell sx={{ fontWeight: 900 }}>Topic</TableCell>
                             <TableCell sx={{ fontWeight: 900 }}>Enough data?</TableCell>
                             <TableCell sx={{ fontWeight: 900 }}>Signal</TableCell>
-                            <TableCell sx={{ fontWeight: 900 }}>Where it came from</TableCell>
+                            <TableCell sx={{ fontWeight: 900 }}>
+                                <Tooltip title="How we determined the signal for this pathway — from your test results, a scenario simulation, or tumor type inference." arrow>
+                                    <span>Where it came from</span>
+                                </Tooltip>
+                            </TableCell>
                             <TableCell sx={{ fontWeight: 900 }}>Next test (if needed)</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {coverage.map((row) => (
-                            <TableRow key={row.axis}>
-                                <TableCell sx={{ fontWeight: 900 }}>{formatAxisTitle(row.axis)}</TableCell>
-                                <TableCell>{row.evaluable ? <Chip size="small" label="Yes" color="success" /> : <Chip size="small" label="No" />}</TableCell>
-                                <TableCell>{renderStatusChip(row)}</TableCell>
-                                <TableCell>
-                                    {row.evidence.kind === "pathway_scores" ? (
-                                        <Typography variant="body2">
-                                            <strong>Structured pathway score</strong> · {row.evidence.rawValue.toFixed(3)}
+                        {coverage.map((row) => {
+                            const evidence = getEvidenceDescription(row);
+                            return (
+                                <TableRow key={row.axis}>
+                                    <TableCell sx={{ fontWeight: 900 }}>{formatAxisTitle(row.axis)}</TableCell>
+                                    <TableCell>{row.evaluable ? <Chip size="small" label="Yes" color="success" /> : <Chip size="small" label="No" />}</TableCell>
+                                    <TableCell>{renderStatusChip(row)}</TableCell>
+                                    <TableCell>
+                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                            {evidence.source}
                                         </Typography>
-                                    ) : row.evidence.kind === "mechanism_panel" ? (
-                                        <Typography variant="body2">
-                                            <strong>Scenario preview vector</strong> · {row.evidence.rawValue.toFixed(3)}{" "}
-                                            <Chip size="small" label="Preview/Scenario-derived" sx={{ ml: 1 }} />
-                                        </Typography>
-                                    ) : row.evidence.kind === "expected_mechanism" ? (
-                                        <Typography variant="body2">
-                                            <strong>Context-derived</strong> · {row.evidence.rawValue.toFixed(3)}{" "}
-                                            <Chip size="small" label="Expected (biomarker)" color="info" sx={{ ml: 1 }} />
-                                        </Typography>
-                                    ) : (
-                                        <Typography variant="body2" color="text.secondary">
-                                            {row.evidence.note}
-                                        </Typography>
-                                    )}
-                                    <Typography variant="caption" color="text.secondary">
-                                        Path:{" "}
-                                        <code>
-                                            {row.evidence.kind === "none" ? "—" : (row.evidence as any).path}
-                                        </code>
-                                    </Typography>
-                                </TableCell>
-                                <TableCell>
-                                    {row.status === "Unknown" ? (
-                                        <Box>
-                                            <Typography variant="body2" sx={{ fontWeight: 800 }}>
-                                                Unknown · Data needed
-                                            </Typography>
+                                        {evidence.detail && (
                                             <Typography variant="caption" color="text.secondary">
-                                                Recommended test: <strong>{row.recommendedTest || "Data needed"}</strong>
+                                                {evidence.detail}
                                             </Typography>
-                                        </Box>
-                                    ) : (
-                                        <Typography variant="body2" color="text.secondary">
-                                            —
-                                        </Typography>
-                                    )}
-                                </TableCell>
-                            </TableRow>
-                        ))}
+                                        )}
+                                    </TableCell>
+                                    <TableCell>
+                                        {row.status === "Unknown" ? (
+                                            <Box>
+                                                <Typography variant="body2" sx={{ fontWeight: 800 }}>
+                                                    Unknown · Data needed
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    Recommended test: <strong>{row.recommendedTest || "Data needed"}</strong>
+                                                </Typography>
+                                            </Box>
+                                        ) : (
+                                            <Typography variant="body2" color="text.secondary">
+                                                —
+                                            </Typography>
+                                        )}
+                                    </TableCell>
+                                </TableRow>
+                            );
+                        })}
                     </TableBody>
                 </Table>
             </CardContent>

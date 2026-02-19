@@ -29,9 +29,9 @@ export default function BoardHeader({ metadata, isPreview, rawBundle, title }) {
                     p: 3,
                     mb: 3,
                     borderRadius: 3,
-                    background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', // Slate-950 to Slate-900
-                    color: 'white',
-                    border: '1px solid rgba(255,255,255,0.1)',
+                    background: '#ffffff',
+                    color: '#0f172a',
+                    border: '1px solid #e2e8f0',
                     position: 'relative',
                     overflow: 'hidden',
                 }}
@@ -44,7 +44,7 @@ export default function BoardHeader({ metadata, isPreview, rawBundle, title }) {
                         right: -20,
                         width: 200,
                         height: 200,
-                        background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, rgba(0,0,0,0) 70%)',
+                        background: 'radial-gradient(circle, rgba(99,102,241,0.08) 0%, rgba(0,0,0,0) 70%)',
                         borderRadius: '50%',
                         pointerEvents: 'none',
                     }}
@@ -53,7 +53,7 @@ export default function BoardHeader({ metadata, isPreview, rawBundle, title }) {
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2, position: 'relative', zIndex: 1 }}>
                     <Box>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1, flexWrap: 'wrap' }}>
-                            <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: '-0.02em' }}>
+                            <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: '-0.02em', color: '#0f172a' }}>
                                 {/* Override title prop or default to Zeta Strategy Board */}
                                 {title || "Zeta Strategy Board"}
                             </Typography>
@@ -61,9 +61,9 @@ export default function BoardHeader({ metadata, isPreview, rawBundle, title }) {
                                 label="Research Use Only"
                                 size="small"
                                 sx={{
-                                    bgcolor: 'rgba(255,255,255,0.1)',
-                                    color: '#94a3b8',
-                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    bgcolor: '#f1f5f9',
+                                    color: '#64748b',
+                                    border: '1px solid #e2e8f0',
                                     height: 24,
                                     fontWeight: 600,
                                 }}
@@ -73,40 +73,40 @@ export default function BoardHeader({ metadata, isPreview, rawBundle, title }) {
                                     label="Preview Mode"
                                     size="small"
                                     sx={{
-                                        bgcolor: 'rgba(245, 158, 11, 0.2)', // Amber-500 alpha
-                                        color: '#fbbf24', // Amber-400
-                                        border: '1px solid rgba(245, 158, 11, 0.3)',
+                                        bgcolor: '#fef3c7',
+                                        color: '#92400e',
+                                        border: '1px solid #fde68a',
                                         height: 24,
                                         fontWeight: 600,
                                     }}
                                 />
                             )}
                         </Box>
-                        <Typography variant="body2" sx={{ color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                        <Typography variant="body2" sx={{ color: '#64748b', display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
                             <span>
-                                Patient: <strong style={{ color: '#f8fafc' }}>{patient_id || '—'}</strong>
+                                Patient: <strong style={{ color: '#0f172a' }}>{patient_id || '—'}</strong>
                             </span>
                             <span style={{ opacity: 0.3 }}>|</span>
                             <span>
-                                Generated: <strong style={{ color: '#f8fafc' }}>{fmtIso(generated_at)}</strong>
+                                Generated: <strong style={{ color: '#0f172a' }}>{fmtIso(generated_at)}</strong>
                             </span>
                             <span style={{ opacity: 0.3 }}>|</span>
                             <span>
-                                Contract: <strong style={{ color: '#f8fafc' }}>{contract_version || '—'}</strong>
+                                Contract: <strong style={{ color: '#0f172a' }}>{contract_version || '—'}</strong>
                             </span>
                             <span style={{ opacity: 0.3 }}>|</span>
                             <span>
-                                Run ID: <strong style={{ color: '#f8fafc' }}>{run_id || '—'}</strong>
+                                Run ID: <strong style={{ color: '#0f172a' }}>{run_id || '—'}</strong>
                             </span>
                             <span style={{ opacity: 0.3 }}>|</span>
                             <span>
-                                Mode: <strong style={{ color: '#f8fafc' }}>{efficacy_mode || '—'}</strong>
+                                Mode: <strong style={{ color: '#0f172a' }}>{efficacy_mode || '—'}</strong>
                             </span>
                         </Typography>
                     </Box>
 
                     <Box sx={{ textAlign: 'right' }}>
-                        <Typography variant="caption" sx={{ color: '#64748b', display: 'block', mb: 0.5, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700 }}>
+                        <Typography variant="caption" sx={{ color: '#94a3b8', display: 'block', mb: 0.5, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700 }}>
                             Requested Levels
                         </Typography>
                         <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
@@ -117,9 +117,9 @@ export default function BoardHeader({ metadata, isPreview, rawBundle, title }) {
                                         label={l}
                                         size="small"
                                         sx={{
-                                            bgcolor: 'rgba(99,102,241,0.2)', // Indigo alpha
-                                            color: '#818cf8', // Indigo-400
-                                            border: '1px solid rgba(99,102,241,0.3)',
+                                            bgcolor: '#eef2ff',
+                                            color: '#4f46e5',
+                                            border: '1px solid #c7d2fe',
                                             height: 20,
                                             fontSize: '0.7rem',
                                             fontWeight: 700
@@ -127,7 +127,7 @@ export default function BoardHeader({ metadata, isPreview, rawBundle, title }) {
                                     />
                                 ))
                             ) : (
-                                <Typography variant="caption" sx={{ color: '#475569' }}>—</Typography>
+                                <Typography variant="caption" sx={{ color: '#94a3b8' }}>—</Typography>
                             )}
                         </Box>
 
@@ -137,9 +137,9 @@ export default function BoardHeader({ metadata, isPreview, rawBundle, title }) {
                             onClick={() => setOpen(true)}
                             sx={{
                                 mt: 1.5,
-                                color: '#e2e8f0',
-                                borderColor: 'rgba(226,232,240,0.35)',
-                                '&:hover': { borderColor: 'rgba(226,232,240,0.6)', bgcolor: 'rgba(255,255,255,0.04)' },
+                                color: '#475569',
+                                borderColor: '#cbd5e1',
+                                '&:hover': { borderColor: '#94a3b8', bgcolor: '#f8fafc' },
                                 textTransform: 'none',
                                 fontWeight: 700,
                             }}

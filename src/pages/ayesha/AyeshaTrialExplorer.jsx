@@ -12,11 +12,13 @@ import React, { useEffect, useMemo } from 'react';
 import {
   Box,
   Button,
+  CircularProgress,
   Grid,
   Typography,
   Paper,
   Alert,
   Fade,
+  Divider,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -43,6 +45,9 @@ import {
 
 import { WarRoomLoadingSkeleton } from '../../components/LoadingSkeleton';
 import { ErrorState } from '../../components/orchestrator/Common/index';
+import { useAyeshaTherapyFitBundle } from '../../hooks/useAyeshaTherapyFitBundle';
+import WeeklyStrategyLoop from '../../components/ayesha/WeeklyStrategyLoop';
+import PatientJourneyEnhanced from '../../components/patient/PatientJourneyEnhanced';
 
 // ----------------------------------------------------------------------
 // LOGIC HELPER: PRIMARY DIRECTIVE
@@ -152,6 +157,9 @@ const AyeshaTrialExplorer = () => {
   const { slResult, analyzeSL } = useSyntheticLethality();
   useEffect(() => { analyzeSL(profile); }, [profile, analyzeSL]);
 
+  // TherapyFit bundle for WeeklyStrategyLoop
+  const { data: therapyBundle, isLoading: tbLoading, error: tbError } = useAyeshaTherapyFitBundle({ level: 'l1' });
+
   // Extract Signals
   const ca125 = result?.ca125_intelligence;
   const resistance = result?.resistance_alert;
@@ -163,7 +171,14 @@ const AyeshaTrialExplorer = () => {
     getPrimaryDirective(slResult, resistance, trials.length, result?.soc_recommendation, profile),
     [slResult, resistance, trials.length, result, profile]);
 
-  if (loading) return <WarRoomLoadingSkeleton />;
+  if (loading) return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: 2 }}>
+      <CircularProgress size={48} thickness={4} sx={{ color: '#6366f1' }} />
+      <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
+        Loading intelligence…
+      </Typography>
+    </Box>
+  );
   if (error) return <ErrorState message={error} onRetry={refresh} />;
 
   return (
@@ -244,16 +259,40 @@ const AyeshaTrialExplorer = () => {
           </Grid>
         </Grid>
 
-        {/* 2. THE PRIMARY DIRECTIVE */}
+        {/* 2. THE PRIMARY DIRECTIVE — SL + Trials side-by-side */}
         <Typography variant="overline" fontWeight="900" color="text.secondary" letterSpacing={2} mb={1} display="block">
           SECTOR 2: PRIMARY DIRECTIVE
         </Typography>
-        <Box mb={4}>
-          <ZetaPrimaryDirective
-            {...directive}
-            onAction={() => navigate(directive.actionRoute)}
-          />
-        </Box>
+        <Grid container spacing={2} mb={4}>
+          {/* SL Directive */}
+          <Grid item xs={12} md={slResult?.synthetic_lethality_detected ? 6 : 12}>
+            <ZetaPrimaryDirective
+              {...directive}
+              onAction={() => navigate(directive.actionRoute)}
+            />
+          </Grid>
+          {/* Trials Directive — always visible when trials exist */}
+          {slResult?.synthetic_lethality_detected && trials.length > 0 && (
+            <Grid item xs={12} md={6}>
+              <ZetaPrimaryDirective
+                headline="ENGAGE CLINICAL TRIALS"
+                subheadline={`${trials.length} High-Fidelity Matches Found`}
+                reasoning={[
+                  "Multiple pathway-aligned options available",
+                  "Standard of Care options limited or exhausted",
+                ]}
+                receipts={{
+                  level: 'L2',
+                  inputs: ['NGS', 'Clinical Profile', 'Trial Protocol'],
+                  missing: [],
+                }}
+                actionLabel="VIEW ALL TRIALS"
+                onAction={() => navigate('/ayesha/trials-full')}
+                color="primary"
+              />
+            </Grid>
+          )}
+        </Grid>
 
         {/* 3. REINFORCEMENTS */}
         <Typography variant="overline" fontWeight="900" color="text.secondary" letterSpacing={2} mb={1} display="block">
@@ -306,10 +345,25 @@ const AyeshaTrialExplorer = () => {
           </Grid>
         </Grid>
 
+        {/* 4. WEEKLY STRATEGY LOOP */}
+        <Divider sx={{ my: 3 }} />
+        <WeeklyStrategyLoop
+          bundle={therapyBundle}
+          bundleLoading={tbLoading}
+          bundleError={tbError}
+        />
+
+        {/* 5. PATIENT JOURNEY */}
+        <Divider sx={{ my: 3 }} />
+        <Typography variant="overline" fontWeight="900" color="text.secondary" letterSpacing={2} mb={1} display="block">
+          SECTOR 5: PATIENT JOURNEY
+        </Typography>
+        <PatientJourneyEnhanced patientProfile={profile} />
+
         {/* Disclaimer Footer */}
         <Box mt={4} textAlign="center" color="text.secondary">
           <Typography variant="caption">
-            ZETA PROTOCOL v3.0 • RESEARCH USE ONLY • UNAUTHORIZED ACCESS PROHIBITED
+            CrisPRO.ai • RESEARCH USE ONLY
           </Typography>
         </Box>
 

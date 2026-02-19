@@ -24,7 +24,7 @@ import ProvenanceAccordion from './ranking/ProvenanceAccordion';
 // Utils
 import { humanize } from '../../utils/drugRendering';
 import TherapyFitExplainerAgent from './TherapyFitExplainerAgent';
-import { API_ROOT } from '../../lib/apiConfig';
+import { saveDossier } from '../../utils/dossierStore';
 
 
 /**
@@ -35,7 +35,7 @@ import { API_ROOT } from '../../lib/apiConfig';
  * @param {Function} onViewDetails - Optional callback when "Details" clicked
  * @param {Object} context - Analysis context for dossier generation (level, scenario, inputs)
  */
-export default function DrugRankingPanel({ drugs = [], onViewDetails, context = {} }) {
+export default function DrugRankingPanel({ drugs = [], onViewDetails, context = {}, title }) {
   const [showExplanation, setShowExplanation] = useState({});
   const [creatingDossier, setCreatingDossier] = useState(null); // drug index -> loading state
   const navigate = useNavigate();
@@ -44,40 +44,23 @@ export default function DrugRankingPanel({ drugs = [], onViewDetails, context = 
     setShowExplanation(prev => ({ ...prev, [idx]: !prev[idx] }));
   };
 
-  const handleInformDoctor = async (drug, idx) => {
+  const handleInformDoctor = (drug, idx) => {
     setCreatingDossier(idx);
     try {
-      // Construct Payload matching DoctorDossierInput
-      const payload = {
-        drug_data: {
-          ...drug,
-          drug: drug.name || drug.drug || "Unknown",
-          label_status: drug.label_status || "UNKNOWN"
-        },
-        context: {
-          patient_id: "AK",
-          level: context.level || "L2",
-          scenario: context.scenario || "Unknown",
-          mutations: context.inputs?.mutations || []
-        },
-        provenance: context.provenance || {}
+      const ctx = {
+        patient_id: 'AK',
+        level: context.level || 'L1',
+        scenario: context.scenario || 'Baseline',
+        mutations: context.inputs?.mutations || [],
       };
 
-      const res = await fetch(`${API_ROOT}/api/ayesha/dossiers/create`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      if (!res.ok) throw new Error("Failed to generate dossier");
-
-      const data = await res.json();
-      // Navigate to the new dossier
-      navigate(data.path);
+      const entry = saveDossier(drug, ctx);
+      // Navigate to the dossier detail page
+      navigate(`/ayesha-dossiers/${entry.id}`);
 
     } catch (err) {
-      console.error("Dossier creation failed:", err);
-      alert("Failed to create dossier: " + err.message);
+      console.error('Dossier creation failed:', err);
+      alert('Failed to create dossier: ' + err.message);
     } finally {
       setCreatingDossier(null);
     }

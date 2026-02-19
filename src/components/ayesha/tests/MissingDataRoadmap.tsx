@@ -1,15 +1,24 @@
 /**
  * MissingDataRoadmap — patient-actionable test recommendations.
  * Mars rules: tell them what tests to ask about, not what "gates" are missing.
+ * Dynamic: reads from backend tests_needed when available, falls back to constants.
  */
 import React from "react";
 import { Alert, Box, Card, CardContent, Stack, Typography } from "@mui/material";
 import { MISSING_EXPLANATIONS, topMissing } from "./testsConstants";
 
+interface TestNeeded {
+    test?: string;
+    why?: string;
+    unlocks?: string[];
+    status?: string;
+}
+
 interface MissingDataRoadmapProps {
     completenessMissing: string[];
     monitoringBaselineMissing: boolean;
     expressionTripwireError: string | null;
+    testsNeeded?: TestNeeded[];
 }
 
 const ICONS: Record<string, string> = {
@@ -20,10 +29,31 @@ const ICONS: Record<string, string> = {
     "ca125_value": "🩸",
 };
 
+/**
+ * Try to find a matching backend test for this missing key.
+ * Fuzzy match: "hrd_score" matches test names containing "hrd".
+ */
+function findMatchingApiTest(missingKey: string, testsNeeded: TestNeeded[]): TestNeeded | null {
+    if (!testsNeeded?.length) return null;
+    const lk = missingKey.toLowerCase();
+
+    // Direct keyword matching
+    for (const t of testsNeeded) {
+        const name = String(t?.test || "").toLowerCase();
+        if (lk.includes("hrd") && name.includes("hrd")) return t;
+        if (lk.includes("tmb") && name.includes("tmb")) return t;
+        if (lk.includes("ngs") && (name.includes("ngs") || name.includes("genomic") || name.includes("cgp"))) return t;
+        if (lk.includes("rna") && (name.includes("rna") || name.includes("expression"))) return t;
+        if (lk.includes("ca125") && (name.includes("ca-125") || name.includes("ca125"))) return t;
+    }
+    return null;
+}
+
 export default function MissingDataRoadmap({
     completenessMissing,
     monitoringBaselineMissing,
     expressionTripwireError,
+    testsNeeded = [],
 }: MissingDataRoadmapProps) {
     if (!completenessMissing.length && !expressionTripwireError) {
         return (
@@ -54,8 +84,19 @@ export default function MissingDataRoadmap({
             {/* Test cards */}
             <Stack gap={1.5}>
                 {items.map((m) => {
-                    const explain = MISSING_EXPLANATIONS[m];
+                    const apiTest = findMatchingApiTest(m, testsNeeded);
+                    const fallback = MISSING_EXPLANATIONS[m];
                     const icon = ICONS[m] || "📋";
+
+                    // Prefer API data, fall back to constants
+                    const title = apiTest?.test
+                        ? apiTest.test
+                        : m.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+                    const description = apiTest?.why || fallback?.what || "Additional data needed for this pathway.";
+                    const unlockText = apiTest?.unlocks?.length
+                        ? apiTest.unlocks.join(", ")
+                        : fallback?.unlocks || "Expands pathway analysis coverage.";
+
                     return (
                         <Card key={m} sx={{ borderRadius: 2, border: "1px solid #e2e8f0" }}>
                             <CardContent sx={{ py: 2, px: 2.5 }}>
@@ -63,13 +104,13 @@ export default function MissingDataRoadmap({
                                     <Typography sx={{ fontSize: "1.5rem", mt: 0.25 }}>{icon}</Typography>
                                     <Box>
                                         <Typography variant="subtitle2" sx={{ fontWeight: 900, color: "#0f172a" }}>
-                                            {m.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+                                            {title}
                                         </Typography>
                                         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
-                                            {explain?.what || "Additional data needed for this pathway."}
+                                            {description}
                                         </Typography>
                                         <Typography variant="caption" sx={{ color: "#3b82f6", fontWeight: 700, mt: 0.5, display: "block" }}>
-                                            {explain?.unlocks || "Expands pathway analysis coverage."}
+                                            {unlockText}
                                         </Typography>
                                     </Box>
                                 </Stack>

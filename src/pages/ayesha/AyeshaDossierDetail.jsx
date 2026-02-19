@@ -2,15 +2,12 @@
  * Ayesha Dossier Detail View
  * 
  * Full dossier display with:
- * - Markdown rendering
- * - Export options (markdown download)
- * - Share link functionality
+ * - Markdown rendering (ReactMarkdown + remark-gfm)
+ * - Export (client-side download)
+ * - Share link
  * - Back to list navigation
  * 
- * Modular architecture:
- * - Separate markdown renderer (can be extracted to component)
- * - Export logic isolated (can be extracted to hook)
- * - Share logic isolated (can be extracted to hook)
+ * Data source: localStorage via dossierStore (no backend dependency)
  */
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -19,14 +16,12 @@ import {
   Typography,
   Paper,
   Button,
-  CircularProgress,
   Alert,
   Breadcrumbs,
   Link,
   Grid,
   Chip,
   LinearProgress,
-  Tooltip,
 } from '@mui/material';
 import {
   ArrowLeftIcon,
@@ -40,7 +35,7 @@ import {
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import ResistanceProphetCard from '../../components/ayesha/ResistanceProphetCard';
-import { API_ROOT } from '../../lib/apiConfig';
+import { getDossier } from '../../utils/dossierStore';
 
 
 const getTierColor = (tier) => {
@@ -121,65 +116,31 @@ const AyeshaDossierDetail = () => {
   const navigate = useNavigate();
 
   const [dossier, setDossier] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
     if (nct_id) {
-      loadDossier();
+      const found = getDossier(nct_id);
+      if (found) {
+        setDossier(found);
+      } else {
+        setNotFound(true);
+      }
     }
   }, [nct_id]);
 
-  const loadDossier = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch(
-        `${API_ROOT}/api/ayesha/dossiers/detail/${nct_id}`
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      setDossier(data);
-
-    } catch (err) {
-      setError(err.message);
-      console.error('Failed to load dossier:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleExport = async (format = 'markdown') => {
-    try {
-      const response = await fetch(
-        `${API_ROOT}/api/ayesha/dossiers/export/${nct_id}?format=${format}`
-      );
-
-      if (!response.ok) {
-        throw new Error('Export failed');
-      }
-
-      // Download as file
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${nct_id}_DOSSIER.md`;
-      a.click();
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error('Export failed:', err);
-      alert('Failed to export dossier. Please try again.');
-    }
+  const handleExport = () => {
+    if (!dossier?.markdown) return;
+    const blob = new Blob([dossier.markdown], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${nct_id}_DOSSIER.md`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleShare = () => {
-    // Copy dossier URL to clipboard
     const url = window.location.href;
     navigator.clipboard.writeText(url).then(() => {
       alert('Dossier link copied to clipboard!');
@@ -188,23 +149,11 @@ const AyeshaDossierDetail = () => {
     });
   };
 
-  if (isLoading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
-        <Typography variant="body1" sx={{ ml: 2 }}>
-          Loading dossier...
-        </Typography>
-      </Box>
-    );
-  }
-
-  if (error) {
+  if (notFound) {
     return (
       <Box p={3}>
-        <Alert severity="error">
-          <Typography variant="h6">Error Loading Dossier</Typography>
-          <Typography variant="body2">{error}</Typography>
+        <Alert severity="warning">
+          Dossier not found for {nct_id}. It may have been cleared from browser storage.
         </Alert>
         <Button
           startIcon={<ArrowLeftIcon className="h-5 w-5" />}
@@ -220,18 +169,10 @@ const AyeshaDossierDetail = () => {
 
   if (!dossier) {
     return (
-      <Box p={3}>
-        <Alert severity="warning">
-          Dossier not found for {nct_id}
-        </Alert>
-        <Button
-          startIcon={<ArrowLeftIcon className="h-5 w-5" />}
-          onClick={() => navigate('/ayesha-dossiers')}
-          sx={{ mt: 2 }}
-          variant="outlined"
-        >
-          Back to List
-        </Button>
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <Typography variant="body1" color="text.secondary">
+          Loading dossier...
+        </Typography>
       </Box>
     );
   }
@@ -243,15 +184,6 @@ const AyeshaDossierDetail = () => {
         <Link
           component="button"
           variant="body2"
-          onClick={() => navigate('/ayesha-trials')}
-          underline="hover"
-          sx={{ cursor: 'pointer' }}
-        >
-          Ayesha Trial Explorer
-        </Link>
-        <Link
-          component="button"
-          variant="body2"
           onClick={() => navigate('/ayesha-dossiers')}
           underline="hover"
           sx={{ cursor: 'pointer' }}
@@ -259,7 +191,7 @@ const AyeshaDossierDetail = () => {
           All Dossiers
         </Link>
         <Typography variant="body2" color="text.primary">
-          {dossier.nct_id}
+          {dossier.title || dossier.nct_id}
         </Typography>
       </Breadcrumbs>
 
@@ -283,7 +215,7 @@ const AyeshaDossierDetail = () => {
           </Button>
           <Button
             startIcon={<DocumentArrowDownIcon className="h-5 w-5" />}
-            onClick={() => handleExport('markdown')}
+            onClick={handleExport}
             variant="contained"
           >
             Export Dossier
@@ -296,9 +228,9 @@ const AyeshaDossierDetail = () => {
         <Grid container spacing={2}>
           <Grid item xs={12} sm={4}>
             <Typography variant="caption" color="text.secondary" display="block">
-              NCT ID
+              Dossier ID
             </Typography>
-            <Typography variant="body1" fontWeight="bold" sx={{ fontFamily: 'monospace' }}>
+            <Typography variant="body1" fontWeight="bold" sx={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
               {dossier.nct_id}
             </Typography>
           </Grid>
@@ -308,30 +240,34 @@ const AyeshaDossierDetail = () => {
             </Typography>
             <Box mt={0.5}>
               <Chip
-                label={dossier.metadata?.tier || 'UNKNOWN'}
+                label={dossier.metadata?.tier || dossier.tier || 'UNKNOWN'}
                 size="small"
-                color={getTierColor(dossier.metadata?.tier)}
+                color={getTierColor(dossier.metadata?.tier || dossier.tier)}
               />
             </Box>
           </Grid>
           <Grid item xs={12} sm={4}>
             <Typography variant="caption" color="text.secondary" display="block">
-              Match Score
+              Efficacy Score
             </Typography>
             <Typography variant="body1" fontWeight="bold">
-              {dossier.metadata?.match_score ? Math.round(dossier.metadata.match_score * 100) : 0}%
+              {dossier.metadata?.match_score
+                ? Math.round(dossier.metadata.match_score * 100)
+                : dossier.match_score
+                  ? Math.round(dossier.match_score * 100)
+                  : 0}%
             </Typography>
           </Grid>
         </Grid>
       </Paper>
 
-      {/* Holistic Score Analysis - NEW */}
+      {/* Holistic Score Analysis */}
       <HolisticScoreBreakdown
         breakdown={dossier.metadata?.holistic_score_breakdown}
         weights={dossier.metadata?.weights}
       />
 
-      {/* Resistance Prophet Predictions - NEW */}
+      {/* Resistance Prophet Predictions */}
       <ResistanceProphetCard resistance_prediction={dossier.metadata?.resistance_prediction} />
 
       {/* Markdown Content */}
@@ -339,7 +275,6 @@ const AyeshaDossierDetail = () => {
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           components={{
-            // Custom renderers for better formatting
             h1: ({ node, ...props }) => (
               <Typography variant="h3" gutterBottom sx={{ mt: 4, mb: 2 }} {...props} />
             ),
@@ -418,7 +353,7 @@ const AyeshaDossierDetail = () => {
 
         <Button
           startIcon={<DocumentArrowDownIcon className="h-5 w-5" />}
-          onClick={() => handleExport('markdown')}
+          onClick={handleExport}
           variant="contained"
         >
           Download Dossier
@@ -429,9 +364,3 @@ const AyeshaDossierDetail = () => {
 };
 
 export default AyeshaDossierDetail;
-
-
-
-
-
-

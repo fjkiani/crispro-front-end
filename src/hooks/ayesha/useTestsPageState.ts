@@ -100,6 +100,7 @@ export function useTestsPageState() {
 
     const bundle: any = bundleQ.data;
     const levels: any = bundle?.levels || {};
+    const testsNeeded: any[] = safeArray(bundle?.tests_needed);
 
     // Active level
     const activeLevelKey: "L1" | "L2" | "L3" = l3ScenarioId ? "L3" : scenarioId ? "L2" : "L1";
@@ -273,6 +274,7 @@ export function useTestsPageState() {
         scenarioRequires,
         axes,
         isPreview,
+        testsNeeded,
 
         // Alerts
         axisUnknownAlerts,

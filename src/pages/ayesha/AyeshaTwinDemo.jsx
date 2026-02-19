@@ -10,6 +10,7 @@ import { transformToDigitalTwin } from '../../utils/ayesha/digitalTwinTransform'
 
 // Ayesha clinical components (SOC / CA-125 / SAE Phase-1)
 import { SOCRecommendationCard, CA125Tracker, NextTestCard, HintTilesPanel, MechanismChips } from '../../components/ayesha';
+import EssentialityScoreDisplay from '../../components/ayesha/EssentialityScoreDisplay';
 
 // Modular components
 import {
@@ -116,6 +117,16 @@ export default function AyeshaTwinDemo() {
 
           {/* 🧬 DIGITAL TWIN MOAT COMPONENTS */}
           <DigitalTwinSection digitalTwinData={digitalTwinData} />
+
+          {/* 🧪 Gene Essentiality Analysis */}
+          {((careData.essentiality_scores && careData.essentiality_scores.length > 0) || (careData.synthetic_lethality?.essentiality_scores && careData.synthetic_lethality.essentiality_scores.length > 0)) && (
+            <Box sx={{ mb: 3 }}>
+              <EssentialityScoreDisplay
+                essentialityScores={(careData.essentiality_scores && careData.essentiality_scores.length > 0) ? careData.essentiality_scores : careData.synthetic_lethality.essentiality_scores}
+                title="Gene Essentiality Analysis"
+              />
+            </Box>
+          )}
 
           {/* High-signal clinical context for Ayesha (SOC + CA-125 + Next tests + Hints + Mechanism map) */}
           <Box sx={{ mb: 3 }}>
