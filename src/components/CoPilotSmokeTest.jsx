@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_ROOT } from '../lib/apiConfig';
 import {
   Box,
   Paper,
@@ -187,7 +188,7 @@ const CoPilotSmokeTest = () => {
   const runTest = async (testCase) => {
     const startTime = Date.now();
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_ROOT || 'http://localhost:8000'}${testCase.endpoint}`, {
+      const response = await fetch(`${API_ROOT}${testCase.endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -231,7 +232,7 @@ const CoPilotSmokeTest = () => {
     const startTime = Date.now();
     try {
       // Simulate Q2C router call
-      const response = await fetch(`${process.env.REACT_APP_API_ROOT || 'http://localhost:8000'}/api/copilot/q2c`, {
+      const response = await fetch(`${API_ROOT}/api/copilot/q2c`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

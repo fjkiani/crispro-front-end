@@ -4,6 +4,7 @@
 
 export { default as DNAHelixBackground } from './DNAHelixBackground';
 export { default as DNALoginCard } from './DNALoginCard';
+export { default as SimpleLoginCard } from './SimpleLoginCard';
 export { default as ProtectedRoute } from './ProtectedRoute';
 export { default as PatientRoute } from './PatientRoute';
 export { default as PersonaRoute } from './PersonaRoute';

@@ -38,6 +38,7 @@ import {
   Paper,
   Grid
 } from '@mui/material';
+import { API_ROOT as API_BASE_URL } from '../../lib/apiConfig';
 import {
   Warning as WarningIcon,
   CheckCircle as CheckCircleIcon,
@@ -52,7 +53,6 @@ import {
   ArrowForward as ArrowForwardIcon
 } from '@mui/icons-material';
 
-const API_BASE_URL = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 
 // Risk level colors
 const RISK_COLORS = {
@@ -295,8 +295,8 @@ const ResistancePanel = ({
         </Collapse>
 
         {/* RUO Disclaimer Banner */}
-        <Alert 
-          severity="warning" 
+        <Alert
+          severity="warning"
           sx={{ mt: 2, backgroundColor: 'rgba(255, 152, 0, 0.1)', border: '1px solid #ff9800' }}
           icon={<InfoIcon />}
         >
@@ -326,8 +326,8 @@ const ResistancePanel = ({
 const RiskBadge = ({ riskLevel, probability }) => {
   const color = RISK_COLORS[riskLevel] || '#888';
   const icon = riskLevel === 'HIGH' ? <WarningIcon /> :
-               riskLevel === 'MEDIUM' ? <InfoIcon /> :
-               <CheckCircleIcon />;
+    riskLevel === 'MEDIUM' ? <InfoIcon /> :
+      <CheckCircleIcon />;
 
   return (
     <Chip

@@ -28,17 +28,17 @@ export default function Genomics101Explanations({ patientProfile, result }) {
             MBD4 Mutation (Homozygous)
           </Typography>
           <Typography variant="body2" paragraph>
-            <strong>What it means:</strong> You have a mutation in both copies of the MBD4 gene. 
-            This gene normally repairs DNA damage. When it's broken, your cells can't fix certain 
+            <strong>What it means:</strong> You have a mutation in both copies of the MBD4 gene.
+            This gene normally repairs DNA damage. When it's broken, your cells can't fix certain
             types of DNA damage as well.
           </Typography>
           <Typography variant="body2" paragraph>
-            <strong>Why this matters for treatment:</strong> Because your DNA repair system is compromised, 
-            drugs that create DNA damage (like platinum chemotherapy or PARP inhibitors) can be especially 
+            <strong>Why this matters for treatment:</strong> Because your DNA repair system is compromised,
+            drugs that create DNA damage (like platinum chemotherapy or PARP inhibitors) can be especially
             effective. Your tumor is more vulnerable to these drugs.
           </Typography>
           <Typography variant="body2">
-            <strong>Risk increases:</strong> This mutation is associated with increased risk for 
+            <strong>Risk increases:</strong> This mutation is associated with increased risk for
             acute myeloid leukemia and colorectal cancer. Regular monitoring is recommended.
           </Typography>
         </Box>
@@ -51,14 +51,14 @@ export default function Genomics101Explanations({ patientProfile, result }) {
             TP53 Mutation (Tumor)
           </Typography>
           <Typography variant="body2" paragraph>
-            <strong>What it means:</strong> Your tumor has a mutation in the TP53 gene, which is 
-            often called the "guardian of the genome." This gene normally stops damaged cells from 
+            <strong>What it means:</strong> Your tumor has a mutation in the TP53 gene, which is
+            often called the "guardian of the genome." This gene normally stops damaged cells from
             growing and dividing.
           </Typography>
           <Typography variant="body2">
-            <strong>Why this matters for treatment:</strong> When TP53 is broken, tumor cells can 
-            grow unchecked. However, this also means the tumor has lost an important "checkpoint" 
-            that normally protects cells from DNA-damaging drugs. Combined with your MBD4 mutation, 
+            <strong>Why this matters for treatment:</strong> When TP53 is broken, tumor cells can
+            grow unchecked. However, this also means the tumor has lost an important "checkpoint"
+            that normally protects cells from DNA-damaging drugs. Combined with your MBD4 mutation,
             this creates a "double hit" vulnerability that certain drugs can exploit.
           </Typography>
         </Box>
@@ -71,13 +71,13 @@ export default function Genomics101Explanations({ patientProfile, result }) {
             PDGFRA Variant (VUS - Variant of Uncertain Significance)
           </Typography>
           <Typography variant="body2" paragraph>
-            <strong>What it means:</strong> A variant (genetic change) was found in your PDGFRA gene, 
-            but we don't yet know if it causes disease or is harmless. It could contribute to your 
+            <strong>What it means:</strong> A variant (genetic change) was found in your PDGFRA gene,
+            but we don't yet know if it causes disease or is harmless. It could contribute to your
             cancer risk, or it could be benign (harmless).
           </Typography>
           <Typography variant="body2">
-            <strong>What we're doing:</strong> We're using advanced AI tools (Evo2, AlphaMissense) 
-            to analyze this variant and determine if it's likely harmful. The results will help 
+            <strong>What we're doing:</strong> We're using advanced AI tools (Evo2, AlphaMissense)
+            to analyze this variant and determine if it's likely harmful. The results will help
             clarify whether this variant needs monitoring or action.
           </Typography>
         </Box>
@@ -90,13 +90,13 @@ export default function Genomics101Explanations({ patientProfile, result }) {
             Treatment Opportunity: Synthetic Lethality
           </Typography>
           <Typography variant="body2" paragraph>
-            <strong>What this means:</strong> Your combination of genetic mutations (MBD4 + TP53) 
-            creates a specific vulnerability. When both DNA repair pathways are broken, your tumor 
+            <strong>What this means:</strong> Your combination of genetic mutations (MBD4 + TP53)
+            creates a specific vulnerability. When both DNA repair pathways are broken, your tumor
             becomes dependent on backup pathways that can be targeted with drugs.
           </Typography>
           <Typography variant="body2">
-            <strong>Why this is good news:</strong> This vulnerability means certain drugs (like 
-            PARP inhibitors, platinum chemotherapy, or ATR inhibitors) may be especially effective 
+            <strong>Why this is good news:</strong> This vulnerability means certain drugs (like
+            PARP inhibitors, platinum chemotherapy, or ATR inhibitors) may be especially effective
             for you because they target the pathways your tumor now depends on.
           </Typography>
         </Box>

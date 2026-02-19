@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { HeroMetrics, ResponseCharts, OverlapAnalysis, ValidationStatus, PatientTable } from './platinum';
+import { API_ROOT } from '../../lib/apiConfig';
 
-const API_ROOT = import.meta.env.VITE_API_ROOT || '';
 
 const Field = ({ label, children }) => (
   <label className="block text-sm text-gray-300 mb-2">
@@ -220,7 +220,7 @@ const CohortLab = () => {
                   <td className="px-2 py-1 text-gray-200">{r.sample_id}</td>
                   <td className="px-2 py-1 text-gray-200">{r.gene}</td>
                   <td className="px-2 py-1 text-gray-300">{r.hgvs_p || '—'}</td>
-                  <td className="px-2 py-1 text-gray-300">{r.chrom}:{r.pos} {r.ref}>{r.alt}</td>
+                  <td className="px-2 py-1 text-gray-300">{r.chrom}:{r.pos} {r.ref}{'>'}{r.alt}</td>
                   <td className="px-2 py-1 text-gray-200">{Number(r.outcome_platinum) === 1 ? 'Yes' : 'No'}</td>
                 </tr>
               ))}

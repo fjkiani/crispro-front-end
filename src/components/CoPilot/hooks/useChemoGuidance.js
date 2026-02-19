@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useCoPilot } from '../context/CoPilotContext';
+import { API_ROOT } from '../../../lib/apiConfig';
 
 /**
  * useChemoGuidance
@@ -11,7 +12,6 @@ export const useChemoGuidance = () => {
   const [error, setError] = useState(null);
   const [guidance, setGuidance] = useState(null);
 
-  const API_ROOT = import.meta.env.VITE_API_ROOT || '';
 
   const fetchGuidance = useCallback(async (overrides = {}) => {
     setLoading(true);

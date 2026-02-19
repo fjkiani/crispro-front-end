@@ -9,8 +9,8 @@
  */
 
 import { useState, useCallback } from 'react';
+import { API_ROOT } from '../lib/apiConfig';
 
-const API_ROOT = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 
 /**
  * Build the API request body from patient profile

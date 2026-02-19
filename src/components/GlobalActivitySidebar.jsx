@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { IconChevronRight, IconChevronLeft, IconActivity, IconUser, IconHistory, IconRobot, IconTarget, IconRocket, IconShield } from '@tabler/icons-react';
 import { useActivity, ACTIVITY_TYPES } from '../context/ActivityContext';
 import { useLocation } from 'react-router-dom';
+import { API_ROOT } from '../lib/apiConfig';
 
 // Activity event types with their styling
 const EVENT_STYLES = {
@@ -160,7 +161,6 @@ const EVENT_STYLES = {
 };
 
 const GlobalActivitySidebar = () => {
-  const API_ROOT = import.meta.env.VITE_API_ROOT || '';
   const [isExpanded, setIsExpanded] = useState(true);
   const activitiesEndRef = useRef(null);
   const [patientName, setPatientName] = useState('');

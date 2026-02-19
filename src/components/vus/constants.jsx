@@ -1,10 +1,10 @@
 // VUS Explorer Constants - Fully Dynamic Configuration
 
 export const WORKFLOW_STEPS = {
-  IDLE: 'idle',
-  MUTATION_SELECTION: 'mutation_selection',
-  ANALYSIS_VIEW: 'analysis_view',
-  CRISPR_VIEW: 'crispr_view'
+    IDLE: 'idle',
+    MUTATION_SELECTION: 'mutation_selection',
+    ANALYSIS_VIEW: 'analysis_view',
+    CRISPR_VIEW: 'crispr_view'
 };
 
 export const WORKFLOW_STEPS_CONFIG = [
@@ -15,7 +15,7 @@ export const WORKFLOW_STEPS_CONFIG = [
         workflowStep: 'mutation_selection'
     },
     {
-        key: 'step2', 
+        key: 'step2',
         title: '2. Analyze Impact (Evo2)',
         description: 'Predict functional effects & query genome.',
         workflowStep: 'analysis_view'
@@ -54,7 +54,7 @@ export const SUGGESTED_QUERY_TEMPLATES = {
 
 export const CATEGORY_COLORS = {
     effect: 'indigo',
-    presence: 'green', 
+    presence: 'green',
     absence: 'yellow',
     resistance: 'red'
 };
@@ -87,8 +87,9 @@ export const CONFIDENCE_COLORS = {
 export const DEFAULT_PLACEHOLDER_GENE = "BRAF";
 export const DEFAULT_PLACEHOLDER_VARIANT = "V600E";
 
+// Backend API base URL: use API_ROOT from lib/apiConfig.js (Render in prod).
 export const EXTERNAL_URLS = {
-    CRISPR_DESIGNER: 'http://localhost:8501',
+    CRISPR_DESIGNER: import.meta.env.VITE_CRISPR_DESIGNER_URL || 'http://localhost:8501',
     CLINICAL_TRIALS: 'https://clinicaltrials.gov/search'
 };
 
@@ -109,16 +110,6 @@ export const ACTION_BUTTONS = {
         label: "Analyze Effect",
         className: "bg-blue-600 hover:bg-blue-700 text-white py-1 px-2 rounded text-xs",
         title: "Analyze Effect"
-    },
-    wiwfm: {
-        label: "WIWFM",
-        className: "bg-purple-600 hover:bg-purple-700 text-white py-1 px-2 rounded text-xs",
-        title: "Run therapy fit (efficacy)"
-    },
-    dossier: {
-        label: "Send to Dossier",
-        className: "bg-slate-600 hover:bg-slate-700 text-white py-1 px-2 rounded text-xs",
-        title: "Send to Dossier"
     },
     design: {
         label: "Design Guides",
@@ -174,22 +165,21 @@ export const RESEARCH_MODE_CONFIG = {
     disclaimer: "Results are research‑mode and cohort‑dependent."
 };
 
-// Insight chips labels, helpers, thresholds
 export const INSIGHT_LABELS = {
-    functionality: 'Functionality',
-    regulatory: 'Regulatory',
+    functionality: 'Functional Impact',
+    chromatin: 'Chromatin Access',
     essentiality: 'Essentiality',
-    chromatin: 'Chromatin'
+    regulatory: 'Regulatory Role'
 };
 
 export const INSIGHT_HELPERS = {
-    functionality: 'How likely the protein function is altered by the variant.',
-    regulatory: 'How much the variant may affect gene control (splicing/regulatory).',
-    essentiality: 'Whether the gene is critical for cancer survival (context‑aware hint).',
-    chromatin: 'How accessible the locus is (design feasibility and expression context).'
+    functionality: 'Predicted impact on protein function based on sequence conservation and structural analysis.',
+    chromatin: 'Accessibility of the genomic region, indicating potential for active transcription.',
+    essentiality: 'Importance of this gene for cell survival in relevant cancer cell lines.',
+    regulatory: 'Potential impact on gene regulation features like enhancers or promoters.'
 };
 
 export const INSIGHT_THRESHOLDS = {
-    high: 0.7,
+    high: 0.8,
     mid: 0.5
 };

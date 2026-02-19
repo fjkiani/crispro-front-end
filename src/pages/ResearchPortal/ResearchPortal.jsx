@@ -8,9 +8,9 @@ import AutonomousTrialAgent from '../../components/research/AutonomousTrialAgent
 import { exportTrialsPDF } from '../../utils/exportTrialsPDF';
 import { Button, Box, Tabs, Tab, Alert, Typography } from '@mui/material';
 import { useSporadic } from '../../context/SporadicContext';
+import { API_ROOT } from '../../lib/apiConfig';
 
 // Define API URLs (adjust port if necessary)
-const API_ROOT = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 
 const ResearchPortal = () => {
   const [searchResults, setSearchResults] = useState([]);

@@ -30,8 +30,8 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import ScienceIcon from '@mui/icons-material/Science';
+import { API_ROOT } from '../../lib/apiConfig';
 
-const API_ROOT = import.meta.env.VITE_API_ROOT || '';
 
 const defaultStudiesByDisease = {
   'ovarian cancer': [

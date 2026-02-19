@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Box, Grid, TextField, IconButton, Button, Stack, Typography, Chip, Tooltip } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { API_ROOT as API_BASE_URL } from '../../lib/apiConfig';
 
-const API_BASE_URL = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 
 const presets = [
   { gene: 'KRAS', hgvs_p: 'p.Gly12Asp', variant_info: 'chr12:25245350 C>T', build: 'hg38' },

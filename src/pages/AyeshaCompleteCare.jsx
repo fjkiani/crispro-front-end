@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_ROOT } from '../lib/apiConfig';
 import {
   Box,
   Typography,
@@ -66,7 +67,7 @@ export default function AyeshaCompleteCare() {
     // Extract tumor_context from profile biomarkers (IHC/molecular data)
     const biomarkers = profile.tumor_context?.biomarkers || {};
     const somatic = profile.tumor_context?.somatic_mutations || [];
-    
+
     // Build proper tumor_context for backend
     const tumor_context = {
       p53_status: biomarkers.p53_status || null,
@@ -138,7 +139,7 @@ export default function AyeshaCompleteCare() {
     try {
       // Build request from REAL patient profile - no hard-coding
       const requestBody = buildRequestFromProfile(patientProfile);
-      
+
       console.log('[AyeshaCompleteCare] Request body built from profile:', {
         stage: requestBody.stage,
         germline_status: requestBody.germline_status,
@@ -146,8 +147,8 @@ export default function AyeshaCompleteCare() {
         somatic_mutations_count: requestBody.tumor_context?.somatic_mutations?.length || 0,
         germline_variants_count: requestBody.germline_variants?.length || 0
       });
-      
-      const response = await fetch(`${import.meta.env.VITE_API_ROOT}/api/ayesha/complete_care_v2`, {
+
+      const response = await fetch(`${API_ROOT}/api/ayesha/complete_care_v2`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody)
@@ -159,7 +160,7 @@ export default function AyeshaCompleteCare() {
       }
 
       const data = await response.json();
-      
+
       console.log('[AyeshaCompleteCare] API response:', {
         has_wiwfm: !!data.wiwfm,
         wiwfm_status: data.wiwfm?.status,
@@ -185,13 +186,13 @@ export default function AyeshaCompleteCare() {
         has_mechanism_map: !!data.mechanism_map,
         has_resistance: !!data.resistance_playbook
       });
-      
+
       // Transform new API structure to match component expectations
       // Handle "awaiting_ngs" status properly
-      const wiwfmDrugs = data.wiwfm?.status === "awaiting_ngs" 
+      const wiwfmDrugs = data.wiwfm?.status === "awaiting_ngs"
         ? []  // No drugs if awaiting NGS
         : (data.wiwfm?.drugs || data.wiwfm?.recommendations || []);
-      
+
       // PLUMBER 3: Call Synthetic Lethality endpoint
       let syntheticLethalityResult = null;
       try {
@@ -214,16 +215,16 @@ export default function AyeshaCompleteCare() {
         }
 
         if (slMutations.length > 0) {
-          const slResponse = await fetch(`${import.meta.env.VITE_API_ROOT}/api/guidance/synthetic_lethality`, {
+          const slResponse = await fetch(`${API_ROOT}/api/guidance/synthetic_lethality`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               disease: patientProfile.disease?.type || 'ovarian_cancer_hgs',
               mutations: slMutations,
-              api_base: import.meta.env.VITE_API_ROOT || 'http://localhost:8000'
+              api_base: API_ROOT
             })
           });
-          
+
           if (slResponse.ok) {
             syntheticLethalityResult = await slResponse.json();
             console.log('[AyeshaCompleteCare] Synthetic Lethality result:', syntheticLethalityResult);
@@ -240,7 +241,7 @@ export default function AyeshaCompleteCare() {
       const vusMutations = patientProfile.germline?.mutations?.filter(m => m.classification === 'VUS') || [];
       for (const vus of vusMutations) {
         try {
-          const vusResponse = await fetch(`${import.meta.env.VITE_API_ROOT}/api/vus/identify`, {
+          const vusResponse = await fetch(`${API_ROOT}/api/vus/identify`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -251,7 +252,7 @@ export default function AyeshaCompleteCare() {
               }
             })
           });
-          
+
           if (vusResponse.ok) {
             vusResults[vus.gene] = await vusResponse.json();
             console.log(`[AyeshaCompleteCare] VUS Resolution for ${vus.gene}:`, vusResults[vus.gene]);
@@ -292,7 +293,7 @@ export default function AyeshaCompleteCare() {
         });
 
         for (const item of unique) {
-          const resp = await fetch(`${import.meta.env.VITE_API_ROOT}/api/insights/predict_gene_essentiality`, {
+          const resp = await fetch(`${API_ROOT}/api/insights/predict_gene_essentiality`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -333,28 +334,28 @@ export default function AyeshaCompleteCare() {
         ...data,
         drug_recommendations: wiwfmDrugs,
         food_recommendations: data.food_validation?.recommendations || data.food_recommendations || [],
-        integrated_confidence: data.wiwfm?.status === "awaiting_ngs" 
-          ? null 
+        integrated_confidence: data.wiwfm?.status === "awaiting_ngs"
+          ? null
           : (data.wiwfm?.confidence || data.integrated_confidence || 0.7),
         confidence_breakdown: data.wiwfm?.status === "awaiting_ngs"
           ? null
           : (data.wiwfm?.confidence_breakdown || data.confidence_breakdown || {
-              drug_component: data.wiwfm?.confidence || 0.7,
-              food_component: data.food_validation?.confidence || 0.6
-            }),
+            drug_component: data.wiwfm?.confidence || 0.7,
+            food_component: data.food_validation?.confidence || 0.6
+          }),
         wiwfm_status: data.wiwfm?.status,  // Pass through status for UI handling
         synthetic_lethality: syntheticLethalityResult,  // PLUMBER 3
         vus_results: vusResults,  // PLUMBER 4
         essentiality_scores: essentialityScores  // PLUMBER X
       };
-      
+
       console.log('[AyeshaCompleteCare] Transformed data:', {
         drug_recommendations_count: transformedData.drug_recommendations.length,
         wiwfm_status: transformedData.wiwfm_status,
         has_synthetic_lethality: !!transformedData.synthetic_lethality,
         vus_results_count: Object.keys(transformedData.vus_results).length
       });
-      
+
       setResult(transformedData);
     } catch (err) {
       setError(`Error: ${err.message}`);
@@ -371,7 +372,7 @@ export default function AyeshaCompleteCare() {
 
   const handleExportJSON = () => {
     if (!result) return;
-    
+
     const dataStr = JSON.stringify(result, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(dataBlob);
@@ -450,15 +451,15 @@ export default function AyeshaCompleteCare() {
       run_id: result.provenance?.run_id || result.run_id,
       timestamp: result.provenance?.generated_at || result.timestamp,
       data_sources: {
-        pubmed_papers: (result.provenance?.drug_analysis?.papers_reviewed || 0) + 
-                       (result.provenance?.food_analysis?.papers_reviewed || 0),
+        pubmed_papers: (result.provenance?.drug_analysis?.papers_reviewed || 0) +
+          (result.provenance?.food_analysis?.papers_reviewed || 0),
         chembl_targets: drugCount + foodCount,
         clinical_trials: trialCount,
         treatment_lines: patientProfile.diagnostic_timeline?.length || 0
       },
       models_used: [
         { name: "Complete Care Orchestrator", version: "v2" },
-        { name: "Drug Efficacy (WIWFM)", version: result.wiwfm ? "v2" : "v1" },
+        { name: "Drug Efficacy (Patient Fit)", version: result.wiwfm ? "v2" : "v1" },
         { name: "Food Validator", version: result.food_validation ? "v2" : "v1" },
         { name: "SAE Feature Analysis", version: "v2.1" },
         { name: "Resistance Detection", version: "v2" }
@@ -504,15 +505,15 @@ export default function AyeshaCompleteCare() {
           <Grid item xs={12} md={4}>
             <Typography variant="body2" color="text.secondary">Germline Status</Typography>
             <Typography variant="body1" sx={{ fontWeight: 500, color: patientProfile.germline_status === 'positive' ? 'warning.main' : 'text.primary' }}>
-              {patientProfile.germline_status?.toUpperCase() || 'UNKNOWN'} 
+              {patientProfile.germline_status?.toUpperCase() || 'UNKNOWN'}
               {patientProfile.germline?.mutations?.[0]?.gene && ` (${patientProfile.germline.mutations[0].gene})`}
             </Typography>
           </Grid>
           <Grid item xs={12} md={4}>
             <Typography variant="body2" color="text.secondary">Key Biomarkers</Typography>
             <Typography variant="body1" sx={{ fontWeight: 500 }}>
-              PD-L1: CPS {patientProfile.tumor_context?.biomarkers?.pd_l1_cps || 'N/A'} | 
-              p53: {patientProfile.tumor_context?.biomarkers?.p53_status || 'N/A'} | 
+              PD-L1: CPS {patientProfile.tumor_context?.biomarkers?.pd_l1_cps || 'N/A'} |
+              p53: {patientProfile.tumor_context?.biomarkers?.p53_status || 'N/A'} |
               MMR: {patientProfile.tumor_context?.biomarkers?.mmr_status || 'N/A'}
             </Typography>
           </Grid>
@@ -584,27 +585,27 @@ export default function AyeshaCompleteCare() {
       )}
 
       {/* PLUMBER 7: Germline Alert Component */}
-      {patientProfile.germline?.status === 'POSITIVE' && 
-       patientProfile.germline?.mutations?.some(m => m.classification === 'pathogenic') && (
-        <Alert severity="warning" sx={{ mb: 3 }}>
-          <AlertTitle>Germline Pathogenic Mutation Detected</AlertTitle>
-          {patientProfile.germline.mutations
-            .filter(m => m.classification === 'pathogenic')
-            .map((mutation, idx) => (
-              <Box key={idx}>
-                <Typography>
-                  <strong>{mutation.gene}</strong>
-                  {mutation.syndrome && ` (${mutation.syndrome})`}
-                </Typography>
-                {mutation.risk_increases && mutation.risk_increases.length > 0 && (
-                  <Typography variant="body2" sx={{ mt: 1 }}>
-                    <strong>Risk increases:</strong> {mutation.risk_increases.join(', ')}
+      {patientProfile.germline?.status === 'POSITIVE' &&
+        patientProfile.germline?.mutations?.some(m => m.classification === 'pathogenic') && (
+          <Alert severity="warning" sx={{ mb: 3 }}>
+            <AlertTitle>Germline Pathogenic Mutation Detected</AlertTitle>
+            {patientProfile.germline.mutations
+              .filter(m => m.classification === 'pathogenic')
+              .map((mutation, idx) => (
+                <Box key={idx}>
+                  <Typography>
+                    <strong>{mutation.gene}</strong>
+                    {mutation.syndrome && ` (${mutation.syndrome})`}
                   </Typography>
-                )}
-              </Box>
-            ))}
-        </Alert>
-      )}
+                  {mutation.risk_increases && mutation.risk_increases.length > 0 && (
+                    <Typography variant="body2" sx={{ mt: 1 }}>
+                      <strong>Risk increases:</strong> {mutation.risk_increases.join(', ')}
+                    </Typography>
+                  )}
+                </Box>
+              ))}
+          </Alert>
+        )}
 
       {/* Awaiting NGS Status */}
       {result?.wiwfm_status === "awaiting_ngs" && (
@@ -649,7 +650,7 @@ export default function AyeshaCompleteCare() {
         <Box>
           {/* Integrated Confidence Bar - Only show if not awaiting NGS */}
           {result.wiwfm_status !== "awaiting_ngs" && (result.integrated_confidence || result.summary?.confidence_level) && (
-          <IntegratedConfidenceBar
+            <IntegratedConfidenceBar
               integratedConfidence={result.integrated_confidence || 0.7}
               confidenceBreakdown={result.confidence_breakdown || {
                 drug_component: 0.7,
@@ -676,7 +677,7 @@ export default function AyeshaCompleteCare() {
           {/* PLUMBER 8: Synthetic Lethality Analysis */}
           {result.synthetic_lethality && (
             <Box sx={{ mb: 3 }}>
-              <SyntheticLethalityCard 
+              <SyntheticLethalityCard
                 slResult={result.synthetic_lethality}
                 loading={false}
               />
@@ -693,7 +694,7 @@ export default function AyeshaCompleteCare() {
                 {Object.entries(result.vus_results).map(([gene, vusData]) => {
                   const vusMutation = patientProfile.germline?.mutations?.find(m => m.gene === gene && m.classification === 'VUS');
                   if (!vusMutation) return null;
-                  
+
                   return (
                     <VUSResolutionCard
                       key={gene}
@@ -713,7 +714,7 @@ export default function AyeshaCompleteCare() {
           {/* Phase 3: Essentiality Score Display */}
           {((result.essentiality_scores && result.essentiality_scores.length > 0) || (result.synthetic_lethality?.essentiality_scores && result.synthetic_lethality.essentiality_scores.length > 0)) && (
             <Box sx={{ mb: 3 }}>
-              <EssentialityScoreDisplay 
+              <EssentialityScoreDisplay
                 essentialityScores={(result.essentiality_scores && result.essentiality_scores.length > 0) ? result.essentiality_scores : result.synthetic_lethality.essentiality_scores}
                 title="Gene Essentiality Analysis"
               />
@@ -752,7 +753,7 @@ export default function AyeshaCompleteCare() {
           {result.trials && (
             <Box sx={{ mb: 3 }}>
               {result.trials.trials && result.trials.trials.length > 0 ? (
-                <TrialMatchesCard 
+                <TrialMatchesCard
                   trialMatches={result.trials.trials}
                   loading={false}
                 />
@@ -767,7 +768,7 @@ export default function AyeshaCompleteCare() {
                   {result.trials.summary && (
                     <Box sx={{ mt: 2 }}>
                       <Typography variant="body2" color="text.secondary">
-                        <strong>Candidates:</strong> {result.trials.summary.total_candidates || 0} | 
+                        <strong>Candidates:</strong> {result.trials.summary.total_candidates || 0} |
                         <strong> Top results:</strong> {result.trials.summary.top_results || 0}
                       </Typography>
                     </Box>
@@ -816,17 +817,17 @@ export default function AyeshaCompleteCare() {
                       MBD4 Mutation (Homozygous)
                     </Typography>
                     <Typography variant="body2" paragraph>
-                      <strong>What it means:</strong> You have a mutation in both copies of the MBD4 gene. 
-                      This gene normally repairs DNA damage. When it's broken, your cells can't fix certain 
+                      <strong>What it means:</strong> You have a mutation in both copies of the MBD4 gene.
+                      This gene normally repairs DNA damage. When it's broken, your cells can't fix certain
                       types of DNA damage as well.
                     </Typography>
                     <Typography variant="body2" paragraph>
-                      <strong>Why this matters for treatment:</strong> Because your DNA repair system is compromised, 
-                      drugs that create DNA damage (like platinum chemotherapy or PARP inhibitors) can be especially 
+                      <strong>Why this matters for treatment:</strong> Because your DNA repair system is compromised,
+                      drugs that create DNA damage (like platinum chemotherapy or PARP inhibitors) can be especially
                       effective. Your tumor is more vulnerable to these drugs.
                     </Typography>
                     <Typography variant="body2">
-                      <strong>Risk increases:</strong> This mutation is associated with increased risk for 
+                      <strong>Risk increases:</strong> This mutation is associated with increased risk for
                       acute myeloid leukemia and colorectal cancer. Regular monitoring is recommended.
                     </Typography>
                   </Box>
@@ -839,14 +840,14 @@ export default function AyeshaCompleteCare() {
                       TP53 Mutation (Tumor)
                     </Typography>
                     <Typography variant="body2" paragraph>
-                      <strong>What it means:</strong> Your tumor has a mutation in the TP53 gene, which is 
-                      often called the "guardian of the genome." This gene normally stops damaged cells from 
+                      <strong>What it means:</strong> Your tumor has a mutation in the TP53 gene, which is
+                      often called the "guardian of the genome." This gene normally stops damaged cells from
                       growing and dividing.
                     </Typography>
                     <Typography variant="body2">
-                      <strong>Why this matters for treatment:</strong> When TP53 is broken, tumor cells can 
-                      grow unchecked. However, this also means the tumor has lost an important "checkpoint" 
-                      that normally protects cells from DNA-damaging drugs. Combined with your MBD4 mutation, 
+                      <strong>Why this matters for treatment:</strong> When TP53 is broken, tumor cells can
+                      grow unchecked. However, this also means the tumor has lost an important "checkpoint"
+                      that normally protects cells from DNA-damaging drugs. Combined with your MBD4 mutation,
                       this creates a "double hit" vulnerability that certain drugs can exploit.
                     </Typography>
                   </Box>
@@ -859,13 +860,13 @@ export default function AyeshaCompleteCare() {
                       PDGFRA Variant (VUS - Variant of Uncertain Significance)
                     </Typography>
                     <Typography variant="body2" paragraph>
-                      <strong>What it means:</strong> A variant (genetic change) was found in your PDGFRA gene, 
-                      but we don't yet know if it causes disease or is harmless. It could contribute to your 
+                      <strong>What it means:</strong> A variant (genetic change) was found in your PDGFRA gene,
+                      but we don't yet know if it causes disease or is harmless. It could contribute to your
                       cancer risk, or it could be benign (harmless).
                     </Typography>
                     <Typography variant="body2">
-                      <strong>What we're doing:</strong> We're using advanced AI tools (Evo2, AlphaMissense) 
-                      to analyze this variant and determine if it's likely harmful. The results will help 
+                      <strong>What we're doing:</strong> We're using advanced AI tools (Evo2, AlphaMissense)
+                      to analyze this variant and determine if it's likely harmful. The results will help
                       clarify whether this variant needs monitoring or action.
                     </Typography>
                   </Box>
@@ -878,13 +879,13 @@ export default function AyeshaCompleteCare() {
                       Treatment Opportunity: Synthetic Lethality
                     </Typography>
                     <Typography variant="body2" paragraph>
-                      <strong>What this means:</strong> Your combination of genetic mutations (MBD4 + TP53) 
-                      creates a specific vulnerability. When both DNA repair pathways are broken, your tumor 
+                      <strong>What this means:</strong> Your combination of genetic mutations (MBD4 + TP53)
+                      creates a specific vulnerability. When both DNA repair pathways are broken, your tumor
                       becomes dependent on backup pathways that can be targeted with drugs.
                     </Typography>
                     <Typography variant="body2">
-                      <strong>Why this is good news:</strong> This vulnerability means certain drugs (like 
-                      PARP inhibitors, platinum chemotherapy, or ATR inhibitors) may be especially effective 
+                      <strong>Why this is good news:</strong> This vulnerability means certain drugs (like
+                      PARP inhibitors, platinum chemotherapy, or ATR inhibitors) may be especially effective
                       for you because they target the pathways your tumor now depends on.
                     </Typography>
                   </Box>
@@ -928,7 +929,7 @@ export default function AyeshaCompleteCare() {
                   Confidence Level:
                 </Typography>
                 <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-                  {result.integrated_confidence 
+                  {result.integrated_confidence
                     ? `${Math.round(result.integrated_confidence * 100)}%`
                     : result.summary?.confidence_level || "N/A"}
                 </Typography>

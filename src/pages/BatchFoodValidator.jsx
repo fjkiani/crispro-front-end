@@ -23,8 +23,8 @@ import BatchResultsTable from '../components/batch/BatchResultsTable';
 import BatchProgressTracker from '../components/batch/BatchProgressTracker';
 import ComparativeAnalysisPanel from '../components/comparison/ComparativeAnalysisPanel';
 import { useBatchValidation } from '../hooks/useBatchValidation';
+import { API_ROOT } from '../lib/apiConfig';
 
-const API_ROOT = import.meta.env.VITE_API_ROOT || 'http://127.0.0.1:8000';
 
 /**
  * Batch Food Validator

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import useWebSocket from '../../hooks/useWebSocket'; // <<<- IMPORTANT: Check if this path is correct relative to src/components/collaboration
-import FormattedAnalysisContent from '../utils/FormattedAnalysisContent'; // <-- IMPORT
+import useWebSocket from '../../hooks/useWebSocket';
+import FormattedAnalysisContent from '../utils/FormattedAnalysisContent';
+import { WS_ROOT } from '../../lib/apiConfig';
 
 const ConsultationPanel = ({ 
   patientId, 
@@ -50,8 +51,7 @@ const ConsultationPanel = ({
 
   // --- WebSocket Connection ---
   // TODO: Securely generate/retrieve auth token
-  const authToken = `valid_token_${currentUser?.id || 'unknown'}`; 
-  const WS_ROOT = import.meta.env.VITE_WS_ROOT || 'ws://localhost:8008'; // Default for local if not set
+  const authToken = `valid_token_${currentUser?.id || 'unknown'}`;
   const wsUrl = consultationRoomId ? `${WS_ROOT}/ws` : null; // Use generic endpoint, room handled by join message
 
   const {

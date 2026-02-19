@@ -19,8 +19,8 @@ import SAETreatmentLineChips from '../components/SAETreatmentLineChips';
 
 // 🧬 RESISTANCE PREDICTION - MM Resistance Analysis
 import ResistancePanel from '../components/myeloma/ResistancePanel';
+import { API_ROOT as API_BASE_URL } from '../lib/apiConfig';
 
-const API_BASE_URL = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 
 const MyelomaDigitalTwin = () => {
   const [mutations, setMutations] = useState([]); // [{gene,hgvs_p,variant_info,build}]

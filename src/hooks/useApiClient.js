@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
+import { API_ROOT as API_BASE_URL } from '../lib/apiConfig';
 
 const DEFAULT_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
 
 export default function useApiClient(modelId) {
-  const API_BASE_URL = import.meta.env.VITE_API_ROOT || 'http://127.0.0.1:8023';
 
   const client = useMemo(() => {
     const post = async (endpoint, payload = {}, opts = {}) => {

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_ROOT } from '../../../lib/apiConfig';
 import { Box, Typography, Paper, Button, Chip } from '@mui/material';
 import { Q2C_ROUTER } from './intents';
 
@@ -58,7 +59,7 @@ export const Q2CRouterTest = () => {
         max_context_papers: 3
       };
 
-      const response = await fetch('http://localhost:8000/api/evidence/rag-query', {
+      const response = await fetch(`${API_ROOT}/api/evidence/rag-query`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

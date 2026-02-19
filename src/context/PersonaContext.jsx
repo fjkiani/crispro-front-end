@@ -22,6 +22,14 @@ const PERSONA_ACCESS = {
       '/patient/tasks',
       '/home',
       '/profile',
+      // Allow patients to access research and other tools (read-only or limited)
+      '/research-intelligence',
+      '/clinical-genomics',
+      '/synthetic-lethality',
+      '/dosing-guidance',
+      '/metastasis',
+      '/ddr-status',
+      '/sentinel',
     ],
     features: [
       'view_own_profile',
@@ -63,6 +71,7 @@ const PERSONA_ACCESS = {
       '/home',
       '/profile',
       '/dashboard',
+      '/sentinel',
     ],
     features: [
       'view_patient_profiles',

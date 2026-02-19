@@ -10,13 +10,16 @@
  */
 import { useState, useCallback } from 'react';
 import { AYESHA_11_17_25_PROFILE } from '../constants/patients/ayesha_11_17_25';
+import { API_ROOT } from '../lib/apiConfig';
 
-const API_ROOT = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 
 function _inferConsequenceFromHgvs(hgvsP, hgvsC, fallback = 'missense_variant') {
   const p = (hgvsP || '').toLowerCase();
   const c = (hgvsC || '').toLowerCase();
 
+  // Common HGVS patterns:
+  // - "fs" indicates frameshift (e.g., p.K431Nfs*54)
+  // - "*" indicates stop gained / truncation (e.g., p.R213*)
   if (p.includes('fs')) return 'frameshift_variant';
   if (p.includes('*')) return 'stop_gained';
   if (c.includes('del') || c.includes('dup') || c.includes('ins')) return 'frameshift_variant';
@@ -24,6 +27,7 @@ function _inferConsequenceFromHgvs(hgvsP, hgvsC, fallback = 'missense_variant') 
 }
 
 function _pickHgvsP(m) {
+  // Prefer protein HGVS for SL logic (flags/hotspot parsing)
   return (
     m?.protein_change ||
     m?.hgvs_p ||
@@ -33,6 +37,7 @@ function _pickHgvsP(m) {
 }
 
 function _pickHgvsC(m) {
+  // Keep c. HGVS for provenance; do not confuse it with protein HGVS
   return (typeof m?.variant === 'string' && m.variant.startsWith('c.')) ? m.variant : (m?.hgvs_c || null);
 }
 
@@ -53,6 +58,8 @@ export const useSyntheticLethality = () => {
       if (patientData.germline?.mutations) {
         mutations.push(...patientData.germline.mutations.map(m => ({
           gene: m.gene,
+          // IMPORTANT: `m.variant` in the patient constant is typically HGVS c. (e.g., c.1293delA).
+          // For SL, we must prefer protein HGVS (p.) when available to avoid "unknown" flags.
           hgvs_p: _pickHgvsP(m),
           hgvs_c: _pickHgvsC(m),
           consequence: m.variant_type || m.consequence || _inferConsequenceFromHgvs(_pickHgvsP(m), _pickHgvsC(m), 'missense_variant'),
@@ -94,7 +101,9 @@ export const useSyntheticLethality = () => {
         options: {
           model_id: "evo2_7b",
           include_explanations: true,
-          explanation_audience: "clinician"
+          explanation_audience: "clinician",
+          resolve_hgvs_to_grch38: true,
+          true_scoring_required: true
         }
       };
 

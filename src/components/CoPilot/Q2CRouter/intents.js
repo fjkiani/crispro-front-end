@@ -1,3 +1,5 @@
+import { API_ROOT } from '../../../lib/apiConfig';
+
 /**
  * Q2C Router - Question to Capability Router
  * Intent patterns and API mappings for clinical questions
@@ -18,19 +20,6 @@ export const Q2C_INTENTS = {
     ],
     endpoint: '/api/trials/agent/search',
     description: 'Find matching clinical trials',
-    confidence: 'high'
-  },
-  ocr_analysis: {
-    patterns: [
-      /analyze.*(report|text|note)/i,
-      /extract.*(data|clinical)/i,
-      /read.*(this|report)/i,
-      /parse.*(report|text)/i,
-      /upload.*(report|file)/i,
-      /copy.*paste/i
-    ],
-    endpoint: '/api/copilot/analyze_report',
-    description: 'Analyze clinical text/report',
     confidence: 'high'
   },
   chemo_guidance: {
@@ -222,13 +211,6 @@ export const generatePayload = (intent, context) => {
         variant_info: variant?.variant_info
       };
 
-    case 'ocr_analysis':
-      return {
-        ...basePayload,
-        text: context.text || question, // Expect text to be in context if uploaded, or uses question if pasted
-        context: page || 'onboarding'
-      };
-
     case 'drug_efficacy':
       // ⚔️ TREATMENT LINE INTEGRATION - Include treatment history in efficacy payload
       return {
@@ -369,7 +351,7 @@ export const generatePayload = (intent, context) => {
           alt: variant.alt,
           build: variant.build
         }] : [],
-        api_base: 'http://127.0.0.1:8000'
+        api_base: API_ROOT
       };
 
     case 'toxicity_risk':

@@ -19,7 +19,7 @@ if (import.meta.env.DEV) {
 }
 
 // Check if environment variables are present
-export const isSupabaseEnabled = !!(supabaseUrl && supabaseAnonKey);
+export const isSupabaseEnabled = false; // FORCE DISABLED due to connection errors (Mars Rules: Minimal Viable Proof)
 
 // Initialize Supabase client with error handling
 let supabaseClient = null;
@@ -44,7 +44,7 @@ if (isSupabaseEnabled) {
 const mockSupabaseClient = {
   auth: {
     getSession: () => Promise.resolve({ data: { session: null }, error: null }),
-    onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+    onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => { } } } }),
     signInWithPassword: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } }),
     signUp: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } }),
     signOut: () => Promise.resolve({ error: null }),
@@ -163,7 +163,7 @@ export class AnalysisHistoryService {
         .select('*')
         .order('timestamp', { ascending: false })
         .limit(limit);
-      
+
       // Filter by user_id if authenticated
       if (userId) {
         query = query.eq('user_id', userId);
@@ -171,12 +171,12 @@ export class AnalysisHistoryService {
         // Anonymous users only see their own (null user_id)
         query = query.is('user_id', null);
       }
-      
+
       const { data, error } = await query;
 
       // Handle 404/table not found gracefully (PGRST202 = relation not found)
       if (error) {
-        if (error.code === 'PGRST202' || error.code === '42P01' || error.message?.includes('does not exist')) {
+        if (error.code === 'PGRST202' || error.code === 'PGRST205' || error.code === '42P01' || error.message?.includes('does not exist')) {
           console.warn('⚠️ analysis_history table does not exist yet - using localStorage fallback');
           this.enabled = false; // Disable service to avoid repeated 404s
           return [];

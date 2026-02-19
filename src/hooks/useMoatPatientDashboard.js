@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { buildAyeshaCompleteCareV2Request } from "../utils/patientGates";
+import { API_ROOT } from '../lib/apiConfig';
 
-const API_ROOT = import.meta.env.VITE_API_ROOT || "http://localhost:8000";
 
 function cacheKey(profileId) {
   return `moat_dashboard_cache:${profileId}`;

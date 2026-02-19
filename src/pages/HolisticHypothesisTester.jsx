@@ -34,8 +34,8 @@ import HolisticProgressTracker from '../components/holistic/HolisticProgressTrac
 import LLMInsightsPanel from '../components/holistic/LLMInsightsPanel';
 import ComparativeAnalysisPanel from '../components/comparison/ComparativeAnalysisPanel';
 import { useHolisticValidation } from '../hooks/useHolisticValidation';
+import { API_ROOT } from '../lib/apiConfig';
 
-const API_ROOT = import.meta.env.VITE_API_ROOT || 'http://127.0.0.1:8000';
 
 /**
  * Holistic Hypothesis Tester

@@ -27,8 +27,8 @@ import { Search as SearchIcon, FilterList as FilterIcon } from '@mui/icons-mater
 import { DocumentArrowDownIcon } from '@heroicons/react/24/outline';
 import UniversalDossierSummaryCard from '../components/universal/UniversalDossierSummaryCard';
 import PatientProfileForm from '../components/universal/PatientProfileForm';
+import { API_ROOT } from '../lib/apiConfig';
 
-const API_ROOT = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 
 const UniversalDossierBrowser = () => {
   const [patientId, setPatientId] = useState('');

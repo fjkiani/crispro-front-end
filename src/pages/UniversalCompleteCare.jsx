@@ -43,10 +43,10 @@ import { CompleteCareLoadingSkeleton } from '../components/LoadingSkeleton';
 import ErrorState from '../components/complete-care/ErrorState';
 import EmptyState from '../components/complete-care/EmptyState';
 
-const API_ROOT = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 
 // Import main patient profile constant
 import { AYESHA_11_17_25_PROFILE } from '../constants/patients';
+import { API_ROOT } from '../lib/apiConfig';
 
 /**
  * UniversalCompleteCare - Universal complete care plan page

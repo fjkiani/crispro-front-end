@@ -184,11 +184,60 @@ const ChemosensitivityFeaturesCard = ({
             </Box>
           )}
 
+          {/* Milestone Targets — only if forecast data exists in payload */}
+          <Box>
+            <Typography variant="subtitle2" gutterBottom>
+              Response Milestone Targets
+            </Typography>
+            {kelimFeatures.forecast?.cycle3_expected_value != null || kelimFeatures.forecast?.cycle6_expected_value != null ? (
+              <Stack spacing={1}>
+                {kelimFeatures.forecast.cycle3_expected_value != null && (
+                  <Box display="flex" justifyContent="space-between" alignItems="center"
+                    sx={{ p: 1, borderRadius: 1, border: '1px dashed', borderColor: 'primary.light', bgcolor: 'primary.50' }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Cycle 3 Target:
+                    </Typography>
+                    <Chip
+                      label={`CA-125 ≤ ${kelimFeatures.forecast.cycle3_expected_value}`}
+                      size="small"
+                      color="primary"
+                      variant="outlined"
+                      sx={{ fontWeight: 600 }}
+                    />
+                  </Box>
+                )}
+                {kelimFeatures.forecast.cycle6_expected_value != null && (
+                  <Box display="flex" justifyContent="space-between" alignItems="center"
+                    sx={{ p: 1, borderRadius: 1, border: '1px dashed', borderColor: 'success.light', bgcolor: 'success.50' }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Cycle 6 Target:
+                    </Typography>
+                    <Chip
+                      label={`CA-125 ≤ ${kelimFeatures.forecast.cycle6_expected_value}`}
+                      size="small"
+                      color="success"
+                      variant="outlined"
+                      sx={{ fontWeight: 600 }}
+                    />
+                  </Box>
+                )}
+                <Typography variant="caption" color="text.secondary">
+                  Targets derived from KELIM kinetics model applied to pre-treatment CA-125 baseline.
+                </Typography>
+              </Stack>
+            ) : (
+              <Alert severity="info" variant="outlined" sx={{ fontSize: '0.78rem' }}>
+                Milestone targets not available. Requires pre-treatment CA-125 baseline
+                and sufficient measurements to compute KELIM kinetics targets.
+              </Alert>
+            )}
+          </Box>
+
           {/* Explanation */}
           <Alert severity="info" sx={{ mt: 1 }}>
             <Typography variant="caption">
-              <strong>KELIM:</strong> CA-125 Kinetic-ELIMination rate constant. 
-              Measures how quickly CA-125 declines under effective therapy. 
+              <strong>KELIM:</strong> CA-125 Kinetic-ELIMination rate constant.
+              Measures how quickly CA-125 declines under effective therapy.
               Higher K = better chemosensitivity. K ≥ 1.0 suggests favorable response.
             </Typography>
           </Alert>

@@ -18,6 +18,7 @@ import {
   Stack,
   LinearProgress
 } from '@mui/material';
+import { API_ROOT } from '../lib/apiConfig';
 import {
   Science,
   Security,
@@ -29,7 +30,6 @@ import {
   Lightbulb
 } from '@mui/icons-material';
 
-const API_ROOT = import.meta.env.VITE_API_ROOT || 'http://127.0.0.1:8000';
 
 /**
  * 🔬 SYNTHETIC LETHALITY DETECTIVE DEMO
@@ -152,7 +152,7 @@ const SyntheticLethalityDetective = () => {
                 Patient Case
               </Typography>
               <Divider sx={{ my: 2 }} />
-              
+
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 <strong>Diagnosis:</strong> Metastatic Ovarian Cancer
               </Typography>
@@ -167,7 +167,7 @@ const SyntheticLethalityDetective = () => {
                 <Typography variant="subtitle2" gutterBottom>
                   Genomic Profile:
                 </Typography>
-                <Chip 
+                <Chip
                   label={`${TEST_MUTATION.gene} ${TEST_MUTATION.hgvs_p}`}
                   color="error"
                   sx={{ mt: 1 }}
@@ -180,7 +180,7 @@ const SyntheticLethalityDetective = () => {
 
               <Alert severity="info" sx={{ mt: 3 }}>
                 <Typography variant="caption">
-                  <strong>Clinical Challenge:</strong> No genomic biomarkers exist for post-T-DXd therapy selection. 
+                  <strong>Clinical Challenge:</strong> No genomic biomarkers exist for post-T-DXd therapy selection.
                   rwPFS is 2-3 months on most options. We need better.
                 </Typography>
               </Alert>
@@ -270,9 +270,9 @@ const SyntheticLethalityDetective = () => {
                         </Typography>
                       </Box>
                     </Stack>
-                    
+
                     <Divider sx={{ my: 2 }} />
-                    
+
                     <Typography variant="h4" sx={{ color: 'success.dark', fontWeight: 'bold', textAlign: 'center', py: 2 }}>
                       {result.suggested_therapy?.toUpperCase() || 'PLATINUM / PARP INHIBITOR'}
                     </Typography>
@@ -282,8 +282,8 @@ const SyntheticLethalityDetective = () => {
                         🎯 <strong>Mechanism:</strong>
                       </Typography>
                       <Typography variant="body2" sx={{ pl: 2 }}>
-                        • BRCA1 mutation → DNA repair pathway #1 broken<br/>
-                        • {result.suggested_therapy || 'Platinum/PARP inhibitor'} → Blocks DNA repair pathway #2<br/>
+                        • BRCA1 mutation → DNA repair pathway #1 broken<br />
+                        • {result.suggested_therapy || 'Platinum/PARP inhibitor'} → Blocks DNA repair pathway #2<br />
                         • Result: <strong>Synthetic lethality</strong> - cancer cells die, normal cells survive
                       </Typography>
                     </Box>
@@ -302,8 +302,8 @@ const SyntheticLethalityDetective = () => {
 
                     <Alert severity="success" sx={{ mt: 3 }}>
                       <Typography variant="body2">
-                        <strong>Time to Decision:</strong> Same day vs. 6 weeks traditional workflow<br/>
-                        <strong>Confidence:</strong> 89% (S/P/E framework)<br/>
+                        <strong>Time to Decision:</strong> Same day vs. 6 weeks traditional workflow<br />
+                        <strong>Confidence:</strong> 89% (S/P/E framework)<br />
                         <strong>Expected rwPFS:</strong> 8-12 months (vs 2-3 months with wrong choice)
                       </Typography>
                     </Alert>
@@ -350,7 +350,7 @@ const SyntheticLethalityDetective = () => {
           </Grid>
           <Alert severity="info" sx={{ mt: 2 }}>
             <Typography variant="caption">
-              <strong>Research Use Only:</strong> This analysis uses computational predictions. 
+              <strong>Research Use Only:</strong> This analysis uses computational predictions.
               Clinical decisions require validation by healthcare professionals.
             </Typography>
           </Alert>
@@ -369,29 +369,29 @@ const renderStepContent = (stepIndex, result) => {
       return (
         <Box sx={{ my: 2 }}>
           <Typography variant="body2">
-            ✓ Analyzed BRCA1 C61G mutation<br/>
-            ✓ RING domain disruption detected<br/>
-            ✓ Protein functionality severely compromised<br/>
+            ✓ Analyzed BRCA1 C61G mutation<br />
+            ✓ RING domain disruption detected<br />
+            ✓ Protein functionality severely compromised<br />
             ✓ DNA damage response pathway impaired
           </Typography>
           {result.damage_report?.length > 0 && (
-            <Chip 
+            <Chip
               label={`Functionality Score: ${result.damage_report[0]?.functionality?.functionality_score?.toFixed(2) || 'N/A'}`}
-              color="error" 
-              size="small" 
-              sx={{ mt: 1 }} 
+              color="error"
+              size="small"
+              sx={{ mt: 1 }}
             />
           )}
         </Box>
       );
-    
+
     case 1: // Pathway
       return (
         <Box sx={{ my: 2 }}>
           <Typography variant="body2">
-            ✓ DNA repair pathway dependency analyzed<br/>
-            ✓ Homologous recombination deficiency detected<br/>
-            ✓ Pathway vulnerabilities mapped<br/>
+            ✓ DNA repair pathway dependency analyzed<br />
+            ✓ Homologous recombination deficiency detected<br />
+            ✓ Pathway vulnerabilities mapped<br />
             ✓ Therapeutic targets identified
           </Typography>
           <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
@@ -400,34 +400,34 @@ const renderStepContent = (stepIndex, result) => {
           </Stack>
         </Box>
       );
-    
+
     case 2: // Synthetic Lethality
       return (
         <Box sx={{ my: 2 }}>
           <Typography variant="body2">
-            ✓ BRCA1 in DNA repair gene set detected<br/>
-            ✓ Synthetic lethality opportunity identified<br/>
-            ✓ Platinum/PARP inhibitor mechanism validated<br/>
+            ✓ BRCA1 in DNA repair gene set detected<br />
+            ✓ Synthetic lethality opportunity identified<br />
+            ✓ Platinum/PARP inhibitor mechanism validated<br />
             ✓ Evidence tier: I (FDA approved, RCTs)
           </Typography>
           {result.essentiality_report?.length > 0 && (
-            <Chip 
+            <Chip
               label={`Essentiality: ${result.essentiality_report[0]?.result?.essentiality_score?.toFixed(2) || 'N/A'}`}
-              color="info" 
-              size="small" 
-              sx={{ mt: 1 }} 
+              color="info"
+              size="small"
+              sx={{ mt: 1 }}
             />
           )}
         </Box>
       );
-    
+
     case 3: // Therapy
       return (
         <Box sx={{ my: 2 }}>
           <Typography variant="body2">
-            ✓ Therapy recommendation: <strong>{result.suggested_therapy?.toUpperCase() || 'PLATINUM'}</strong><br/>
-            ✓ FDA approval status: ✅ On-label<br/>
-            ✓ Clinical evidence: Multiple Phase 3 RCTs<br/>
+            ✓ Therapy recommendation: <strong>{result.suggested_therapy?.toUpperCase() || 'PLATINUM'}</strong><br />
+            ✓ FDA approval status: ✅ On-label<br />
+            ✓ Clinical evidence: Multiple Phase 3 RCTs<br />
             ✓ Confidence: 89% (S/P/E framework)
           </Typography>
           <Alert severity="success" sx={{ mt: 1 }}>
@@ -437,7 +437,7 @@ const renderStepContent = (stepIndex, result) => {
           </Alert>
         </Box>
       );
-    
+
     default:
       return null;
   }

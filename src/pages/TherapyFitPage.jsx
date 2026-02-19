@@ -20,8 +20,8 @@ import VariantInputList from '../components/myeloma/VariantInputList';
 import ModelSelector from '../components/myeloma/ModelSelector';
 import DiseaseSelector from '../components/common/DiseaseSelector';
 import SPEFrameworkExplanation from '../components/therapy-fit/SPEFrameworkExplanation';
+import { API_ROOT as API_BASE_URL } from '../lib/apiConfig';
 
-const API_BASE_URL = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 
 export default function TherapyFitPage() {
   const [disease, setDisease] = useState('');

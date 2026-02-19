@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
+import { API_ROOT } from '../lib/apiConfig';
 
-const API_ROOT = import.meta.env.VITE_API_ROOT || 'http://127.0.0.1:8000';
 
 /**
  * useHolisticValidation Hook

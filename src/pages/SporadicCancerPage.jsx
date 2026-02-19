@@ -91,7 +91,7 @@ export default function SporadicCancerPage() {
 
     const gatesText = gates.join(String.fromCharCode(10));
 
-    return `# Sporadic Cancer Analysis Summary\n\n## Patient Context\n- Germline Status: ${germlineStatus}\n- Data Level: ${dataLevel}\n- Tumor Context ID: ${contextId || 'N/A'}\n\n## Biomarkers\n- TMB: ${tmbVal} mut/Mb\n- HRD Score: ${hrdVal}\n- MSI Status: ${msiVal}\n- Completeness Score: ${compVal}\n\n## Applied Gates\n${gatesText}\n\n## Next Steps\n1. Run WIWFM efficacy prediction\n2. Review provenance cards per drug\n3. Consider additional biomarker testing if data level is L0/L1\n\n---\nGenerated from Sporadic Cancer Analysis Tool (RUO)`;
+    return `# Sporadic Cancer Analysis Summary\n\n## Patient Context\n- Germline Status: ${germlineStatus}\n- Data Level: ${dataLevel}\n- Tumor Context ID: ${contextId || 'N/A'}\n\n## Biomarkers\n- TMB: ${tmbVal} mut/Mb\n- HRD Score: ${hrdVal}\n- MSI Status: ${msiVal}\n- Completeness Score: ${compVal}\n\n## Applied Gates\n${gatesText}\n\n## Next Steps\n1. Run Patient Fit efficacy prediction\n2. Review provenance cards per drug\n3. Consider additional biomarker testing if data level is L0/L1\n\n---\nGenerated from Sporadic Cancer Analysis Tool (RUO)`;
   };
 
   const copyClinicianSummary = async () => {
@@ -135,11 +135,10 @@ export default function SporadicCancerPage() {
               <Stack direction="row" spacing={1}>
                 <Chip label={`TMB: ${tumorContext?.tmb?.toFixed(1) || 'N/A'}`} size="small" variant="outlined" />
                 <Chip
-                  label={`HRD: ${
-                    tumorContext?.hrd_score !== null && tumorContext?.hrd_score !== undefined
+                  label={`HRD: ${tumorContext?.hrd_score !== null && tumorContext?.hrd_score !== undefined
                       ? tumorContext.hrd_score.toFixed(0)
                       : 'Unknown'
-                  }`}
+                    }`}
                   size="small"
                   variant="outlined"
                 />

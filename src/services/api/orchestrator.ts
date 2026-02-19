@@ -1,3 +1,5 @@
+import { API_ROOT as API_BASE } from '../../lib/apiConfig';
+
 /**
  * Orchestrator API Client
  * 
@@ -5,7 +7,6 @@
  * Provides type-safe methods for all orchestrator operations.
  */
 
-const API_BASE = import.meta.env.VITE_API_ROOT || 'http://127.0.0.1:8000';
 
 // Types
 export interface PipelineRequest {
@@ -80,11 +81,11 @@ export const orchestratorApi = {
       // File upload: use dedicated upload endpoint
       const formData = new FormData();
       formData.append('file', file);
-      
+
       if (fileType) {
         formData.append('file_type', fileType);
       }
-      
+
       // Add request metadata as form fields
       if (request.patient_id) {
         formData.append('patient_id', request.patient_id);
@@ -104,18 +105,18 @@ export const orchestratorApi = {
       if (request.options?.skip_agents) {
         formData.append('skip_agents', JSON.stringify(request.options.skip_agents));
       }
-      
+
       const response = await fetch(`${API_BASE}/api/orchestrate/full/upload`, {
         method: 'POST',
         body: formData,
         // Don't set Content-Type header for FormData - browser will set it with boundary
       });
-      
+
       if (!response.ok) {
         const error = await response.json().catch(() => ({ detail: `HTTP ${response.status}` }));
         throw new Error(error.detail || 'Pipeline execution failed');
       }
-      
+
       return response.json();
     } else {
       // No file: send JSON body to standard endpoint
@@ -129,7 +130,7 @@ export const orchestratorApi = {
         current_regimen: request.options?.current_regimen,
         skip_agents: request.options?.skip_agents,
       };
-      
+
       const response = await fetch(`${API_BASE}/api/orchestrate/full`, {
         method: 'POST',
         headers: {
@@ -137,12 +138,12 @@ export const orchestratorApi = {
         },
         body: JSON.stringify(requestBody),
       });
-      
+
       if (!response.ok) {
         const error = await response.json().catch(() => ({ detail: `HTTP ${response.status}` }));
         throw new Error(error.detail || 'Pipeline execution failed');
       }
-      
+
       return response.json();
     }
   },
@@ -152,12 +153,12 @@ export const orchestratorApi = {
    */
   async getStatus(patientId: string): Promise<StatusResponse> {
     const response = await fetch(`${API_BASE}/api/orchestrate/status/${patientId}`);
-    
+
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.detail || 'Failed to get status');
     }
-    
+
     return response.json();
   },
 
@@ -166,12 +167,12 @@ export const orchestratorApi = {
    */
   async getState(patientId: string): Promise<PatientState> {
     const response = await fetch(`${API_BASE}/api/orchestrate/state/${patientId}`);
-    
+
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.detail || 'Failed to get patient state');
     }
-    
+
     return response.json();
   },
 
@@ -186,12 +187,12 @@ export const orchestratorApi = {
       },
       body: JSON.stringify(event),
     });
-    
+
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.detail || 'Event processing failed');
     }
-    
+
     return response.json();
   },
 
@@ -203,14 +204,14 @@ export const orchestratorApi = {
     if (phase) {
       params.append('phase', phase);
     }
-    
+
     const response = await fetch(`${API_BASE}/api/orchestrate/states?${params}`);
-    
+
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.detail || 'Failed to list states');
     }
-    
+
     return response.json();
   },
 
@@ -219,7 +220,7 @@ export const orchestratorApi = {
    */
   async healthCheck(): Promise<HealthResponse> {
     const response = await fetch(`${API_BASE}/api/orchestrate/health`);
-    
+
     if (!response.ok) {
       return {
         status: 'unhealthy',
@@ -228,7 +229,7 @@ export const orchestratorApi = {
         error: 'Health check failed',
       };
     }
-    
+
     return response.json();
   },
 };

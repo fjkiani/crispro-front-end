@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Paper, Grid, Card, CardContent, LinearProgress, Alert } from '@mui/material';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { API_ROOT as API_BASE_URL } from '../../lib/apiConfig';
 
-const API_BASE_URL = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 
 const SupabaseDashboard = () => {
   const [metrics, setMetrics] = useState(null);

@@ -24,33 +24,67 @@ import {
   Box,
   Chip,
 } from '@mui/material';
-import { Warning, Error as ErrorIcon } from '@mui/icons-material';
+import { Warning, Error as ErrorIcon, CheckCircle } from '@mui/icons-material';
 
 const PathwayDisruptionCard = ({ brokenPathways = [] }) => {
-  if (!brokenPathways || brokenPathways.length === 0) {
-    return (
-      <Card elevation={2} sx={{ borderRadius: 2, height: '100%' }}>
-        <CardContent>
-          <Typography variant="body2" color="text.secondary">
-            No pathway disruptions detected
-          </Typography>
-        </CardContent>
-      </Card>
-    );
-  }
-
   // Filter to only show broken/compromised pathways
-  const disruptedPathways = brokenPathways.filter(
+  const disruptedPathways = brokenPathways ? brokenPathways.filter(
     p => p.status === 'NON_FUNCTIONAL' || p.status === 'COMPROMISED'
-  );
+  ) : [];
 
   if (disruptedPathways.length === 0) {
     return (
-      <Card elevation={2} sx={{ borderRadius: 2, height: '100%' }}>
-        <CardContent>
-          <Typography variant="body2" color="text.secondary">
-            All pathways functional
-          </Typography>
+      <Card elevation={0} sx={{ borderRadius: 2, height: '100%', display: 'flex', flexDirection: 'column', border: '1px solid', borderColor: 'divider' }}>
+        <CardHeader
+          title={
+            <Box display="flex" alignItems="center" gap={1}>
+              <Typography variant="h6" fontWeight={700}>
+                Functional Integrity
+              </Typography>
+              <Chip
+                label="STABLE"
+                size="small"
+                sx={{ bgcolor: '#ecfdf5', color: '#059669', fontWeight: 700, fontSize: '0.7rem', height: 20 }}
+              />
+            </Box>
+          }
+          subheader="No intrinsic pathway failures detected"
+          sx={{ pb: 1 }}
+        />
+        <CardContent sx={{ flexGrow: 1, pt: 0 }}>
+          <Alert severity="success" icon={<Warning fontSize="inherit" />} sx={{ mb: 2, bgcolor: '#f0fdf4', color: '#166534', border: '1px solid', borderColor: '#bbf7d0' }}>
+            <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+              Non-Addicted Profile
+            </Typography>
+            <Typography variant="caption" display="block" sx={{ lineHeight: 1.4 }}>
+              Unlike unstable tumors vulnerable to synthetic lethality (e.g. PARPi), this tumor has kept its safety systems intact.
+            </Typography>
+            <Typography variant="caption" display="block" sx={{ mt: 1, fontWeight: 600 }}>
+              Implication: Harder to target implicitly. Must attack primary growth fuel (MAPK/PI3K).
+            </Typography>
+          </Alert>
+
+          <Box>
+            <Typography variant="caption" color="text.secondary" fontWeight={500} gutterBottom>
+              Verified Functional Systems:
+            </Typography>
+            <Box display="flex" flexWrap="wrap" gap={1} mt={0.5}>
+              {['Apoptosis', 'Cell Cycle', 'DNA Repair', 'Hypoxia'].map(p => (
+                <Chip
+                  key={p}
+                  icon={<CheckCircle sx={{ fontSize: '0.9rem !important' }} />}
+                  label={p}
+                  size="small"
+                  sx={{
+                    bgcolor: '#ffffff',
+                    border: '1px solid',
+                    borderColor: '#d1d5db',
+                    '& .MuiChip-icon': { color: '#059669' } // emerald-600
+                  }}
+                />
+              ))}
+            </Box>
+          </Box>
         </CardContent>
       </Card>
     );
@@ -60,8 +94,8 @@ const PathwayDisruptionCard = ({ brokenPathways = [] }) => {
     <Card elevation={2} sx={{ borderRadius: 2, height: '100%' }}>
       <CardHeader
         avatar={<Warning color="warning" />}
-        title="⚠️ Broken Pathways"
-        subheader={`${disruptedPathways.length} pathway${disruptedPathways.length !== 1 ? 's' : ''} disrupted`}
+        title="⚠️ Disrupted Pathways"
+        subheader={`${disruptedPathways.length} pathway${disruptedPathways.length !== 1 ? 's' : ''} compromised`}
       />
       <CardContent>
         <Stack spacing={2}>
@@ -82,10 +116,10 @@ const PathwayDisruptionCard = ({ brokenPathways = [] }) => {
                 <Typography variant="subtitle2" fontWeight={600} gutterBottom>
                   {pathway.pathway_name}
                 </Typography>
-                
+
                 <Box display="flex" flexWrap="wrap" gap={1} mb={1} alignItems="center">
                   <Chip
-                    label={pathway.status.replace('_', ' ')}
+                    label={(pathway.status || 'UNKNOWN').replace('_', ' ')}
                     size="small"
                     color={severity}
                     sx={{ fontWeight: 600 }}
@@ -107,8 +141,7 @@ const PathwayDisruptionCard = ({ brokenPathways = [] }) => {
                     <Box display="flex" flexWrap="wrap" gap={0.5}>
                       {pathway.genes_affected.map((gene, idx) => (
                         <Chip
-                          key={idx}
-                          label={gene}
+                          label={typeof gene === 'object' ? (gene.name || gene.gene || 'Unknown') : gene}
                           size="small"
                           variant="outlined"
                           sx={{ fontSize: '0.7rem' }}

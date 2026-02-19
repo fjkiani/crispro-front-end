@@ -56,6 +56,9 @@ build/
 # Environment variables
 .env
 .env.local
+.env.development
+.env.production
+.env.staging
 
 # PyTorch specific
 torch/
@@ -101,3 +104,10 @@ Thumbs.db
 variant-analysis-evo2-main/
 CRISPResso2-master copy/
 CRISPResso2-master/
+
+# Backup and temp files
+*.bak
+*.bak[0-9]*
+*.new
+refactor-api-imports.mjs
+debug_*.py

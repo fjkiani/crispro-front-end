@@ -48,8 +48,8 @@ import {
 } from '@mui/icons-material';
 import PatientProfileForm from '../components/universal/PatientProfileForm';
 import UniversalDossierSummaryCard from '../components/universal/UniversalDossierSummaryCard';
+import { API_ROOT } from '../lib/apiConfig';
 
-const API_ROOT = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 
 /**
  * Compute SAE mechanism vector from tumor_context

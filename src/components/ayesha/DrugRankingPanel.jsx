@@ -1,20 +1,31 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Card,
   CardContent,
   Typography,
-  Chip,
   LinearProgress,
   Button,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails
+  CircularProgress
 } from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import MedicationIcon from '@mui/icons-material/Medication';
 import InfoIcon from '@mui/icons-material/Info';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import AssessmentIcon from '@mui/icons-material/Assessment';
+
+// Modular Components
+import DrugCardHeader from './ranking/DrugCardHeader';
+import EvidenceRenderer from './ranking/EvidenceRenderer';
+import SafetyPanel from './ranking/SafetyPanel';
+import ProvenanceAccordion from './ranking/ProvenanceAccordion';
+
+// Utils
+import { humanize } from '../../utils/drugRendering';
+import TherapyFitExplainerAgent from './TherapyFitExplainerAgent';
+import { API_ROOT } from '../../lib/apiConfig';
+
 
 /**
  * DrugRankingPanel - Displays ranked drug recommendations
@@ -22,8 +33,56 @@ import InfoIcon from '@mui/icons-material/Info';
  * Props:
  * @param {Array} drugs - Array of drug recommendation objects
  * @param {Function} onViewDetails - Optional callback when "Details" clicked
+ * @param {Object} context - Analysis context for dossier generation (level, scenario, inputs)
  */
-export default function DrugRankingPanel({ drugs = [], onViewDetails }) {
+export default function DrugRankingPanel({ drugs = [], onViewDetails, context = {} }) {
+  const [showExplanation, setShowExplanation] = useState({});
+  const [creatingDossier, setCreatingDossier] = useState(null); // drug index -> loading state
+  const navigate = useNavigate();
+
+  const toggleExplanation = (idx) => {
+    setShowExplanation(prev => ({ ...prev, [idx]: !prev[idx] }));
+  };
+
+  const handleInformDoctor = async (drug, idx) => {
+    setCreatingDossier(idx);
+    try {
+      // Construct Payload matching DoctorDossierInput
+      const payload = {
+        drug_data: {
+          ...drug,
+          drug: drug.name || drug.drug || "Unknown",
+          label_status: drug.label_status || "UNKNOWN"
+        },
+        context: {
+          patient_id: "AK",
+          level: context.level || "L2",
+          scenario: context.scenario || "Unknown",
+          mutations: context.inputs?.mutations || []
+        },
+        provenance: context.provenance || {}
+      };
+
+      const res = await fetch(`${API_ROOT}/api/ayesha/dossiers/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) throw new Error("Failed to generate dossier");
+
+      const data = await res.json();
+      // Navigate to the new dossier
+      navigate(data.path);
+
+    } catch (err) {
+      console.error("Dossier creation failed:", err);
+      alert("Failed to create dossier: " + err.message);
+    } finally {
+      setCreatingDossier(null);
+    }
+  };
+
   if (!drugs || drugs.length === 0) {
     return (
       <Card sx={{ p: 3 }}>
@@ -34,73 +93,21 @@ export default function DrugRankingPanel({ drugs = [], onViewDetails }) {
     );
   }
 
-  const getTierColor = (tier) => {
-    if (tier === 'supported') return 'success';
-    if (tier === 'consider') return 'warning';
-    return 'default';
-  };
-
-  const getBadgeColor = (badge) => {
-    if (badge === 'RCT' || badge === 'Guideline') return 'success';
-    if (badge === 'ClinVar-Strong') return 'info';
-    return 'default';
-  };
-
   return (
     <Card sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
         <MedicationIcon color="primary" fontSize="large" />
         <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-          Drug Efficacy Rankings
+          ARSENAL (DRUG EFFICACY RANKINGS)
         </Typography>
       </Box>
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {drugs.map((drug, idx) => (
-          <Card key={idx} variant="outlined" sx={{ bgcolor: idx === 0 ? 'primary.50' : 'white' }}>                                                              
+          <Card key={idx} variant="outlined" sx={{ bgcolor: idx === 0 ? 'primary.50' : 'white' }}>
             <CardContent>
               {/* Header */}
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>                                                      
-                <Box>
-                  <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                    {idx + 1}. {drug.drug}
-                  </Typography>
-                  <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>                                                                               
-                    <Chip
-                      label={`Tier: ${drug.tier?.toUpperCase() || 'UNKNOWN'}`}
-                      color={getTierColor(drug.tier)}
-                      size="small"
-                    />
-                    {/* Completeness Level Badge (L0/L1/L2) */}
-                    {drug.sporadic_gates_provenance?.level && (
-                      <Chip
-                        label={`Intake: ${drug.sporadic_gates_provenance.level}`}
-                        color={drug.sporadic_gates_provenance.level === 'L2' ? 'success' : 
-                               drug.sporadic_gates_provenance.level === 'L1' ? 'warning' : 'error'}
-                        size="small"
-                        variant="outlined"
-                      />
-                    )}
-                    {drug.badges && drug.badges.map((badge, bidx) => (
-                      <Chip
-                        key={bidx}
-                        label={badge}
-                        color={getBadgeColor(badge)}
-                        size="small"
-                        variant="outlined"
-                      />
-                    ))}
-                  </Box>
-                </Box>
-                <Box sx={{ textAlign: 'right' }}>
-                  <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>                                                                  
-                    {Math.round((drug.efficacy_score || 0) * 100)}%
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Confidence: {Math.round((drug.confidence || 0) * 100)}%
-                  </Typography>
-                </Box>
-              </Box>
+              <DrugCardHeader drug={drug} index={idx} />
 
               {/* Score Bar */}
               <Box sx={{ mb: 2 }}>
@@ -112,213 +119,27 @@ export default function DrugRankingPanel({ drugs = [], onViewDetails }) {
                 />
               </Box>
 
-              {/* Rationale */}
-              {drug.rationale && (
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>                                                                              
-                  {drug.rationale}
-                </Typography>
-              )}
+              {/* Rationale / Evidence */}
+              <EvidenceRenderer rationale={drug.rationale} />
 
-              {/* PGx Screening (RUO) */}
-              {drug.pgx_screening && drug.pgx_screening.screened && (
-                <Box sx={{ mb: 2, p: 1.5, border: 1, borderColor: 'divider', borderRadius: 1, bgcolor: 'background.default' }}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
-                    PGx Safety (RUO)
+              {/* If we only have citations_count (not actual PMIDs), be explicit */}
+              {typeof drug.citations_count === 'number' && (!drug.citations || drug.citations.length === 0) && (
+                <Box sx={{ mt: 1 }}>
+                  <Typography variant="caption" color="text.secondary">
+                    {drug.citations_count > 0
+                      ? `Citations surfaced: ${drug.citations_count} (PMIDs not attached in this response)`
+                      : 'No citations surfaced in this response.'}
                   </Typography>
-                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 1 }}>
-                    <Chip
-                      label={`PGx Tier: ${drug.pgx_screening.toxicity_tier || 'UNKNOWN'}`}
-                      size="small"
-                      color={
-                        (drug.pgx_screening.toxicity_tier || '').toUpperCase() === 'HIGH' ? 'error' :
-                        (drug.pgx_screening.toxicity_tier || '').toUpperCase() === 'MODERATE' ? 'warning' :
-                        'success'
-                      }
-                      variant="outlined"
-                    />
-                    {typeof drug.pgx_screening.adjustment_factor === 'number' && (
-                      <Chip
-                        label={`Adj: ${drug.pgx_screening.adjustment_factor.toFixed(2)}×`}
-                        size="small"
-                        variant="outlined"
-                      />
-                    )}
-                  </Box>
-                  {drug.pgx_screening.rationale && (
-                   <Typography variant="body2" color="text.secondary">
-                      {drug.pgx_screening.rationale}
-                    </Typography>
-                  )}
-                  {Array.isArray(drug.pgx_screening.alerts) && drug.pgx_screening.alerts.length > 0 && (
-                    <Box sx={{ mt: 1 }}>
-                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold' }}>
-                        Alerts
-                      </Typography>
-                      {drug.pgx_screening.alerts.slice(0, 3).map((a, aidx) => (
-                        <Typography key={aidx} variant="body2" sx={{ mt: 0.5 }}>
-                          • <strong>{a.gene}</strong>: {a.message}
-                        </Typography>
-                      ))}
-                    </Box>
-                  )}
                 </Box>
               )}
 
-            {/* Sporadic Gates Provenance - Why this confidence? */}
-              {drug.sporadic_gates_provenance && !drug.sporadic_gates_provenance.error && (
-                <Accordion sx={{ mb: 2, bgcolor: 'action.hover' }}>
-                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <InfoIcon color="primary" fontSize="small" />
-                      <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-                        Why this confidence?
-                      </Typography>
-                      {drug.sporadic_gates_provenance.gates_applied && drug.sporadic_gates_provenance.gates_applied.length > 0 && (
-                        <Chip
-                          label={`${drug.sporadic_gates_provenance.gates_applied.length} gate(s) applied`}
-                          size="small"
-                          color="info"
-                        />
-                      )}
-                    </Box>
-                  </AccordionSummary>
-                  <AccordionDetails>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      {/* Completeness Level */}
-                      {drug.sporadic_gates_provenance.level && (
-                        <Box>
-                          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold' }}>
-                            Data Completeness
-                          </Typography>
-                          <Typography variant="body2">
-                            <strong>{drug.sporadic_gates_provenance.level}</strong> - {
-                              drug.sporadic_gates_provenance.level === 'L2' ? 'Full biomarker panel available' :
-                              drug.sporadic_gates_provenance.level === 'L1' ? 'Partial biomarkers (TMB/MSI/HRD incomplete)' :
-                              'Minimal data (disease priors only)'
-                            }
-                          </Typography>
-                        </Box>
-                      )}
+              {/* PGx Screening (RUO) */}
+              <SafetyPanel pgxScreening={drug.pgx_screening} />
 
-                      {/* Gates Applied */}
-                      {drug.sporadic_gates_provenance.gates_applied && drug.sporadic_gates_provenance.gates_applied.length > 0 && (
-                        <Box>
-                          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold' }}>
-                            Adjustments Applied
-                          </Typography>
-                          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 0.5 }}>
-                            {drug.sporadic_gates_provenance.gates_applied.map((gate, gidx) => (
-                              <Chip
-                                key={gidx}
-                                label={gate.replace(/_/g, ' ')}
-                                size="small"
-                                color={gate.includes('PENALTY') ? 'error' : 
-                                       gate.includes('RESCUE') ? 'success' : 
-                                       gate.includes('BOOST') ? 'success' : 'default'}
-                                variant="outlined"
-                              />
-                            ))}
-                          </Box>
-                        </Box>
-                      )}
+              {/* Sporadic Gates Provenance - Why this confidence? */}
+              <ProvenanceAccordion provenance={drug.sporadic_gates_provenance} />
 
-                      {/* Efficacy/Confidence Deltas */}
-                      {(drug.sporadic_gates_provenance.efficacy_delta !== 0 || drug.sporadic_gates_provenance.confidence_delta !== 0) && (
-                        <Box>
-                          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold' }}>
-                            Score Adjustments
-                          </Typography>
-                          <Box sx={{ display: 'flex', gap: 2, mt: 0.5 }}>
-                            {drug.sporadic_gates_provenance.efficacy_delta !== 0 && (
-                              <Typography variant="body2">
-                                Efficacy: <strong style={{ color: drug.sporadic_gates_provenance.efficacy_delta < 0 ? 'red' : 'green' }}>
-                                  {drug.sporadic_gates_provenance.efficacy_delta > 0 ? '+' : ''}
-                                  {Math.round(drug.sporadic_gates_provenance.efficacy_delta * 100)}%
-                                </strong>
-                              </Typography>
-                            )}
-                            {drug.sporadic_gates_provenance.confidence_delta !== 0 && (
-                              <Typography variant="body2">
-                                Confidence: <strong style={{ color: drug.sporadic_gates_provenance.confidence_delta < 0 ? 'red' : 'green' }}>
-                                  {drug.sporadic_gates_provenance.confidence_delta > 0 ? '+' : ''}
-                                  {Math.round(drug.sporadic_gates_provenance.confidence_delta * 100)}%
-                                </strong>
-                              </Typography>
-                            )}
-                          </Box>
-                        </Box>
-                      )}
-
-                      {/* Rationale */}
-                      {drug.sporadic_gates_provenance.rationale && Array.isArray(drug.sporadic_gates_provenance.rationale) && (
-                        <Box>
-                          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold' }}>
-                            Explanation
-                          </Typography>
-                          <Box sx={{ mt: 0.5 }}>
-                            {drug.sporadic_gates_provenance.rationale.map((rationale, ridx) => (
-                              <Typography key={ridx} variant="body2" sx={{ mb: 0.5 }}>
-                                • <strong>{rationale.gate?.replace(/_/g, ' ')}</strong>: {rationale.reason || rationale.verdict}
-                              </Typography>
-                            ))}
-                          </Box>
-                        </Box>
-                      )}
-
-                      {/* Germline Status */}
-                      {drug.sporadic_gates_provenance.germline_status && (
-                        <Box>
-                          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold' }}>
-                            Germline Status
-                          </Typography>
-                          <Typography variant="body2">
-                          {drug.sporadic_gates_provenance.germline_status === 'positive' ? '✅ BRCA1/2 positive' :
-                             drug.sporadic_gates_provenance.germline_status === 'negative' ? '⚠️ Germline negative' :
-                             '❓ Unknown'}
-                          </Typography>
-                        </Box>
-                      )}
-                    </Box>
-                  </AccordionDetails>
-                </Accordion>
-              )}
-
-              {/* SAE Features */}
-              {drug.sae_features && (
-                <Accordion sx={{ mb: 2 }}>
-                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-                      Treatment Line Intelligence
-                    </Typography>
-                  </AccordionSummary>
-                  <AccordionDetails>
-                    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                      {drug.sae_feine_fitness && (
-                        <Box>
-                          <Typography variant="caption" color="text.secondary">
-                            Line Fitness
-                          </Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 'bold' }}>                                                                              
-                            {Math.round(drug.sae_features.line_fitness.score * 100)}%                                                                           
-                          </Typography>
-                        </Box>
-                      )}
-                      {drug.sae_features.cross_resistance && (
-                        <Box>
-                          <Typography variant="caption" color="text.secondary">
-                            Cross-Resistance Risk
-                          </Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 'bold' }}>                                                                              
-                            {drug.sae_features.cross_resistance.risk}
-                          </Typography>
-                        </Box>
-                      )}
-                    </Box>
-                  </AccordionDetails>
-                </Accordion>
-              )}
-
-              {/* Citations */}
+              {/* Citations (PMIDs) */}
               {drug.citations && drug.citations.length > 0 && (
                 <Box sx={{ mt: 1 }}>
                   <Typography variant="caption" color="text.secondary">
@@ -337,18 +158,45 @@ export default function DrugRankingPanel({ drugs = [], onViewDetails }) {
                 </Box>
               )}
 
-              {/* Details Button */}
-              {onViewDetails && (
+              {/* AI Explanation Block - Deterministic Agent */}
+              {showExplanation[idx] && (
+                <TherapyFitExplainerAgent target={drug} />
+              )}
+
+              {/* Action Buttons */}
+              <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
+                <Button
+                  variant={showExplanation[idx] ? "outlined" : "contained"}
+                  size="small"
+                  color="secondary"
+                  startIcon={<AutoAwesomeIcon />}
+                  onClick={() => toggleExplanation(idx)}
+                >
+                  {showExplanation[idx] ? 'Hide Agent Analysis' : 'Ask Agent'}
+                </Button>
+
                 <Button
                   variant="outlined"
                   size="small"
-                  startIcon={<InfoIcon />}
-                  onClick={() => onViewDetails(drug)}
-                  sx={{ mt: 2 }}
+                  startIcon={creatingDossier === idx ? <CircularProgress size={20} /> : <AssessmentIcon />} // Use AssessmentIcon
+                  onClick={() => handleInformDoctor(drug, idx)}
+                  disabled={creatingDossier === idx}
                 >
-                  View Details
+                  Inform Doctor
                 </Button>
-              )}
+
+                {onViewDetails && (
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<InfoIcon />}
+                    onClick={() => onViewDetails(drug)}
+                  >
+                    View Details
+                  </Button>
+                )}
+              </Box>
+
             </CardContent>
           </Card>
         ))}
@@ -364,10 +212,17 @@ DrugRankingPanel.propTypes = {
     confidence: PropTypes.number,
     tier: PropTypes.string,
     sae_features: PropTypes.object,
-    rationale: PropTypes.string,
+    rationale: PropTypes.oneOfType([
+      PropTypes.string,
+      PropTypes.arrayOf(PropTypes.object)
+    ]),
     citations: PropTypes.array,
     badges: PropTypes.array,
     insights: PropTypes.object,
-    sporadic_gates_provenance: PropTypes.object
-  }))
+    sporadic_gates_provenance: PropTypes.object,
+    pgx_screening: PropTypes.object,
+    label_status: PropTypes.string // added to prop types
+  })),
+  onViewDetails: PropTypes.func,
+  context: PropTypes.object
 };

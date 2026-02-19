@@ -1,3 +1,5 @@
+import { API_ROOT } from '../../../lib/apiConfig';
+
 export interface GeneInfo {
   gene_id: string;
   symbol: string;
@@ -15,57 +17,57 @@ export interface GauntletResult {
 }
 
 export interface ForgeResult {
-    new_protein_name: string;
-    new_protein_sequence: string;
-    new_zeta_score: number;
-    commentary: string;
+  new_protein_name: string;
+  new_protein_sequence: string;
+  new_zeta_score: number;
+  commentary: string;
 }
 
 export interface ClinvarVariant {
-    id: string;
-    title: string;
-    [key: string]: any;
+  id: string;
+  title: string;
+  [key: string]: any;
 }
 
 
 export interface GeneData {
-    gene_info: GeneInfo;
-    sequence: string;
-    clinvar_variants: ClinvarVariant[];
+  gene_info: GeneInfo;
+  sequence: string;
+  clinvar_variants: ClinvarVariant[];
 }
 
 // Restored Types For component compatibility
 export interface GeneFromSearch {
-    symbol: string;
-    name: string;
-    chrom: string;
-    description: string;
-    gene_id: string;
+  symbol: string;
+  name: string;
+  chrom: string;
+  description: string;
+  gene_id: string;
 }
 export interface GeneBounds {
-    min: number;
-    max: number;
+  min: number;
+  max: number;
 }
 export interface AnalysisResult {
-    zeta_score: number;
-    delta_score: number;
-    prediction: string;
-    classification_confidence: number;
-    position: number;
-    reference: string;
-    alternative: string;
+  zeta_score: number;
+  delta_score: number;
+  prediction: string;
+  classification_confidence: number;
+  position: number;
+  reference: string;
+  alternative: string;
 }
 
 
 export async function fetchGeneData(geneSymbol: string): Promise<GeneData> {
   console.log(`[DEBUG] fetchGeneData called with symbol: ${geneSymbol}`);
   const encodedGeneSymbol = encodeURIComponent(geneSymbol);
-  const url = `http://localhost:8000/api/gene/${encodedGeneSymbol}/details`;
+  const url = `${API_ROOT}/api/gene/${encodedGeneSymbol}/details`;
   console.log(`[DEBUG] Calling backend URL: ${url}`);
   try {
     const response = await fetch(url);
     if (!response.ok) {
-        throw new Error(`Genomic Intel API Error: ${response.statusText}`);
+      throw new Error(`Genomic Intel API Error: ${response.statusText}`);
     }
     const data = await response.json();
     return data as GeneData;
@@ -90,7 +92,7 @@ async function fetchSequenceForAnalysis(
     const apiUrl = `https://api.genome.ucsc.edu/getData/sequence?genome=${genomeId};chrom=${chromosome};start=${apiStart};end=${apiEnd}`;
     const response = await fetch(apiUrl);
     if (!response.ok) throw new Error(`UCSC API Error: ${response.statusText}`);
-    
+
     const data = await response.json();
     if (data.error || !data.dna) {
       return { sequence: "", error: data.error || "No DNA sequence returned" };
@@ -115,30 +117,30 @@ export async function analyzeVariantWithAPI({ position, alternative, genomeId, c
   if (variantIndexInWindow < 0 || variantIndexInWindow >= baseline_sequence.length) {
     throw new Error("Variant position is outside the fetched sequence window.");
   }
-  
+
   const perturbed_sequence =
     baseline_sequence.substring(0, variantIndexInWindow) +
     alternative +
     baseline_sequence.substring(variantIndexInWindow + 1);
 
-  const response = await fetch('http://localhost:8000/api/oracle/calculate_zeta_score', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ baseline_sequence, perturbed_sequence }),
+  const response = await fetch(`${API_ROOT}/api/oracle/calculate_zeta_score`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ baseline_sequence, perturbed_sequence }),
   });
 
   if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.detail || 'Zeta Oracle API request failed');
+    const errorData = await response.json();
+    throw new Error(errorData.detail || 'Zeta Oracle API request failed');
   }
 
   const oracleResponse = await response.json();
 
   return {
-      ...oracleResponse,
-      position: position,
-      reference: baseline_sequence.charAt(variantIndexInWindow),
-      alternative: alternative,
+    ...oracleResponse,
+    position: position,
+    reference: baseline_sequence.charAt(variantIndexInWindow),
+    alternative: alternative,
   };
 }
 
@@ -251,7 +253,7 @@ export async function fetchClinvarVariants(
 
   const summaryData = await summaryResponse.json();
   if (!summaryData.result) return [];
-  
+
   return Object.values(summaryData.result)
     .filter((v: any) => v.uid && v.title)
     .map((v: any) => ({

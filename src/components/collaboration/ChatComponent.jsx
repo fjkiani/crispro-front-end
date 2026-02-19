@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import useWebSocket from '../../hooks/useWebSocket'; // Adjust path if needed
+import useWebSocket from '../../hooks/useWebSocket';
+import { WS_ROOT } from '../../lib/apiConfig';
 
-// --- Configuration (Replace with dynamic values later) --- 
-const WS_ROOT = import.meta.env.VITE_WS_ROOT || 'ws://localhost:8008'; // Default for local if not set
 const WS_URL = `${WS_ROOT}/ws/react-client`;
 const DUMMY_AUTH_TOKEN = 'valid_token_user123'; // Example valid token for backend placeholder
 const DUMMY_ROOM_ID = 'consult_room_abc';

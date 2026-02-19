@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { 
-  Box, 
-  TextField, 
-  Button, 
-  Card, 
-  Typography, 
-  Chip, 
+import { API_ROOT } from '../lib/apiConfig';
+import {
+  Box,
+  TextField,
+  Button,
+  Card,
+  Typography,
+  Chip,
   LinearProgress,
   Alert,
   Divider,
@@ -37,7 +38,7 @@ export default function FoodValidatorAB() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [useLLM, setUseLLM] = useState(true); // Default: LLM enabled
-  
+
   // Patient context state
   const [patientContext, setPatientContext] = useState({
     disease: 'ovarian_cancer_hgs',
@@ -67,14 +68,14 @@ export default function FoodValidatorAB() {
   const handleValidateWithContext = async (context) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       // Use enhanced endpoint if LLM is enabled
-      const endpoint = useLLM 
+      const endpoint = useLLM
         ? '/api/hypothesis/validate_food_ab_enhanced'
         : '/api/hypothesis/validate_food_ab';
-      
-      const response = await fetch(`${import.meta.env.VITE_API_ROOT}${endpoint}`, {
+
+      const response = await fetch(`${API_ROOT}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -86,11 +87,11 @@ export default function FoodValidatorAB() {
           use_llm: useLLM
         })
       });
-      
+
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
       }
-      
+
       const data = await response.json();
       setResult(data);
     } catch (err) {
@@ -130,11 +131,11 @@ export default function FoodValidatorAB() {
           A→B Food Validator (Ayesha's Case)
         </Typography>
         <Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
-          <strong>Strategy:</strong> Without tumor NGS, we use <strong>disease biology</strong> (ovarian cancer HGS, germline negative) 
+          <strong>Strategy:</strong> Without tumor NGS, we use <strong>disease biology</strong> (ovarian cancer HGS, germline negative)
           to infer likely A alterations (TP53, HRD, inflammation) → predict B dependencies → check if food targets B.
         </Typography>
         <Alert severity="info" icon={<LocalHospitalIcon />} sx={{ mb: 2 }}>
-          <strong>Research Use Only</strong> - This analysis supports, not replaces, clinical judgment. 
+          <strong>Research Use Only</strong> - This analysis supports, not replaces, clinical judgment.
           Always consult oncologist before adding supplements.
         </Alert>
       </Box>
@@ -151,7 +152,7 @@ export default function FoodValidatorAB() {
         <Typography variant="h6" gutterBottom>
           Enter Food/Supplement:
         </Typography>
-        
+
         <TextField
           fullWidth
           placeholder="e.g., Vitamin D, Omega-3, Curcumin, Green tea, NAC, Folate"
@@ -171,7 +172,7 @@ export default function FoodValidatorAB() {
           </Typography>
           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
             {quickSuggestions.map(sug => (
-              <Chip 
+              <Chip
                 key={sug}
                 label={sug}
                 onClick={() => setCompound(sug)}
@@ -202,9 +203,9 @@ export default function FoodValidatorAB() {
           />
         </Box>
 
-        <Button 
-          variant="contained" 
-          onClick={handleValidate} 
+        <Button
+          variant="contained"
+          onClick={handleValidate}
           disabled={!compound.trim() || loading}
           fullWidth
           size="large"
@@ -280,18 +281,18 @@ export default function FoodValidatorAB() {
                 )}
               </Box>
               <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                <Chip 
-                  label={result.verdict_explanation} 
+                <Chip
+                  label={result.verdict_explanation}
                   color={getVerdictColor(result.verdict)}
                   sx={{ fontWeight: 'bold' }}
                 />
-                <Chip 
-                  label={`Score: ${result.overall_score}`} 
+                <Chip
+                  label={`Score: ${result.overall_score}`}
                   variant="outlined"
                   sx={{ color: 'white', borderColor: 'white' }}
                 />
-                <Chip 
-                  label={`Confidence: ${result.confidence}`} 
+                <Chip
+                  label={`Confidence: ${result.confidence}`}
                   variant="outlined"
                   sx={{ color: 'white', borderColor: 'white' }}
                 />
@@ -309,21 +310,21 @@ export default function FoodValidatorAB() {
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 How this food targets dependencies created by tumor alterations:
               </Typography>
-              
+
               {result.ab_dependencies.map((match, i) => (
                 <Accordion key={i} sx={{ mb: 1 }}>
                   <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
-                      <Chip 
-                        label={match.match_strength} 
+                      <Chip
+                        label={match.match_strength}
                         color={getMatchStrengthColor(match.match_strength)}
                         size="small"
                       />
                       <Typography variant="body2" sx={{ fontWeight: 'bold', flex: 1 }}>
                         {match.A} → {match.B}
                       </Typography>
-                      <Chip 
-                        label={`${(match.A_prevalence * 100).toFixed(0)}% prevalence`} 
+                      <Chip
+                        label={`${(match.A_prevalence * 100).toFixed(0)}% prevalence`}
                         size="small"
                         variant="outlined"
                       />
@@ -340,16 +341,16 @@ export default function FoodValidatorAB() {
                       <Typography variant="caption" display="block" sx={{ mb: 2, ml: 2 }}>
                         Disrupted pathways: {match.A_pathways.join(', ')}
                       </Typography>
-                      
+
                       <Typography variant="body2" sx={{ mb: 1 }}>
                         <strong>B (Compensatory Dependency):</strong> {match.B}
                       </Typography>
                       <Typography variant="caption" display="block" sx={{ mb: 2, ml: 2, fontStyle: 'italic' }}>
                         Why B becomes critical: {match.B_rationale}
                       </Typography>
-                      
+
                       <Divider sx={{ my: 1 }} />
-                      
+
                       <Typography variant="body2" sx={{ mb: 1, color: 'primary.main' }}>
                         <strong>How {result.compound} targets B:</strong>
                       </Typography>
@@ -371,7 +372,7 @@ export default function FoodValidatorAB() {
             <List dense>
               {result.mechanisms.map((mech, i) => (
                 <ListItem key={i}>
-                  <ListItemText 
+                  <ListItemText
                     primary={`• ${mech}`}
                     primaryTypographyProps={{ variant: 'body2' }}
                   />
@@ -386,8 +387,8 @@ export default function FoodValidatorAB() {
               Evidence:
             </Typography>
             <Box sx={{ mb: 2 }}>
-              <Chip 
-                label={`Grade: ${result.evidence.grade}`} 
+              <Chip
+                label={`Grade: ${result.evidence.grade}`}
                 color={result.evidence.grade === 'MODERATE' ? 'success' : 'warning'}
                 sx={{ mr: 1 }}
               />
@@ -395,7 +396,7 @@ export default function FoodValidatorAB() {
                 {result.evidence.summary}
               </Typography>
             </Box>
-            
+
             {result.evidence.ovarian_data && Object.keys(result.evidence.ovarian_data).length > 0 && (
               <Box sx={{ bgcolor: 'grey.50', p: 2, borderRadius: 1 }}>
                 <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
@@ -426,28 +427,28 @@ export default function FoodValidatorAB() {
             <Typography variant="h6" gutterBottom>
               Recommendations:
             </Typography>
-            
+
             <Box sx={{ mb: 2 }}>
               <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 0.5 }}>
                 Dosage:
               </Typography>
               <Typography variant="body2">{result.recommendation.dosage}</Typography>
             </Box>
-            
+
             <Box sx={{ mb: 2 }}>
               <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 0.5 }}>
                 Safety ({result.recommendation.safety}):
               </Typography>
               <Typography variant="body2">{result.recommendation.safety_notes}</Typography>
             </Box>
-            
+
             <Box sx={{ mb: 2 }}>
               <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 0.5 }}>
                 Cost:
               </Typography>
               <Typography variant="body2">{result.recommendation.cost}</Typography>
             </Box>
-            
+
             {result.recommendation.food_sources && result.recommendation.food_sources.length > 0 && (
               <Box sx={{ mb: 2 }}>
                 <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 0.5 }}>
@@ -456,7 +457,7 @@ export default function FoodValidatorAB() {
                 <Typography variant="body2">{result.recommendation.food_sources.join(', ')}</Typography>
               </Box>
             )}
-            
+
             {result.recommendation.line_context && (
               <Alert severity="warning" sx={{ mt: 2 }}>
                 {result.recommendation.line_context}
@@ -488,7 +489,7 @@ export default function FoodValidatorAB() {
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 Found {result.llm_evidence.paper_count} relevant papers. Confidence boost: +{(result.llm_evidence.confidence_boost * 100).toFixed(0)}%
               </Typography>
-              
+
               {result.llm_evidence.summary && (
                 <Alert severity="info" sx={{ mb: 2 }}>
                   <Typography variant="body2" component="pre" sx={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', fontSize: '0.875rem' }}>
@@ -496,7 +497,7 @@ export default function FoodValidatorAB() {
                   </Typography>
                 </Alert>
               )}
-              
+
               {result.llm_evidence.papers && result.llm_evidence.papers.length > 0 && (
                 <Box>
                   <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold' }}>
@@ -506,7 +507,7 @@ export default function FoodValidatorAB() {
                     {result.llm_evidence.papers.map((paper, idx) => (
                       <ListItem key={idx} sx={{ flexDirection: 'column', alignItems: 'flex-start', py: 1 }}>
                         <Box sx={{ width: '100%' }}>
-                          <Link 
+                          <Link
                             href={`https://pubmed.ncbi.nlm.nih.gov/${paper.pmid}`}
                             target="_blank"
                             rel="noopener noreferrer"
@@ -515,9 +516,9 @@ export default function FoodValidatorAB() {
                             {paper.title}
                           </Link>
                           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
-                            <Chip 
-                              label={`PMID: ${paper.pmid}`} 
-                              size="small" 
+                            <Chip
+                              label={`PMID: ${paper.pmid}`}
+                              size="small"
                               variant="outlined"
                               onClick={() => window.open(`https://pubmed.ncbi.nlm.nih.gov/${paper.pmid}`, '_blank')}
                               clickable
@@ -526,9 +527,9 @@ export default function FoodValidatorAB() {
                               <Chip label={`Year: ${paper.year}`} size="small" variant="outlined" />
                             )}
                             {paper.similarity_score && (
-                              <Chip 
-                                label={`Relevance: ${(paper.similarity_score * 100).toFixed(0)}%`} 
-                                size="small" 
+                              <Chip
+                                label={`Relevance: ${(paper.similarity_score * 100).toFixed(0)}%`}
+                                size="small"
                                 color="primary"
                               />
                             )}
@@ -567,7 +568,7 @@ export default function FoodValidatorAB() {
                 </Typography>
                 <Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                   {result.available_compounds.map(comp => (
-                    <Chip 
+                    <Chip
                       key={comp}
                       label={comp}
                       size="small"

@@ -46,8 +46,8 @@ import {
   QueryStats as QueryStatsIcon
 } from '@mui/icons-material';
 import PatientKnowledgeBaseCard from './PatientKnowledgeBaseCard';
+import { API_ROOT } from '../../lib/apiConfig';
 
-const API_ROOT = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 
 export default function PatientKBDashboard({ patientId, patientProfile }) {
   const [stats, setStats] = useState(null);

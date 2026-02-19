@@ -18,8 +18,8 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DescriptionIcon from '@mui/icons-material/Description';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import { API_ROOT } from '../../lib/apiConfig';
 
-const API_ROOT = import.meta.env.VITE_API_ROOT || '';
 
 /**
  * TumorNGSUpload Component (Day 4 - Module M5)

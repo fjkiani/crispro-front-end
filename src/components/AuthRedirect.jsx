@@ -9,7 +9,7 @@ import { useAuth } from '../context/AuthContext';
 import { usePersona } from '../context/PersonaContext';
 
 const AuthRedirect = () => {
-  const { authenticated, loading, profileLoading } = useAuth();
+  const { authenticated, loading, profileLoading, profile } = useAuth();
   const { persona, personaLoading } = usePersona();
   const location = useLocation();
 
@@ -31,10 +31,10 @@ const AuthRedirect = () => {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  // If authenticated as patient (Ayesha), redirect to patient dashboard
-  if (persona === 'patient') {
-    console.log('✅ Patient authenticated - redirecting to /patient/dashboard');
-    return <Navigate to="/patient/dashboard" replace />;
+  // If authenticated as patient (Ayesha), redirect to trials page
+  if (persona === 'patient' || profile?.role === 'patient') {
+    console.log('✅ Patient authenticated - redirecting to /ayesha-trials');
+    return <Navigate to="/ayesha-trials" replace />;
   }
 
   // Otherwise, redirect to home

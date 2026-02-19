@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Box, Chip, Typography, Stack, Tooltip, Button } from '@mui/material';
+import { API_ROOT as API_BASE_URL } from '../../lib/apiConfig';
 
 const LiveJobBanner = () => {
-  const API_BASE_URL = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
   const [elapsed, setElapsed] = useState(0);
   const [warmStatus, setWarmStatus] = useState(null); // {status, selected_model, upstream_service, elapsed_sec}
   const [isWarming, setIsWarming] = useState(false);

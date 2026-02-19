@@ -1,3 +1,5 @@
+import { API_ROOT as API_BASE } from '../../../lib/apiConfig';
+
 /**
  * ⚔️ CLINICAL GENOMICS - API CLIENT UTILITIES ⚔️
  * 
@@ -11,7 +13,6 @@
  * Research Use Only - Not for Clinical Diagnosis
  */
 
-const API_BASE = import.meta.env.VITE_API_ROOT || 'http://127.0.0.1:8000';
 const DEFAULT_TIMEOUT = 60000; // 60 seconds
 const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
@@ -32,13 +33,13 @@ export const getCacheKey = (path, body) => {
 export const getCached = (key) => {
   const entry = cache.get(key);
   if (!entry) return null;
-  
+
   const now = Date.now();
   if (now - entry.timestamp > CACHE_TTL) {
     cache.delete(key);
     return null;
   }
-  
+
   return entry.data;
 };
 
@@ -70,7 +71,7 @@ export const clearCache = () => {
  */
 export async function apiPost(path, body, { signal, useCache = true, skipRetry = false } = {}) {
   const url = `${API_BASE}${path}`;
-  
+
   // Check cache first
   if (useCache) {
     const cacheKey = getCacheKey(path, body);
@@ -80,13 +81,13 @@ export async function apiPost(path, body, { signal, useCache = true, skipRetry =
       return cached;
     }
   }
-  
+
   const controller = new AbortController();
   const abortSignal = signal || controller.signal;
-  
+
   // Timeout handler
   const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT);
-  
+
   const doFetch = async (attempt = 1) => {
     try {
       // Get auth token from localStorage if available
@@ -95,40 +96,40 @@ export async function apiPost(path, body, { signal, useCache = true, skipRetry =
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       };
-      
+
       // Add Authorization header if token is available
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
-      
+
       const response = await fetch(url, {
         method: 'POST',
         headers,
         body: JSON.stringify(body),
         signal: abortSignal
       });
-      
+
       clearTimeout(timeoutId);
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         const errorMsg = errorData.detail || `HTTP ${response.status}: ${response.statusText}`;
         throw new Error(errorMsg);
       }
-      
+
       const data = await response.json();
-      
+
       // Cache successful result
       if (useCache) {
         const cacheKey = getCacheKey(path, body);
         setCache(cacheKey, data);
       }
-      
+
       return data;
-      
+
     } catch (error) {
       clearTimeout(timeoutId);
-      
+
       // Retry logic (exponential backoff)
       if (!skipRetry && attempt < 3 && error.name !== 'AbortError') {
         const delay = attempt * 1000; // 1s, 2s
@@ -136,12 +137,12 @@ export async function apiPost(path, body, { signal, useCache = true, skipRetry =
         await new Promise(resolve => setTimeout(resolve, delay));
         return doFetch(attempt + 1);
       }
-      
+
       // Re-throw after retries exhausted or abort
       throw error;
     }
   };
-  
+
   return doFetch();
 }
 
@@ -152,37 +153,37 @@ export async function apiGet(path, { signal } = {}) {
   const url = `${API_BASE}${path}`;
   const controller = new AbortController();
   const abortSignal = signal || controller.signal;
-  
+
   const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT);
-  
+
   try {
     // Get auth token from localStorage if available
     const token = localStorage.getItem('token') || localStorage.getItem('authToken');
     const headers = {
       'Accept': 'application/json'
     };
-    
+
     // Add Authorization header if token is available
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
-    
+
     const response = await fetch(url, {
       method: 'GET',
       headers,
       signal: abortSignal
     });
-    
+
     clearTimeout(timeoutId);
-    
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       const errorMsg = errorData.detail || `HTTP ${response.status}: ${response.statusText}`;
       throw new Error(errorMsg);
     }
-    
+
     return await response.json();
-    
+
   } catch (error) {
     clearTimeout(timeoutId);
     throw error;
@@ -194,23 +195,23 @@ export async function apiGet(path, { signal } = {}) {
  */
 export const validateVariant = (variant) => {
   const errors = {};
-  
+
   if (!variant.gene) {
     errors.gene = 'Gene symbol required';
   }
-  
+
   if (!variant.chrom && !variant.hgvs_p && !variant.hgvs_c) {
     errors.variant = 'Either genomic coordinates (chrom/pos/ref/alt) or HGVS notation required';
   }
-  
+
   if (variant.chrom && !variant.pos) {
     errors.pos = 'Position required when chromosome specified';
   }
-  
+
   if (variant.pos && (!variant.ref || !variant.alt)) {
     errors.ref_alt = 'REF and ALT alleles required when position specified';
   }
-  
+
   return {
     isValid: Object.keys(errors).length === 0,
     errors
@@ -247,11 +248,11 @@ export const parseError = (error) => {
   if (error.name === 'AbortError') {
     return 'Request timeout - please try again';
   }
-  
+
   if (error.message.includes('Failed to fetch')) {
     return 'Network error - check backend server is running';
   }
-  
+
   return error.message || 'Unknown error occurred';
 };
 

@@ -10,7 +10,7 @@ export const PageLoadingSkeleton = () => (
     {/* Header skeleton */}
     <Skeleton variant="text" width="40%" height={40} />
     <Skeleton variant="text" width="60%" height={24} />
-    
+
     {/* Content skeleton */}
     <Stack spacing={2}>
       {[1, 2, 3].map((i) => (
@@ -125,7 +125,7 @@ export const FoodValidatorLoadingSkeleton = () => (
   <Stack spacing={3} sx={{ p: 4 }}>
     {/* Header */}
     <Skeleton variant="text" width="40%" height={36} />
-    
+
     {/* Input form */}
     <Card>
       <CardContent>
@@ -195,13 +195,79 @@ export const CoPilotLoadingSkeleton = () => (
   </Stack>
 );
 
+export const WarRoomLoadingSkeleton = () => (
+  <Stack spacing={4} sx={{ p: 3, maxWidth: '1600px', mx: 'auto' }}>
+    {/* SECTOR 1: THREAT RADAR — 4 signal cards */}
+    <Box>
+      <Skeleton variant="text" width={180} height={16} sx={{ mb: 1 }} />
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(4, 1fr)' }, gap: 2 }}>
+        {[1, 2, 3, 4].map((i) => (
+          <Card key={i} variant="outlined" sx={{ p: 2 }}>
+            <Stack direction="row" alignItems="center" spacing={1} mb={1}>
+              <Skeleton variant="circular" width={24} height={24} />
+              <Skeleton variant="text" width="50%" height={20} />
+            </Stack>
+            <Skeleton variant="rectangular" height={8} sx={{ borderRadius: 4, mb: 1 }} />
+            <Skeleton variant="text" width="80%" height={16} />
+            <Skeleton variant="text" width="60%" height={14} />
+          </Card>
+        ))}
+      </Box>
+    </Box>
+
+    {/* SECTOR 2: PRIMARY DIRECTIVE */}
+    <Box>
+      <Skeleton variant="text" width={200} height={16} sx={{ mb: 1 }} />
+      <Card variant="outlined" sx={{ p: 3 }}>
+        <Skeleton variant="text" width="40%" height={32} sx={{ mb: 1 }} />
+        <Skeleton variant="text" width="70%" height={20} />
+        <Stack direction="row" spacing={1} mt={2}>
+          <Skeleton variant="rectangular" width={100} height={24} sx={{ borderRadius: 1 }} />
+          <Skeleton variant="rectangular" width={80} height={24} sx={{ borderRadius: 1 }} />
+        </Stack>
+      </Card>
+    </Box>
+
+    {/* SECTOR 3: REINFORCEMENTS — trials + intel gaps */}
+    <Box>
+      <Skeleton variant="text" width={180} height={16} sx={{ mb: 1 }} />
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' }, gap: 3 }}>
+        {/* Top Trials */}
+        <Card variant="outlined" sx={{ p: 2 }}>
+          <Skeleton variant="text" width="50%" height={20} sx={{ mb: 2 }} />
+          {[1, 2, 3].map((i) => (
+            <Box key={i} sx={{ mb: 2, pb: 2, borderBottom: i < 3 ? '1px solid' : 'none', borderColor: 'divider' }}>
+              <Stack direction="row" justifyContent="space-between">
+                <Skeleton variant="text" width="55%" height={20} />
+                <Skeleton variant="rectangular" width={50} height={20} sx={{ borderRadius: 1 }} />
+              </Stack>
+              <Skeleton variant="text" width="80%" height={16} sx={{ mt: 0.5 }} />
+            </Box>
+          ))}
+        </Card>
+        {/* Intel Gaps */}
+        <Card variant="outlined" sx={{ p: 2 }}>
+          <Skeleton variant="text" width="60%" height={20} sx={{ mb: 2 }} />
+          {[1, 2, 3, 4].map((i) => (
+            <Stack key={i} direction="row" alignItems="center" spacing={1} mb={1.5}>
+              <Skeleton variant="circular" width={20} height={20} />
+              <Skeleton variant="text" width="70%" height={16} />
+            </Stack>
+          ))}
+        </Card>
+      </Box>
+    </Box>
+  </Stack>
+);
+
 export default {
   PageLoadingSkeleton,
   CardGridSkeleton,
   TableLoadingSkeleton,
   CompleteCareLoadingSkeleton,
   FoodValidatorLoadingSkeleton,
-  CoPilotLoadingSkeleton
+  CoPilotLoadingSkeleton,
+  WarRoomLoadingSkeleton
 };
 
 

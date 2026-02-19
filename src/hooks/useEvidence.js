@@ -8,6 +8,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { API_ROOT as API_BASE_URL } from '../lib/apiConfig';
 
 // TTL Cache implementation
 class TTLCache {
@@ -43,7 +44,6 @@ class TTLCache {
 // Global cache instance (30 min TTL for evidence as it's slow-changing)
 const evidenceCache = new TTLCache(30);
 
-const API_BASE_URL = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 
 /**
  * Build query string from coords

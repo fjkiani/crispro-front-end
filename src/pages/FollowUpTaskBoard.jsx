@@ -2,9 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { arrayMove } from "@dnd-kit/sortable";
 import KanbanBoard from '../components/KanbanBoard';
+import { API_ROOT as API_BASE_URL } from '../lib/apiConfig';
 
 // API root configured via environment variable
-const API_BASE_URL = import.meta.env.VITE_API_ROOT;
 
 const defaultCols = [
   { id: "followUpNeeded", title: "Follow-up Needed" },

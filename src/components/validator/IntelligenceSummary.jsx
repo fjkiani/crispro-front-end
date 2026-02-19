@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { API_ROOT } from '../../lib/apiConfig';
 import { Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, CircularProgress, Button } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 
@@ -16,11 +17,11 @@ const IntelligenceSummary = ({ synthesisResult }) => {
         const geneSymbol = firstEntity.split(' ')[0];
 
         // Navigate, passing the intel as state
-        navigate(`/genomic-analysis/${geneSymbol}`, { 
-            state: { 
+        navigate(`/genomic-analysis/${geneSymbol}`, {
+            state: {
                 targetName: geneName,
-                initialIntel: description 
-            } 
+                initialIntel: description
+            }
         });
     };
 
@@ -30,7 +31,7 @@ const IntelligenceSummary = ({ synthesisResult }) => {
                 setIsLoadingPrevalence(true);
                 const entityNames = synthesisResult.entities.map(e => e.name);
                 try {
-                    const response = await fetch('http://localhost:8000/api/population/entity_prevalence', {
+                    const response = await fetch(`${API_ROOT}/api/population/entity_prevalence`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ entities: entityNames }),
@@ -61,7 +62,7 @@ const IntelligenceSummary = ({ synthesisResult }) => {
     return (
         <Paper sx={{ p: 3, mt: 4, bgcolor: '#e8f5e9' }}>
             <Typography variant="h5" gutterBottom>Intelligence Summary</Typography>
-            
+
             <Box sx={{ mb: 3 }}>
                 <Typography variant="h6" gutterBottom>Overall Summary</Typography>
                 <Typography variant="body1">{summary}</Typography>
@@ -87,10 +88,10 @@ const IntelligenceSummary = ({ synthesisResult }) => {
                                     <TableCell><Chip label={entity.type} size="small" /></TableCell>
                                     <TableCell>{entity.description}</TableCell>
                                     <TableCell>
-                                        {isLoadingPrevalence ? <CircularProgress size={20} /> : 
-                                            prevalenceData[entity.name] ? 
-                                            `${prevalenceData[entity.name].prevalence.toFixed(2)}% (${prevalenceData[entity.name].patient_count} patients)` 
-                                            : 'N/A'
+                                        {isLoadingPrevalence ? <CircularProgress size={20} /> :
+                                            prevalenceData[entity.name] ?
+                                                `${prevalenceData[entity.name].prevalence.toFixed(2)}% (${prevalenceData[entity.name].patient_count} patients)`
+                                                : 'N/A'
                                         }
                                     </TableCell>
                                     <TableCell>

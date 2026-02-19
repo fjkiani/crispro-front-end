@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { API_ROOT } from '../lib/apiConfig';
 
 /**
  * useTrialRefresh Hook
@@ -30,7 +31,6 @@ export const useTrialRefresh = () => {
     setRefreshing(true);
     setError(null);
 
-    const API_ROOT = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 
     try {
       const response = await fetch(`${API_ROOT}/api/trials/refresh_status`, {

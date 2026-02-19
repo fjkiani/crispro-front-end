@@ -12,8 +12,8 @@ import {
   Chip,
 } from '@mui/material';
 import PsychologyIcon from '@mui/icons-material/Psychology';
+import { API_ROOT } from '../../lib/apiConfig';
 
-const API_ROOT = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 
 const IntelligenceExtractor = ({ nctId, onIntelligence }) => {
   const [nctIdInput, setNctIdInput] = useState(nctId || '');

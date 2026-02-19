@@ -85,175 +85,124 @@ const EndpointBreakdown = ({ endpoint, jsonData, compact = false }) => {
   };
 
   return (
-    <Paper sx={{ 
-      mt: compact ? 1 : 3, 
-      borderRadius: 3, 
-      overflow: 'hidden', 
-      background: 'linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))',
-      backdropFilter: 'blur(20px)',
-      border: '1px solid rgba(255,255,255,0.1)',
-      boxShadow: compact ? '0 4px 16px rgba(0,0,0,0.1)' : '0 8px 32px rgba(0,0,0,0.2)',
-      transition: 'all 0.3s ease',
-      '&:hover': {
-        transform: 'translateY(-2px)',
-        boxShadow: '0 12px 40px rgba(0,0,0,0.3)',
-        border: '1px solid rgba(96, 165, 250, 0.3)',
-      }
-    }}>
-      {/* Compact Header */}
-      <Box sx={{ 
-        p: 3, 
-        background: `linear-gradient(135deg, ${context.bgColor || 'rgba(96, 165, 250, 0.15)'}, rgba(96, 165, 250, 0.05))`,
-        borderBottom: '1px solid rgba(255,255,255,0.1)'
-      }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-            <Box sx={{ 
-              p: 1.5, 
-              borderRadius: 2, 
-              background: `linear-gradient(135deg, ${context.color || '#60a5fa'}33, ${context.color || '#60a5fa'}22)`,
-              mr: 2
-            }}>
-              <Code sx={{ color: context.color || '#60a5fa', fontSize: '1.4rem' }} />
-            </Box>
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="h5" sx={{ 
-                fontWeight: 800, 
-                fontFamily: 'monospace', 
-                fontSize: '1.4rem',
+    <Paper
+      sx={{
+        mt: compact ? 1 : 3,
+        borderRadius: 3,
+        overflow: 'hidden',
+        background: 'linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03))',
+        backdropFilter: 'blur(16px)',
+        border: '1px solid rgba(255,255,255,0.10)',
+      }}
+    >
+      {/* Header */}
+      <Box
+        sx={{
+          p: 2,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 2,
+          borderBottom: '1px solid rgba(255,255,255,0.10)',
+          background: context.bgColor || 'rgba(96, 165, 250, 0.08)',
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
+          <Code sx={{ color: context.color || '#60a5fa' }} />
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              variant="subtitle2"
+              sx={{
+                fontFamily: 'monospace',
+                fontWeight: 800,
                 color: context.color || '#60a5fa',
-                textShadow: '0 2px 4px rgba(0,0,0,0.3)'
-              }}>
-                {endpoint.endpoint_name}
-              </Typography>
-              <Typography variant="subtitle1" sx={{ 
-                color: 'rgba(255,255,255,0.9)', 
-                fontSize: '1.2rem',
-                fontWeight: 600,
-                mt: 0.5
-              }}>
-                {context.title}
-              </Typography>
-            </Box>
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {endpoint?.endpoint_name || endpoint}
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>
+              {context.title}
+            </Typography>
           </Box>
-      <Button
-        onClick={() => setExpanded(!expanded)}
-            sx={{ 
-              color: context.color || '#60a5fa',
-              fontWeight: 700,
-              fontSize: '1.1rem',
-              textTransform: 'none',
-              '&:hover': {
-                background: `${context.color || '#60a5fa'}22`
-              }
-            }}
-            endIcon={expanded ? <ExpandLess /> : <ExpandMore />}
-          >
-            {expanded ? 'HIDE' : 'DETAILS'}
-      </Button>
         </Box>
+
+        <Button
+          onClick={() => setExpanded((v) => !v)}
+          sx={{ color: context.color || '#60a5fa', fontWeight: 700, textTransform: 'none' }}
+          endIcon={expanded ? <ExpandLess /> : <ExpandMore />}
+          size="small"
+          variant="outlined"
+        >
+          {expanded ? 'HIDE' : 'DETAILS'}
+        </Button>
       </Box>
 
-      {/* Enhanced Content */}
-      <Box sx={{ p: 3 }}>
-        {/* R&D Impact - Always Visible */}
-        <Alert 
-          severity="success" 
-          sx={{ 
-            mb: 3,
-            background: `linear-gradient(135deg, ${context.color || '#10b981'}22, ${context.color || '#10b981'}11)`,
-            border: `2px solid ${context.color || '#10b981'}`,
-            '& .MuiAlert-message': {
-              fontSize: '1.2rem',
-              fontWeight: 600,
-              color: 'white'
-            }
-          }}
-        >
-          <Typography variant="h6" sx={{ 
-            fontWeight: 700, 
-            color: context.color || '#10b981',
-            fontSize: '1.1rem',
-            mb: 1
-          }}>
-            R&D DECISION IMPACT
-          </Typography>
-          <Typography sx={{ 
-            fontSize: '1.1rem',
-            color: 'rgba(255,255,255,0.95)',
-            lineHeight: 1.5
-          }}>
-            {context.rdImplication}
-          </Typography>
-        </Alert>
+      {/* Summary */}
+      <Box sx={{ p: 2 }}>
+        <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.85)' }}>
+          {context.summary}
+        </Typography>
+      </Box>
 
-        {/* Narrative Outcome */}
-        <Box sx={{ 
-          p: 3,
-          background: `linear-gradient(135deg, ${context.color || '#60a5fa'}15, ${context.color || '#60a5fa'}08)`,
-          border: `1px solid ${context.color || '#60a5fa'}44`,
-          borderRadius: 2,
-          mb: 3
-        }}>
-          <Typography variant="h6" sx={{ 
-            fontWeight: 800,
-            color: context.color || '#60a5fa',
-            fontSize: '1.3rem',
-            textAlign: 'center',
-            textShadow: '0 2px 4px rgba(0,0,0,0.3)'
-          }}>
-            {context.narrativeOutcome}
-          </Typography>
-        </Box>
-
-          {/* Raw API Response */}
-          <Box sx={{ 
-            p: 3, 
-            background: 'linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01))'
-          }}>
-            <Typography variant="h6" sx={{ 
-              fontWeight: 700, 
-              mb: 2, 
-              color: 'rgba(255,255,255,0.7)',
-              fontSize: '1rem'
-            }}>
-              🔧 Raw API Response
+      {/* Details */}
+      {expanded && (
+        <Box sx={{ p: 2, pt: 0 }}>
+          <Alert
+            severity="success"
+            sx={{
+              mb: 2,
+              background: 'rgba(16, 185, 129, 0.08)',
+              border: '1px solid rgba(16, 185, 129, 0.30)',
+              '& .MuiAlert-message': { color: 'rgba(255,255,255,0.92)' },
+            }}
+          >
+            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: context.color || '#10b981' }}>
+              R&D DECISION IMPACT
             </Typography>
-            <Paper sx={{ 
-              p: 2, 
-              background: 'rgba(0,0,0,0.3)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              fontFamily: 'monospace',
-              fontSize: '0.8rem',
-              maxHeight: 200,
-              overflowY: 'auto',
+            <Typography variant="body2" sx={{ mt: 0.5 }}>
+              {context.rdImplication}
+            </Typography>
+          </Alert>
+
+          <Box
+            sx={{
+              mb: 2,
+              p: 2,
               borderRadius: 2,
-              lineHeight: 1.5,
-              '&::-webkit-scrollbar': {
-                width: '6px',
-              },
-              '&::-webkit-scrollbar-track': {
-                background: 'rgba(255,255,255,0.1)',
-              },
-              '&::-webkit-scrollbar-thumb': {
-                background: 'rgba(255,255,255,0.3)',
-                borderRadius: '3px',
-              },
-            }}>
-              <pre style={{ 
-                margin: 0, 
-                whiteSpace: 'pre-wrap', 
-                color: 'rgba(255,255,255,0.95)',
-                fontSize: '1rem',
-                fontWeight: 500
-              }}>
+              border: `1px solid ${context.color || '#60a5fa'}44`,
+              background: `linear-gradient(135deg, ${context.color || '#60a5fa'}15, ${context.color || '#60a5fa'}08)`,
+            }}
+          >
+            <Typography variant="subtitle1" sx={{ fontWeight: 900, color: context.color || '#60a5fa' }}>
+              {context.narrativeOutcome}
+            </Typography>
+          </Box>
+
+          <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'rgba(255,255,255,0.7)', mb: 1 }}>
+            🔧 Raw API Response
+          </Typography>
+          <Paper
+            sx={{
+              p: 2,
+              background: 'rgba(0,0,0,0.30)',
+              border: '1px solid rgba(255,255,255,0.10)',
+              borderRadius: 2,
+              maxHeight: 220,
+              overflowY: 'auto',
+              fontFamily: 'monospace',
+              fontSize: '0.85rem',
+            }}
+          >
+            <pre style={{ margin: 0, whiteSpace: 'pre-wrap', color: 'rgba(255,255,255,0.95)' }}>
               {JSON.stringify(jsonData, null, 2)}
             </pre>
-            </Paper>
-          </Box>
+          </Paper>
         </Box>
       )}
-        </Paper>
+    </Paper>
   );
 };
 

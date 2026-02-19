@@ -47,9 +47,9 @@ import {
 import { ToxicityRiskCard } from '../components/ClinicalGenomicsCommandCenter/cards/ToxicityRiskCard';
 import { useToxicity } from '../components/ClinicalGenomicsCommandCenter/hooks/useToxicity';
 import { useToxicityLLM } from '../components/ClinicalGenomicsCommandCenter/hooks/useToxicityLLM';
+import { API_ROOT } from '../lib/apiConfig';
 // Drug MoA mapping handled locally
 
-const API_ROOT = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 
 // Drug MoA mapping (simplified - should come from backend)
 const DRUG_MOA_MAP = {

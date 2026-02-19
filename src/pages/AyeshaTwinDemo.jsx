@@ -23,8 +23,8 @@ import {
   CheckCircle,
   Warning
 } from '@mui/icons-material';
+import { API_ROOT } from '../lib/apiConfig';
 
-const API_ROOT = import.meta.env.VITE_API_ROOT || 'http://127.0.0.1:8000';
 
 /**
  * Ayesha Twin Demo - Public Case Study
@@ -101,7 +101,7 @@ export default function AyeshaTwinDemo() {
           ⚠️ PUBLIC CASE STUDY - NOT AYESHA'S DATA
         </Typography>
         <Typography variant="body2">
-          This demo uses TCGA-13-1481 (public TCGA-OV case) with similar profile to Ayesha's situation. 
+          This demo uses TCGA-13-1481 (public TCGA-OV case) with similar profile to Ayesha's situation.
           This is <strong>NOT</strong> Ayesha's private data - it's an ethical demo to show platform capabilities.
         </Typography>
       </Alert>
@@ -203,7 +203,7 @@ export default function AyeshaTwinDemo() {
               🥗 Food/Supplement Recommendations (A→B Validated)
             </Typography>
             <Divider sx={{ my: 2 }} />
-            
+
             <Grid container spacing={2}>
               {results.food_recommendations.map((food, idx) => (
                 <Grid item xs={12} md={6} key={idx}>
@@ -220,7 +220,7 @@ export default function AyeshaTwinDemo() {
                         />
                       )}
                     </Box>
-                    
+
                     {food.status === 'ERROR' ? (
                       <Alert severity="error" sx={{ mt: 1 }}>
                         {food.error || 'Analysis failed'}
@@ -269,7 +269,7 @@ export default function AyeshaTwinDemo() {
                 💊 Drug Recommendations (WIWFM)
               </Typography>
               <Divider sx={{ my: 2 }} />
-              
+
               {results.drug_recommendations.drugs && results.drug_recommendations.drugs.length > 0 ? (
                 <List>
                   {results.drug_recommendations.drugs.slice(0, 5).map((drug, idx) => (
@@ -309,8 +309,8 @@ export default function AyeshaTwinDemo() {
           {/* Provenance */}
           <Card sx={{ p: 2, bgcolor: 'grey.100' }}>
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-              <strong>Provenance:</strong> {results.provenance.method} | 
-              Data Source: {results.provenance.data_source} | 
+              <strong>Provenance:</strong> {results.provenance.method} |
+              Data Source: {results.provenance.data_source} |
               Case: {results.provenance.case_id}
             </Typography>
             <Typography variant="caption" color="error.main" sx={{ fontStyle: 'italic', display: 'block', mt: 0.5 }}>

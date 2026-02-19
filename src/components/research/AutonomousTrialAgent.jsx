@@ -7,8 +7,8 @@ import { Box, Button, Card, CardContent, Typography, Chip, CircularProgress, Ale
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import SearchIcon from '@mui/icons-material/Search';
 import { useSporadic } from '../../context/SporadicContext';
+import { API_ROOT } from '../../lib/apiConfig';
 
-const API_ROOT = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 
 const AutonomousTrialAgent = ({ patientData, onResults }) => {
   const [isSearching, setIsSearching] = useState(false);

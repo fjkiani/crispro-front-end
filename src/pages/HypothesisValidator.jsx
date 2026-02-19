@@ -14,8 +14,8 @@ import {
 } from '@mui/material';
 import { useSporadic } from '../context/SporadicContext';
 import { BiomarkerSummaryWidget, SporadicProvenanceCard } from '../components/sporadic';
+import { API_ROOT as API_BASE_URL } from '../lib/apiConfig';
 
-const API_BASE_URL = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 
 /**
  * HypothesisValidator (WIWFM) - Agent Jr Mission 4

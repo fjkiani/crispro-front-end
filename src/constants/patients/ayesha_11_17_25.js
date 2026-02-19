@@ -25,8 +25,6 @@ export const AYESHA_11_17_25_PROFILE = {
   patient: {
     patient_id: "AK",
     display_name: "AK",
-    // Treatment history (added to match dashboard "source-of-truth" profile expectations)
-    // Note: These entries should be updated only when explicitly supported by records.
     treatment_history: [
       {
         drug: "Carboplatin + Bevacizumab",
@@ -54,8 +52,7 @@ export const AYESHA_11_17_25_PROFILE = {
         date: "2026-01-27",
         type: "Systemic",
         outcome: "Completed - Avastin held",
-        regimen_details:
-          "Cycle 4: Carboplatin AUC 5 only (Bevacizumab held due to proteinuria)",
+        regimen_details: "Cycle 4: Carboplatin AUC 5 only (Bevacizumab held due to proteinuria)",
       },
     ],
     demographics: {
@@ -107,7 +104,7 @@ export const AYESHA_11_17_25_PROFILE = {
   tumor_context: {
     // PLUMBER 2: Add completeness_score (L1: Has IHC + germline, missing NGS/CA-125)
     completeness_score: 0.55, // L1: Has IHC + germline, missing NGS/CA-125
-    
+
     // Somatic mutations (IHC evidence - not full NGS genomic coordinates yet)
     somatic_mutations: [
       {
@@ -445,10 +442,10 @@ export const AYESHA_11_17_25_PROFILE = {
   // Fields that are *commonly assumed* but must be explicitly confirmed by patient/clinician.
   inferred_fields: {
     treatment_line: {
-      value: 0, // Treatment-naive (not explicitly stated in reports)
-      inferred: true,
-      reason: "Not explicitly stated in attached reports; assuming treatment-naive based on timeline",
-      source_files: [],
+      value: 1, // First-line platinum started Nov 2025
+      inferred: false,
+      reason: "Patient reports completing 4 cycles of Carboplatin/Bevacizumab (Last dose 1/27/26)",
+      source_files: ["Patient Reported - Feb 2026 Audit"],
     },
     // Note: platinum_response removed - not available in reports and should not be shown as inferred
   },

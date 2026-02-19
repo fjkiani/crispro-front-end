@@ -12,8 +12,8 @@ import {
   Autocomplete,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
+import { API_ROOT } from '../../lib/apiConfig';
 
-const API_ROOT = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 
 const TrialSearchForm = ({ onResults }) => {
   const [conditions, setConditions] = useState([]);

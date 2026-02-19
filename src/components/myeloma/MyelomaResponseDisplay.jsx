@@ -10,8 +10,8 @@ import DeltaProfileChart from './DeltaProfileChart';
 import SensitivityProbeTable from './SensitivityProbeTable';
 import DualModelAgreement from './DualModelAgreement';
 import DeepAnalysisPanel from './DeepAnalysisPanel';
+import { API_ROOT as API_BASE_URL } from '../../lib/apiConfig';
 
-const API_BASE_URL = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 
 const getImpactColor = (impact_level) => {
   if (typeof impact_level !== 'number') {

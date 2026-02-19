@@ -19,6 +19,7 @@ import { useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useAuth } from '../context/AuthContext';
 import { usePatient } from '../context/PatientContext';
+import { API_ROOT } from '../lib/apiConfig';
 
 /**
  * PatientSettings - Settings page for patients
@@ -32,12 +33,12 @@ const PatientSettings = () => {
   const navigate = useNavigate();
   const { user, profile: authProfile } = useAuth();
   const { currentPatient, patientProfile } = usePatient();
-  
+
   const patient = currentPatient || patientProfile || authProfile;
-  
+
   const [loading, setLoading] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  
+
   // Form state
   const [formData, setFormData] = useState({
     email: patient?.email || user?.email || '',
@@ -74,18 +75,18 @@ const PatientSettings = () => {
   const handleSave = async () => {
     setLoading(true);
     setSaveSuccess(false);
-    
+
     try {
-      // TODO: Implement API call to save settings
-      // const response = await fetch(`${import.meta.env.VITE_API_ROOT}/api/patient/settings`, {
+      // TODO: Implement API call to save settings (API_ROOT from apiConfig)
+      // const response = await fetch(`${API_ROOT}/api/patient/settings`, {
       //   method: 'PUT',
       //   headers: { 'Content-Type': 'application/json' },
       //   body: JSON.stringify(formData),
       // });
-      
+
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      
+
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
@@ -247,7 +248,7 @@ const PatientSettings = () => {
       {/* RUO Disclaimer */}
       <Alert severity="info" sx={{ mt: 3 }}>
         <Typography variant="body2">
-          <strong>Research Use Only:</strong> This platform is for research and educational purposes only. 
+          <strong>Research Use Only:</strong> This platform is for research and educational purposes only.
           Consult with your healthcare provider for clinical decision-making.
         </Typography>
       </Alert>

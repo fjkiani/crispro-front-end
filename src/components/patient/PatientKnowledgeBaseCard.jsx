@@ -22,6 +22,7 @@ import {
   IconButton,
   Tooltip
 } from '@mui/material';
+import { API_ROOT } from '../../lib/apiConfig';
 import {
   AutoAwesome as AutoAwesomeIcon,
   LibraryBooks as LibraryBooksIcon,
@@ -32,10 +33,9 @@ import {
   TrendingUp as TrendingUpIcon
 } from '@mui/icons-material';
 
-const API_ROOT = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 
-export default function PatientKnowledgeBaseCard({ 
-  patientId, 
+export default function PatientKnowledgeBaseCard({
+  patientId,
   patientProfile,
   onBuildKB,
   onViewKB,
@@ -100,9 +100,9 @@ export default function PatientKnowledgeBaseCard({
   const opportunitiesCount = stats?.opportunities_count || 0;
 
   return (
-    <Card sx={{ 
-      bgcolor: hasKB ? 'success.50' : 'primary.50', 
-      border: '2px solid', 
+    <Card sx={{
+      bgcolor: hasKB ? 'success.50' : 'primary.50',
+      border: '2px solid',
       borderColor: hasKB ? 'success.main' : 'primary.main',
       position: 'relative'
     }}>
@@ -127,7 +127,7 @@ export default function PatientKnowledgeBaseCard({
           <Box>
             <Alert severity="info" sx={{ mb: 2 }}>
               <Typography variant="body2">
-                Your personalized knowledge base hasn't been built yet. 
+                Your personalized knowledge base hasn't been built yet.
                 Click "Build Knowledge Base" to start collecting research papers on your mutations.
               </Typography>
             </Alert>

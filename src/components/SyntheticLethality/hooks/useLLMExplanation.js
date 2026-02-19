@@ -6,8 +6,8 @@
  */
 
 import { useState, useCallback } from 'react';
+import { API_ROOT as API_BASE_URL } from '../../../lib/apiConfig';
 
-const API_BASE_URL = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 
 /**
  * Hook for AI-powered explanations using LLM

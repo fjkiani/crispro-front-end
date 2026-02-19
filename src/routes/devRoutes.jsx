@@ -9,7 +9,7 @@ import React from 'react';
 import { Route } from 'react-router-dom';
 import AgentDemo from '../pages/AgentDemo';
 import AgentStudio from '../pages/AgentStudio';
-// import AyeshaTwinDemo from '../pages/AyeshaTwinDemo';
+import AyeshaTwinDemo from '../pages/AyeshaTwinDemo';
 import ClinicalDossierTest from '../pages/ClinicalDossierTest';
 import { Q2CRouterTest } from '../components/CoPilot/Q2CRouter/Q2CRouterTest';
 import Phase3ActionDemo from '../components/Phase3ActionDemo';

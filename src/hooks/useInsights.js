@@ -11,6 +11,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { API_ROOT as API_BASE_URL } from '../lib/apiConfig';
 
 // TTL Cache implementation (reuse pattern from useKb)
 class TTLCache {
@@ -46,7 +47,6 @@ class TTLCache {
 // Global cache instance (10 min TTL for insights)
 const insightsCache = new TTLCache(10);
 
-const API_BASE_URL = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 
 /**
  * @typedef {Object} InsightResponse

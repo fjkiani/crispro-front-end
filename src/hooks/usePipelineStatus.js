@@ -6,8 +6,8 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
+import { API_ROOT } from '../lib/apiConfig';
 
-const API_ROOT = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 
 export const usePipelineStatus = (patientId, enabled = true) => {
   const [status, setStatus] = useState(null);

@@ -7,6 +7,7 @@ import ResultsDisplay from '../components/research/ResultsDisplay';
 import PatientTrialMatchView from '../components/research/PatientTrialMatchView';
 import ActionSuggestionsModal from '../components/research/ActionSuggestionsModal';
 import CohortLab from '../components/research/CohortLab.jsx';
+import { API_ROOT } from '../lib/apiConfig';
 
 // Placeholder data structure anticipating agent outputs
 const placeholderTrial = {
@@ -38,7 +39,6 @@ const generateId = () => Math.floor(Math.random() * 10001);
 const KANBAN_TASKS_KEY = 'kanbanTasks';
 
 const Research = ({ embedded = false, initialTrials = [] }) => {
-  const API_ROOT = import.meta.env.VITE_API_ROOT || '';
   const { patientId } = useParams();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');

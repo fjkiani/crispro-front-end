@@ -25,8 +25,8 @@ import {
 import SendIcon from '@mui/icons-material/Send';
 import ScienceIcon from '@mui/icons-material/Science';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import { API_ROOT } from '../../lib/apiConfig';
 
-const API_ROOT = import.meta.env.VITE_API_ROOT || '';
 
 /**
  * TumorQuickIntake Component (Day 4 - Module M5)

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_ROOT } from '../../lib/apiConfig';
 import {
   Box,
   Card,
@@ -74,7 +75,7 @@ export default function TumorQuickIntakeForm({ onTumorContextGenerated }) {
         somatic_mutations: formData.somatic_mutations || []
       };
 
-      const response = await fetch(`${import.meta.env.VITE_API_ROOT || 'http://localhost:8000'}/api/tumor/quick_intake`, {
+      const response = await fetch(`${API_ROOT}/api/tumor/quick_intake`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -258,8 +259,8 @@ export default function TumorQuickIntakeForm({ onTumorContextGenerated }) {
                 {result.tumor_context?.completeness_score !== undefined && (
                   <Chip
                     label={`${getLevelFromCompleteness(result.tumor_context.completeness_score)} Intake`}
-                  color={result.tumor_context.completeness_score >= 0.7 ? 'success' : 
-                           result.tumor_context.completeness_score >= 0.3 ? 'warning' : 'error'}
+                    color={result.tumor_context.completeness_score >= 0.7 ? 'success' :
+                      result.tumor_context.completeness_score >= 0.3 ? 'warning' : 'error'}
                     sx={{ ml: 1 }}
                   />
                 )}
@@ -281,7 +282,7 @@ export default function TumorQuickIntakeForm({ onTumorContextGenerated }) {
                       • {rec}
                     </Typography>
                   ))}
-              </Box>
+                </Box>
               )}
 
               <Box sx={{ mt: 2 }}>

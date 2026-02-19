@@ -1,46 +1,47 @@
-import path from "path";
-import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
-import { Buffer } from 'buffer';
+import path from 'path';
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
+// Merged config: Vite 5 (oncology-frontend) + production hardening (root)
 export default defineConfig({
   plugins: [
     react({
-      // Suppress 'use client' directive warnings from dependencies
-      babel: {
-        plugins: [],
-      },
+      // Use the new JSX runtime (automatic)
+      jsxRuntime: 'automatic',
+      jsxImportSource: 'react',
     }),
   ],
-  logLevel: 'warn', // Reduce build output noise
+
+  // Path aliases (@ and ~ both resolve to ./src)
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      '@': path.resolve(__dirname, './src'),
+      '~': path.resolve(__dirname, './src'),
       'buffer': 'buffer',
       'path': 'path-browserify',
-      '~': path.resolve(__dirname, "./src"),
-      '#minpath': path.resolve(__dirname, "./node_modules/vfile/lib/minpath.js"),
-      '#minproc': path.resolve(__dirname, "./node_modules/vfile/lib/minproc.js"),
-      '#minurl': path.resolve(__dirname, "./node_modules/vfile/lib/minurl.js"),
       'node:url': 'url',
     },
   },
+
+  // Global defines for Node.js compat
   define: {
-    'global.Buffer': Buffer,
-    global: "globalThis",
-    "process.env": {},
+    'process.env': process.env,
+    global: 'globalThis',
   },
-  base: "/",
-  server: {
-    // No proxy needed for standalone frontend deployment
-  },
+
+  base: '/',
+
   build: {
-    // Increase chunk size warning limit
     chunkSizeWarningLimit: 1000,
+    minify: 'esbuild',
+    target: 'es2015',
     rollupOptions: {
-      external: [],
+      output: {
+        // Let Vite handle chunking automatically
+        manualChunks: undefined,
+      },
       onwarn(warning, warn) {
-        // Suppress 'use client' directive warnings from dependencies (e.g., @radix-ui)
+        // Suppress 'use client' directive warnings from dependencies
         if (warning.message && warning.message.includes("'use client'")) {
           return;
         }
@@ -48,23 +49,24 @@ export default defineConfig({
         if (warning.message && warning.message.includes('Module level directives')) {
           return;
         }
-        // Show all other warnings
         warn(warning);
       },
-      output: {
-        // Disable manual chunking to avoid circular dependency issues
-        // Let Vite handle chunking automatically - it's better at preserving module order
-        // This fixes "Cannot access '$d' before initialization" errors
-        // The trade-off is slightly larger chunks, but better reliability
-      },
     },
-    // Reduce memory usage during build
-    minify: 'esbuild', // Faster than terser
-    target: 'es2015', // Broader compatibility, less transformation
-    // Use commonjs format for better compatibility
+    // CommonJS compatibility for mixed ESM/CJS deps
     commonjsOptions: {
       include: [/node_modules/],
       transformMixedEsModules: true,
     },
   },
+
+  // Optimize dependencies
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react/jsx-runtime'],
+  },
+
+  server: {
+    // No proxy — API calls use API_ROOT env var
+  },
+
+  logLevel: 'warn',
 });

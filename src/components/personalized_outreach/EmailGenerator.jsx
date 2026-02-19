@@ -13,8 +13,8 @@ import {
 } from '@mui/material';
 import EmailIcon from '@mui/icons-material/Email';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import { API_ROOT } from '../../lib/apiConfig';
 
-const API_ROOT = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 
 const EmailGenerator = ({ intelligenceProfile, onEmailGenerated }) => {
   const [isGenerating, setIsGenerating] = useState(false);

@@ -17,8 +17,8 @@ import {
 import HistoryIcon from '@mui/icons-material/History';
 import SearchIcon from '@mui/icons-material/Search';
 import { useAuth } from '../../context/AuthContext';
+import { API_ROOT } from '../../lib/apiConfig';
 
-const API_ROOT = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 
 export default function QueryHistorySidebar({ onSelectQuery, selectedQueryId, refreshTrigger }) {
   const { user, authenticated } = useAuth();

@@ -1,4 +1,4 @@
-const API_ROOT = import.meta.env.VITE_API_ROOT || '';
+import { API_ROOT } from '../../../lib/apiConfig';
 
 const memoryCache = new Map();
 const LS_KEY = '__vus_cache_v1';

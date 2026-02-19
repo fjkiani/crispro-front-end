@@ -20,7 +20,6 @@ import DemoAnalysisResults from '../analysis/DemoAnalysisResults';
 import { TargetDossierDisplay } from '../dossier/TargetDossierDisplay';
 import TargetDossierRunner from '../dossier/TargetDossierRunner';
 
-const API_BASE_URL = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 
 import { pik3caTrinityCampaignConfig } from '../../config/campaigns/pik3ca_trinity_campaign_config';
 

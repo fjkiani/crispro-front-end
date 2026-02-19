@@ -37,8 +37,8 @@ import MonitorHeartIcon from '@mui/icons-material/MonitorHeart';
 import PercentileBar from '../components/food/PercentileBar';
 import EvidenceQualityChips from '../components/food/EvidenceQualityChips';
 import MechanismPanel from '../components/food/MechanismPanel';
+import { API_ROOT } from '../lib/apiConfig';
 
-const API_ROOT = import.meta.env.VITE_API_ROOT || 'http://127.0.0.1:8000';
 
 export default function DynamicFoodValidator() {
   const [compound, setCompound] = useState('');

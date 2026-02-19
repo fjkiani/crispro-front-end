@@ -33,6 +33,7 @@ import {
   Paper,
   Grid
 } from '@mui/material';
+import { API_ROOT as API_BASE_URL } from '../../lib/apiConfig';
 import {
   Warning as WarningIcon,
   CheckCircle as CheckCircleIcon,
@@ -50,7 +51,6 @@ import {
   Healing as HealingIcon
 } from '@mui/icons-material';
 
-const API_BASE_URL = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 
 // Risk level colors
 const RISK_COLORS = {

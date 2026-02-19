@@ -30,8 +30,8 @@ import {
 import { Search as SearchIcon, FilterList as FilterIcon } from '@mui/icons-material';
 import { DocumentArrowDownIcon } from '@heroicons/react/24/outline';
 import DossierSummaryCard from '../components/ayesha/DossierSummaryCard';
+import { API_ROOT } from '../lib/apiConfig';
 
-const API_ROOT = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 
 const AyeshaDossierBrowser = () => {
   const [dossiers, setDossiers] = useState([]);

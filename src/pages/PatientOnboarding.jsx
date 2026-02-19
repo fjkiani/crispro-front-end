@@ -42,8 +42,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { usePatient } from '../context/PatientContext';
 import { usePersona } from '../context/PersonaContext';
+import { API_ROOT } from '../lib/apiConfig';
 
-const API_ROOT = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 
 /**
  * Patient Onboarding Page
