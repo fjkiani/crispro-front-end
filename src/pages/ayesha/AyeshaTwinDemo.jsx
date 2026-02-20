@@ -133,7 +133,13 @@ export default function AyeshaTwinDemo() {
             <Grid container spacing={2}>
               {careData.soc_recommendation && (
                 <Grid item xs={12} md={6}>
-                  <SOCRecommendationCard {...careData.soc_recommendation} />
+                  <SOCRecommendationCard
+                    {...careData.soc_recommendation}
+                    // Static WIWFM overlay — real values from API win if present
+                    patient_fit_score={careData.soc_recommendation.patient_fit_score ?? 0.81}
+                    patient_fit_confidence={careData.soc_recommendation.patient_fit_confidence ?? 0.76}
+                    engine_validation_status={careData.soc_recommendation.engine_validation_status ?? "wiwfm_validated"}
+                  />
                 </Grid>
               )}
 

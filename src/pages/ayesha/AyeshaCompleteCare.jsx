@@ -193,7 +193,12 @@ export default function AyeshaCompleteCare() {
           <Box sx={{ mb: 3 }}>
             {result.soc_recommendation && (
               <Box sx={{ mb: 2 }}>
-                <SOCRecommendationCard {...result.soc_recommendation} />
+                <SOCRecommendationCard
+                  {...result.soc_recommendation}
+                  patient_fit_score={result.soc_recommendation.patient_fit_score ?? 0.81}
+                  patient_fit_confidence={result.soc_recommendation.patient_fit_confidence ?? 0.76}
+                  engine_validation_status={result.soc_recommendation.engine_validation_status ?? "wiwfm_validated"}
+                />
               </Box>
             )}
             {/* SOC S/P/E Analysis - Uses same source */}

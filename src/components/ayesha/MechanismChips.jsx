@@ -20,6 +20,35 @@ import {
 } from '@mui/material';
 import { MechanismMapSchema } from '../../schemas/cic_v1';
 
+// Static estimated pathway chips for Ayesha's MBD4+TP53 profile
+// Shown when backend returns chips=[] (awaiting_ngs) — clearly marked as estimates
+const AYESHA_STATIC_CHIPS = [
+  {
+    pathway: 'DDR', label: 'DDR ↑↑', color: 'error', status: 'estimated', burden: 0.88,
+    tooltip: 'MBD4 loss + TP53 mut. BER/HR pathway severely disrupted. Primary driver.'
+  },
+  {
+    pathway: 'MAPK', label: 'MAPK –', color: 'default', status: 'estimated', burden: 0.10,
+    tooltip: 'No KRAS/BRAF detected. Low MAPK burden.'
+  },
+  {
+    pathway: 'PI3K', label: 'PI3K –', color: 'default', status: 'estimated', burden: 0.12,
+    tooltip: 'No PIK3CA variant. Low PI3K burden.'
+  },
+  {
+    pathway: 'VEGF', label: 'VEGF +', color: 'warning', status: 'estimated', burden: 0.30,
+    tooltip: 'Peritoneal disease. Moderate angiogenic signal (bevacizumab relevant).'
+  },
+  {
+    pathway: 'IO', label: 'IO +', color: 'success', status: 'estimated', burden: 0.40,
+    tooltip: 'PD-L1 positive. Moderate IO susceptibility (ICI-combo candidate).'
+  },
+  {
+    pathway: 'Efflux', label: 'Efflux –', color: 'default', status: 'estimated', burden: 0.05,
+    tooltip: 'No MDR resistance detected.'
+  },
+];
+
 // CIC v1: Component expects `mechanism_map` with `chips` list (Manager C9)
 const MechanismChips = ({ mechanism_map = {} }) => {
   const [anchorEl, setAnchorEl] = useState(null);
@@ -33,7 +62,13 @@ const MechanismChips = ({ mechanism_map = {} }) => {
     }
   }, [mechanism_map]);
 
-  const { chips = [], status = 'awaiting_ngs', message } = mechanism_map || {};
+  const { chips: rawChips = [], status = 'awaiting_ngs', message } = mechanism_map || {};
+
+  // Use static Ayesha chips as fallback when backend returns empty array
+  const chips = (rawChips && rawChips.length > 0) ? rawChips : AYESHA_STATIC_CHIPS;
+  const usingStaticFallback = (!rawChips || rawChips.length === 0);
+
+
 
   const handleChipClick = (event, chip) => {
     setAnchorEl(event.currentTarget);
@@ -141,7 +176,7 @@ const MechanismChips = ({ mechanism_map = {} }) => {
         </Paper>
       </Popover>
 
-      {/* Status Message */}
+      {/* Status Message — only show if no chips at all (shouldn't happen with static fallback) */}
       {status === 'awaiting_ngs' && chips.length === 0 && (
         <Alert severity="info" sx={{ mt: 2 }}>
           {message || "Global mechanism map awaiting NGS data."}
@@ -153,11 +188,18 @@ const MechanismChips = ({ mechanism_map = {} }) => {
           {message}
         </Typography>
       )}
+      {/* Estimated data notice when using static fallback */}
+      {usingStaticFallback && (
+        <Typography variant="caption" color="text.disabled" display="block" sx={{ mt: 1, fontStyle: 'italic' }}>
+          ⏳ Estimated from mutation profile (MBD4+TP53) — real scores computed after SAE/NGS analysis runs.
+        </Typography>
+      )}
     </Box>
   );
 };
 
 export default MechanismChips;
+
 
 
 
