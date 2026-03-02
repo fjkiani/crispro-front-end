@@ -16,10 +16,12 @@ import AyeshaDossierDetail from '../pages/AyeshaDossierDetail';
 import AyeshaPatientDashboard from '../pages/ayesha/AyeshaPatientDashboard';
 import AyeshaTwinDemo from '../pages/ayesha/AyeshaTwinDemo';
 import ResistanceLab from '../pages/ayesha/ResistanceLab';
+import BiomarkerIntelligencePage from '../pages/ayesha/BiomarkerIntelligencePage';
 import AyeshaWeaponCompatibility from '../pages/ayesha/AyeshaWeaponCompatibility';
 import AyeshaTestsUnlocks from '../pages/ayesha/AyeshaTestsUnlocks';
 import AyeshaHolisticScoring from '../pages/ayesha/AyeshaHolisticScoring';
 import PatientStrategyBoard from '../pages/ayesha/PatientStrategyBoard';
+import PostDebulkingMRD from '../pages/ayesha/PostDebulkingMRD';
 import TestsPage from '../pages/ayesha/TestsPage';
 import PatientDashboard from '../pages/PatientDashboard';
 import PatientProfile from '../pages/PatientProfile';
@@ -182,6 +184,16 @@ export const patientRoutes = [
       </PatientRoute>
     }
   />,
+  // Biomarker Intelligence — Prognosis, PARP sensitivity, DDR markers
+  <Route
+    key="ayesha-biomarker-intelligence"
+    path="/ayesha/biomarker-intelligence"
+    element={
+      <PatientRoute>
+        <BiomarkerIntelligencePage />
+      </PatientRoute>
+    }
+  />,
   <Route
     key="ayesha-therapy-fit"
     path="/ayesha/therapy-fit"
@@ -227,6 +239,16 @@ export const patientRoutes = [
     element={
       <PatientRoute>
         <AyeshaTestsUnlocks />
+      </PatientRoute>
+    }
+  />,
+  // Post-Debulking MRD Intelligence Page
+  <Route
+    key="ayesha-post-debulking-mrd"
+    path="/ayesha/post-debulking-mrd"
+    element={
+      <PatientRoute>
+        <PostDebulkingMRD />
       </PatientRoute>
     }
   />
