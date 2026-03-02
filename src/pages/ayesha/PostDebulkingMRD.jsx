@@ -10,7 +10,8 @@
  *  4. Kill chain integration status — how MRD connects to resistance detection
  *  5. Honest "what we have vs what we need" inventory
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
     Box, Typography, Paper, Chip, Divider, Grid,
     LinearProgress, Tooltip, Alert, AlertTitle, IconButton, Collapse,
@@ -170,24 +171,56 @@ const KillChainSignal = ({ name, active, description }) => (
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+// Fallback data if API is unavailable
+const FALLBACK_COHORT = {
+    n_patients: 167,
+    source: 'Leandersson et al. (MITO16a)',
+    group_survival: {
+        group_0: { count: 124, median_pfs_months: 21.9, median_os_months: 29.5 },
+        group_1: { count: 27, median_pfs_months: 16.3, median_os_months: 27.5 },
+        group_2: { count: 16, median_pfs_months: 15.9, median_os_months: 27.2 },
+    },
+    cutoffs: { tf_pct: 15.08, pf: 0.1659 },
+};
+
 const PostDebulkingMRD = () => {
-    // In production, these would come from the simulate endpoint / patient data
     const hasCA125 = true;
     const hasPanelNGS = true;
     const hasSWGS = false;
-    const currentMRDGroup = null; // Would come from sWGS if available
+    const currentMRDGroup = null;
 
-    // Simulated cohort summary (from air support publication data)
-    const cohortSummary = {
-        n_patients: 167,
-        source: 'Leandersson et al. (MITO16a)',
-        groups: {
-            0: { count: 125, survival: { median_pfs_months: 24.2, median_os_months: 38.7 } },
-            1: { count: 28, survival: { median_pfs_months: 14.1, median_os_months: 27.3 } },
-            2: { count: 14, survival: { median_pfs_months: 8.2, median_os_months: 16.6 } },
-        },
-        cutoffs: { tf_pct: 15.08, pf: 0.1659 },
+    const [cohortSummary, setCohortSummary] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchCohort = async () => {
+            try {
+                const res = await axios.get(`${API_BASE}/api/ayesha/resistance/mrd-cohort`);
+                if (res.data?.available) {
+                    setCohortSummary(res.data);
+                } else {
+                    setCohortSummary(FALLBACK_COHORT);
+                }
+            } catch {
+                setCohortSummary(FALLBACK_COHORT);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchCohort();
+    }, []);
+
+    // Normalized accessors (API returns group_survival, fallback uses same)
+    const getGroupData = (g) => {
+        const gs = cohortSummary?.group_survival || {};
+        const key = `group_${g}`;
+        return gs[key] || { count: 0, median_pfs_months: null, median_os_months: null };
     };
+    const totalPatients = cohortSummary?.n_patients || 167;
+    const cutoffs = cohortSummary?.cutoffs || { tf_pct: 15.08, pf: 0.1659 };
+    const source = cohortSummary?.source || 'Leandersson et al. (MITO16a)';
 
     return (
         <Box sx={{ minHeight: '100vh', bgcolor: DARK_BG, color: TEXT_BRIGHT, p: { xs: 2, md: 4 } }}>
@@ -365,54 +398,82 @@ const PostDebulkingMRD = () => {
                     title="Population Context — Where Would You Fall?"
                     defaultOpen={true}
                 >
-                    <Typography variant="caption" sx={{ color: TEXT_DIM, display: 'block', mb: 2, lineHeight: 1.5 }}>
-                        From the MITO16a study ({cohortSummary.n_patients} ovarian cancer patients), post-surgery MRD grouping
-                        (TF ≥ {cohortSummary.cutoffs.tf_pct}% + PF ≥ {cohortSummary.cutoffs.pf}) significantly stratified
-                        progression-free and overall survival:
-                    </Typography>
-
-                    {[0, 1, 2].map(g => (
-                        <CohortGroupBar
-                            key={g}
-                            group={g}
-                            count={cohortSummary.groups[g].count}
-                            total={cohortSummary.n_patients}
-                            survival={cohortSummary.groups[g].survival}
-                        />
-                    ))}
-
-                    <Divider sx={{ my: 1.5, borderColor: BORDER }} />
-
-                    <Box sx={{ display: 'flex', gap: 2 }}>
-                        <Box sx={{ flex: 1 }}>
-                            <Typography variant="caption" sx={{ color: TEXT_MED, fontWeight: 700, display: 'block', mb: 0.5 }}>
-                                Cutoffs (Exploratory)
-                            </Typography>
-                            <Typography variant="caption" sx={{ color: TEXT_DIM, fontFamily: 'monospace', display: 'block' }}>
-                                TF ≥ {cohortSummary.cutoffs.tf_pct}% → HIGH
-                            </Typography>
-                            <Typography variant="caption" sx={{ color: TEXT_DIM, fontFamily: 'monospace', display: 'block' }}>
-                                PF ≥ {cohortSummary.cutoffs.pf} → HIGH
-                            </Typography>
+                    {loading ? (
+                        <Box sx={{ py: 3 }}>
+                            <LinearProgress sx={{ bgcolor: BORDER, '& .MuiLinearProgress-bar': { bgcolor: ACCENT } }} />
+                            <Typography variant="caption" sx={{ color: TEXT_DIM, mt: 1, display: 'block' }}>Loading cohort data from air support...</Typography>
                         </Box>
-                        <Box sx={{ flex: 1 }}>
-                            <Typography variant="caption" sx={{ color: TEXT_MED, fontWeight: 700, display: 'block', mb: 0.5 }}>
-                                Source
-                            </Typography>
-                            <Typography variant="caption" sx={{ color: TEXT_DIM, display: 'block', lineHeight: 1.4 }}>
-                                {cohortSummary.source}
-                                <br />sWGS + ichorCNA + fragment analysis
-                            </Typography>
-                        </Box>
-                    </Box>
+                    ) : (
+                        <>
+                            {/* Clinician Context Banner */}
+                            <Alert severity="info" variant="outlined" sx={{
+                                mb: 2, bgcolor: '#0d253f30', borderColor: '#4fd1c530',
+                                '& .MuiAlert-icon': { color: ACCENT },
+                            }}>
+                                <AlertTitle sx={{ fontWeight: 700, fontSize: '0.8rem' }}>Clinician Context</AlertTitle>
+                                <Typography variant="caption" sx={{ lineHeight: 1.6 }}>
+                                    In a cohort of <strong>{totalPatients}</strong> similar ovarian cancer patients (MITO16a),
+                                    post-surgery MRD grouping using sWGS (TF + PF) stratified outcomes significantly:
+                                    <br />
+                                    <strong style={{ color: '#2e7d32' }}>Group 0</strong> (low risk): median PFS {getGroupData(0).median_pfs_months || '—'} months
+                                    {' · '}
+                                    <strong style={{ color: '#c62828' }}>Group 2</strong> (high risk): median PFS {getGroupData(2).median_pfs_months || '—'} months
+                                    <br />
+                                    This difference ({((getGroupData(0).median_pfs_months || 0) - (getGroupData(2).median_pfs_months || 0)).toFixed(1)} month gap) held even after adjusting for clinical factors.
+                                </Typography>
+                            </Alert>
 
-                    <Alert severity="warning" variant="outlined" sx={{
-                        mt: 2, bgcolor: '#2d1e0f20', borderColor: '#f57c0030',
-                        '& .MuiAlert-icon': { color: '#f57c00' },
-                    }}>
-                        These cutoffs are exploratory — not validated clinical thresholds.
-                        We use them as internal priors but never present them as decision boundaries.
-                    </Alert>
+                            <Typography variant="caption" sx={{ color: TEXT_DIM, display: 'block', mb: 2, lineHeight: 1.5 }}>
+                                From the MITO16a study ({totalPatients} ovarian cancer patients), post-surgery MRD grouping
+                                (TF ≥ {cutoffs.tf_pct}% + PF ≥ {cutoffs.pf}) significantly stratified
+                                progression-free and overall survival:
+                            </Typography>
+
+                            {[0, 1, 2].map(g => (
+                                <CohortGroupBar
+                                    key={g}
+                                    group={g}
+                                    count={getGroupData(g).count}
+                                    total={totalPatients}
+                                    survival={getGroupData(g)}
+                                />
+                            ))}
+
+                            <Divider sx={{ my: 1.5, borderColor: BORDER }} />
+
+                            <Box sx={{ display: 'flex', gap: 2 }}>
+                                <Box sx={{ flex: 1 }}>
+                                    <Typography variant="caption" sx={{ color: TEXT_MED, fontWeight: 700, display: 'block', mb: 0.5 }}>
+                                        Cutoffs (Exploratory)
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ color: TEXT_DIM, fontFamily: 'monospace', display: 'block' }}>
+                                        TF ≥ {cutoffs.tf_pct}% → HIGH
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ color: TEXT_DIM, fontFamily: 'monospace', display: 'block' }}>
+                                        PF ≥ {cutoffs.pf} → HIGH
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ flex: 1 }}>
+                                    <Typography variant="caption" sx={{ color: TEXT_MED, fontWeight: 700, display: 'block', mb: 0.5 }}>
+                                        Source
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ color: TEXT_DIM, display: 'block', lineHeight: 1.4 }}>
+                                        {source}
+                                        <br />sWGS + ichorCNA + fragment analysis
+                                        <br />{cohortSummary?.available ? '✅ Live from API' : '📦 Fallback data'}
+                                    </Typography>
+                                </Box>
+                            </Box>
+
+                            <Alert severity="warning" variant="outlined" sx={{
+                                mt: 2, bgcolor: '#2d1e0f20', borderColor: '#f57c0030',
+                                '& .MuiAlert-icon': { color: '#f57c00' },
+                            }}>
+                                These cutoffs are exploratory — not validated clinical thresholds.
+                                We use them as internal priors but never present them as decision boundaries.
+                            </Alert>
+                        </>
+                    )}
                 </SectionCard>
 
                 {/* ── Footer Provenance ──────────────────────────────────────── */}
@@ -420,7 +481,7 @@ const PostDebulkingMRD = () => {
                     <Typography variant="caption" sx={{ color: '#2d3748', fontSize: '0.55rem' }}>
                         MRD Intelligence v1.0 · Kill Chain 2-of-4 · Panel Proxy + sWGS Dual-Modality
                         <br />
-                        Population context: Leandersson et al. (MITO16a) · {cohortSummary.n_patients} patients · sWGS ichorCNA TF + PF
+                        Population context: {source} · {totalPatients} patients · sWGS ichorCNA TF + PF
                     </Typography>
                 </Box>
             </Box>

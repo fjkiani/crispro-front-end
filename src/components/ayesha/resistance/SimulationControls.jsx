@@ -155,6 +155,74 @@ const SimulationControls = ({ params, setParams }) => {
                 )}
             </SetupSection>
 
+            {/* 5. ctDNA / MRD MONITORING */}
+            <SetupSection>
+                <FormControlLabel
+                    control={
+                        <Switch
+                            checked={!!params.ctdna_data}
+                            onChange={(e) => {
+                                if (e.target.checked) {
+                                    handleChange('ctdna_data', {
+                                        data_modality: 'panel_proxy',
+                                        panel_proxy_value: 0.02,
+                                        variant_count: 2,
+                                        trend: 'stable',
+                                        provenance_assay: 'Liquid Biopsy Panel',
+                                    });
+                                } else {
+                                    handleChange('ctdna_data', null);
+                                }
+                            }}
+                            sx={{
+                                '& .MuiSwitch-switchBase.Mui-checked': { color: '#e53e3e' },
+                                '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#e53e3e' },
+                            }}
+                        />
+                    }
+                    label={<Typography sx={{ color: '#a0aec0', fontSize: '0.9rem' }}>ctDNA MRD Monitoring</Typography>}
+                />
+
+                {params.ctdna_data && (
+                    <Box sx={{ mt: 2 }}>
+                        <Label>
+                            ctDNA VAF Proxy: <span style={{ color: '#fff' }}>{(params.ctdna_data.panel_proxy_value * 100).toFixed(1)}%</span>
+                        </Label>
+                        <Slider
+                            value={params.ctdna_data.panel_proxy_value}
+                            onChange={(_, val) => handleChange('ctdna_data', {
+                                ...params.ctdna_data,
+                                panel_proxy_value: val,
+                            })}
+                            min={0.0}
+                            max={0.15}
+                            step={0.001}
+                            valueLabelDisplay="auto"
+                            valueLabelFormat={(v) => `${(v * 100).toFixed(1)}%`}
+                            sx={{ color: '#e53e3e' }}
+                        />
+                        <FormControl fullWidth variant="filled" sx={{ bgcolor: '#2d3748', borderRadius: 1, mt: 1 }}>
+                            <InputLabel sx={{ color: '#a0aec0' }}>ctDNA Trend</InputLabel>
+                            <Select
+                                value={params.ctdna_data.trend || 'stable'}
+                                onChange={(e) => handleChange('ctdna_data', {
+                                    ...params.ctdna_data,
+                                    trend: e.target.value,
+                                })}
+                                sx={{ color: '#fff' }}
+                            >
+                                <MenuItem value="declining">↓ Declining</MenuItem>
+                                <MenuItem value="stable">→ Stable</MenuItem>
+                                <MenuItem value="rising">↑ Rising</MenuItem>
+                            </Select>
+                        </FormControl>
+                        <FormHelperText sx={{ color: '#e53e3e', mt: 1 }}>
+                            🧬 Panel ctDNA Proxy — activates MRD card + Kill Chain CTDNA_MRD signal
+                        </FormHelperText>
+                    </Box>
+                )}
+            </SetupSection>
+
         </Box>
     );
 };
