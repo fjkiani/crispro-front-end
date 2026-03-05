@@ -304,6 +304,8 @@ export const patientRoutes = [
   <Route key="journey-arsenal-detail" path="/ayesha/journey/arsenal/:slug" element={<PatientRoute><ArsenalDrugDetailPage /></PatientRoute>} />,
   <Route key="journey-biomarker" path="/ayesha/journey/biomarker" element={<PatientRoute><BiomarkerIntelligencePage /></PatientRoute>} />,
   <Route key="journey-prognosis" path="/ayesha/journey/prognosis" element={<PatientRoute><PrognosisSentinel /></PatientRoute>} />,
+  <Route key="journey-post-debulking" path="/ayesha/journey/post-debulking" element={<PatientRoute><PostDebulkingMRD /></PatientRoute>} />,
+  <Route key="post-debulking-legacy" path="/ayesha/post-debulking" element={<PatientRoute><PostDebulkingMRD /></PatientRoute>} />,
   // Redirect /ayesha/journey to Phase 1
   <Route key="journey-root" path="/ayesha/journey" element={<Navigate to="/ayesha/journey/profile" replace />} />,
 ];
