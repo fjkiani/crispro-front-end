@@ -15,6 +15,7 @@ const ComboRationaleCard = React.lazy(() => import('../../components/ayesha/Comb
 const DDRSubVectorCard = React.lazy(() => import('../../components/ayesha/DDRSubVectorCard'));
 const HRDUnlockPanel = React.lazy(() => import('../../components/ayesha/HRDUnlockPanel'));
 const ResistanceGateBanner = React.lazy(() => import('../../components/ayesha/ResistanceGateBanner'));
+const IOHarmPreventionPanel = React.lazy(() => import('../../components/ayesha/IOHarmPreventionPanel'));
 
 const LoadingFallback = () => <Skeleton variant="rectangular" height={300} sx={{ borderRadius: 4, mb: 4 }} />;
 
@@ -53,14 +54,8 @@ const AyeshaTherapyFit = () => {
 
     const { patient_context, synthetic_lethality, l2_scenarios, l3_scenarios, preview_cache, levels } = bundle || {};
 
-    // Determine Unlock Status (Default to L1 if missing)
-    // builder.py calculates completeness_score. 
-    // L1 < 0.7 <= L2 < 0.9 <= L3
-    // We can interpret the score directly.
-    const completeness = patient_context?.tumor_context?.completeness_score || 0.4;
-    let currentLevel = 'L1';
-    if (completeness >= 0.9) currentLevel = 'L3';
-    else if (completeness >= 0.7) currentLevel = 'L2';
+    // Determine Unlock Status from backend's completeness block (Truth)
+    const currentLevel = levels?.L1?.completeness?.level || 'L1';
 
     // ARSENAL: Extract Resistance Gate from Level 1 Structure
     const resistanceGateData = levels?.L1?.resistance_gate;
@@ -139,6 +134,23 @@ const AyeshaTherapyFit = () => {
             */}
             <Suspense fallback={null}>
                 <ResistanceGateBanner data={resistanceGateData} />
+            </Suspense>
+
+            {/* 
+                BEAT 0.5: IO HARM PREVENTION GATE (The Safety Layer)
+                Shows the risk-benefit assessment for immunotherapy.
+                Three layers: Predictor → Gate → Conservative Safety Net.
+            */}
+            <Suspense fallback={<LoadingFallback />}>
+                <Box sx={{ mb: 6, maxWidth: '1000px', mx: 'auto' }}>
+                    <IOHarmPreventionPanel
+                        riskBenefitDecision={bundle?.io_harm_prevention?.decision_result}
+                        biomarkerDrivers={bundle?.io_harm_prevention?.biomarker_drivers}
+                        checkpointExpression={bundle?.io_harm_prevention?.checkpoint_expression}
+                        ioProfileCard={bundle?.io_harm_prevention?.io_profile_card}
+                        safetyGate={bundle?.io_harm_prevention?.safety_gate || { active: true }}
+                    />
+                </Box>
             </Suspense>
 
             {/* 

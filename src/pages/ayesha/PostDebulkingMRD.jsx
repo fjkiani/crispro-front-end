@@ -29,20 +29,20 @@ import {
     Hub as HubIcon,
 } from '@mui/icons-material';
 
-// ── Design tokens (matches LabStyles.js) ──────────────────────────────────────
-const DARK_BG = '#0a0e14';
-const PANEL_BG = '#151b24';
-const HEADER_BG = '#1a202c';
-const BORDER = '#2d3748';
-const ACCENT = '#4fd1c5';
-const TEXT_DIM = '#718096';
-const TEXT_MED = '#a0aec0';
-const TEXT_BRIGHT = '#e2e8f0';
+// ── Design tokens (light mode) ───────────────────────────────────────────────
+const DARK_BG = '#f8fafc';
+const PANEL_BG = '#ffffff';
+const HEADER_BG = '#f1f5f9';
+const BORDER = '#e2e8f0';
+const ACCENT = '#2563eb';
+const TEXT_DIM = '#64748b';
+const TEXT_MED = '#475569';
+const TEXT_BRIGHT = '#0f172a';
 
 const GROUP_CONFIG = {
-    0: { color: '#2e7d32', bgColor: '#0f2d1a', label: 'Group 0 — Low Risk', desc: 'Both TF and PF below cutoff' },
-    1: { color: '#f57c00', bgColor: '#2d1e0f', label: 'Group 1 — Intermediate', desc: 'One signal high, one low (discordant)' },
-    2: { color: '#c62828', bgColor: '#2d1515', label: 'Group 2 — High Risk', desc: 'Both TF and PF above cutoff' },
+    0: { color: '#2e7d32', bgColor: '#f0fdf4', label: 'Group 0 — Low Risk', desc: 'Both TF and PF below cutoff' },
+    1: { color: '#f57c00', bgColor: '#fffbeb', label: 'Group 1 — Intermediate', desc: 'One signal high, one low (discordant)' },
+    2: { color: '#c62828', bgColor: '#fef2f2', label: 'Group 2 — High Risk', desc: 'Both TF and PF above cutoff' },
 };
 
 // ── Section Components ────────────────────────────────────────────────────────
@@ -82,10 +82,10 @@ const StatusBadge = ({ available, label }) => (
         label={label}
         size="small"
         sx={{
-            bgcolor: available ? '#0f2d1a' : '#2d1515',
+            bgcolor: available ? '#f0fdf4' : '#fef2f2',
             color: available ? '#2e7d32' : '#c62828',
-            border: `1px solid ${available ? '#2e7d3250' : '#c6282850'}`,
-            fontWeight: 600, fontSize: '0.7rem', mr: 0.5, mb: 0.5,
+            border: `1px solid ${available ? '#bbf7d0' : '#fecaca'}`,
+            fontWeight: 600, fontSize: '0.8125rem', mr: 0.5, mb: 0.5,
         }}
     />
 );

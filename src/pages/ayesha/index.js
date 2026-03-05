@@ -14,3 +14,4 @@ export { default as TestsPage } from './TestsPage';
 export { default as AyeshaTrialExplorer } from './AyeshaTrialExplorer';
 export { default as AyeshaTrialsOnly } from './AyeshaTrialsOnly';
 export { default as AyeshaTwinDemo } from './AyeshaTwinDemo';
+export { default as IOHarmPreventionDemo } from './IOHarmPreventionDemo';

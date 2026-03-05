@@ -9,7 +9,7 @@
  * - MOAT routes only
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { usePersona } from "../context/PersonaContext";
@@ -54,6 +54,14 @@ const iconMap = {
   'synthetic-lethality': SLIcon,
   'dosing-guidance': DosingIcon,
   'metastasis': MetastasisIcon,
+  // Journey phases
+  'journey-snapshot': CareIcon,
+  'journey-tests': TrialIcon,
+  'journey-treatment': DosingIcon,
+  'journey-monitoring': MetastasisIcon,
+  'journey-resistance': LabIcon,
+  'journey-board': DossierIcon,
+  // Legacy Ayesha pages
   'ayesha-dashboard': DashboardIcon,
   'ayesha-complete-care': CareIcon,
   'ayesha-trials': TrialIcon,
@@ -62,6 +70,7 @@ const iconMap = {
   'ayesha-resistance-lab': LabIcon,
   'ayesha-therapy-fit': DosingIcon,
   'ayesha-holistic-scoring': TrialIcon,
+  'ayesha-tumor-board': DossierIcon,
   'ayesha-tests': CareIcon,
   'mutation-explorer': GenomicsIcon,
 };
@@ -82,8 +91,16 @@ export const ImprovedSidebar = () => {
   const [activeItem, setActiveItem] = useState('');
 
   // Get filtered navigation based on persona
-  // All personas go through the filter — the personas[] array on each nav item controls visibility
-  const navItems = user ? getNavigationForPersona(persona) : [];
+  // When on journey pages, ONLY show the 6 journey phases for a focused experience
+  const isOnJourneyPage = location.pathname.startsWith('/ayesha/journey');
+  const navItems = useMemo(() => {
+    if (!user) return [];
+    const allItems = getNavigationForPersona(persona);
+    if (isOnJourneyPage) {
+      return allItems.filter(item => item.name.startsWith('journey-'));
+    }
+    return allItems;
+  }, [user, persona, isOnJourneyPage]);
 
   // Determine active route
   useEffect(() => {

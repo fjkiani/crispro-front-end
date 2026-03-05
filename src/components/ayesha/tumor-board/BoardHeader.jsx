@@ -55,7 +55,7 @@ export default function BoardHeader({ metadata, isPreview, rawBundle, title }) {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1, flexWrap: 'wrap' }}>
                             <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: '-0.02em', color: '#0f172a' }}>
                                 {/* Override title prop or default to Zeta Strategy Board */}
-                                {title || "Zeta Strategy Board"}
+                                {title || "CrisPRO.ai Strategy Board"}
                             </Typography>
                             <Chip
                                 label="Research Use Only"

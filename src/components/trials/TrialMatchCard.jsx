@@ -58,7 +58,14 @@ const TrialMatchCard = ({ trial, rank }) => {
     why_included,
     trial_line_bucket,
     freshness,
+    mechanism_alignment,   // null when sae_mechanism_vector not provided
   } = trial;
+
+  // Null-mode flags — set by backend when sae_mechanism_vector is absent
+  const hasMechanismScore = typeof mechanism_fit_score === 'number' && mechanism_fit_score !== null;
+  const hasEligibilityScore = typeof eligibility_score === 'number' && eligibility_score !== null;
+  const hasHolisticScore = typeof holistic_score === 'number' && holistic_score !== null;
+  const hasAlignmentBreakdown = mechanism_alignment && typeof mechanism_alignment === 'object' && !Array.isArray(mechanism_alignment);
 
   // MoA tag color map
   const MOA_TAG_COLORS = {
@@ -402,7 +409,7 @@ const TrialMatchCard = ({ trial, rank }) => {
               </Box>
 
               {/* Scoring Breakdown (from pipeline hardening) */}
-              {scoring_breakdown && (
+              {scoring_breakdown && hasMechanismScore && (
                 <Box mt={2} p={1.5} sx={{ bgcolor: 'grey.50', borderRadius: 1 }}>
                   <Typography variant="caption" fontWeight="bold" gutterBottom display="block">
                     Score Weights
@@ -419,10 +426,10 @@ const TrialMatchCard = ({ trial, rank }) => {
                     ))}
                   </Box>
                   <Box display="flex" gap={1} flexWrap="wrap" mt={0.5}>
-                    {typeof scoring_breakdown.mechanism_fit_score === 'number' && (
+                    {hasMechanismScore && (
                       <Typography variant="caption">Mech: {(scoring_breakdown.mechanism_fit_score * 100).toFixed(0)}%</Typography>
                     )}
-                    {typeof scoring_breakdown.eligibility_score === 'number' && (
+                    {hasEligibilityScore && (
                       <Typography variant="caption">Elig: {(scoring_breakdown.eligibility_score * 100).toFixed(0)}%</Typography>
                     )}
                     {typeof scoring_breakdown.pgx_safety_score === 'number' && (
@@ -431,6 +438,28 @@ const TrialMatchCard = ({ trial, rank }) => {
                     {typeof scoring_breakdown.resistance_risk_score === 'number' && (
                       <Typography variant="caption">Resist: {(scoring_breakdown.resistance_risk_score * 100).toFixed(0)}%</Typography>
                     )}
+                  </Box>
+                </Box>
+              )}
+              {/* Mechanism Alignment Pathway Chips — omit entirely when mechanism_alignment is absent */}
+              {hasAlignmentBreakdown && (
+                <Box mt={2} p={1.5} sx={{ bgcolor: 'grey.50', borderRadius: 1 }}>
+                  <Typography variant="caption" fontWeight="bold" gutterBottom display="block">
+                    Pathway Alignment
+                  </Typography>
+                  <Box display="flex" gap={0.5} flexWrap="wrap">
+                    {Object.entries(mechanism_alignment)
+                      .filter(([, v]) => typeof v === 'number' && v > 0)
+                      .sort(([, a], [, b]) => b - a)
+                      .map(([pathway, score]) => (
+                        <Chip
+                          key={pathway}
+                          label={`${pathway.replace(/_/g, ' ')}: ${Math.round(score * 100)}%`}
+                          size="small"
+                          sx={{ fontSize: '0.65rem', bgcolor: score >= 0.7 ? '#1565c0' : '#e0e0e0', color: score >= 0.7 ? '#fff' : '#424242' }}
+                        />
+                      ))
+                    }
                   </Box>
                 </Box>
               )}
@@ -445,14 +474,20 @@ const TrialMatchCard = ({ trial, rank }) => {
           </Alert>
         )}
 
-        {/* Holistic Score Card (backend-computed) */}
-        {trial.holistic_score !== undefined && (
+        {/* Holistic Score Card (backend-computed — only when holistic_score is a real number) */}
+        {hasHolisticScore && (
           <HolisticScoreCard trial={trial} />
         )}
-        {trial.holistic_score === undefined && (
-          <Alert severity="info" sx={{ mt: 2 }}>
-            Holistic score not attached in this response.
-          </Alert>
+        {/* Null-mode: mechanism fit not computed — show when neither holistic nor mechanism score present */}
+        {!hasHolisticScore && !hasMechanismScore && (
+          <Box mt={2} p={1.5} sx={{ bgcolor: 'grey.50', border: '1px dashed #ccc', borderRadius: 1 }}>
+            <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
+              <strong>Mechanism fit: N/A</strong> — scoring requires SAE mechanism vector
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              MoA vector available • Match score = MoA confidence ({typeof moa_confidence === 'number' ? `${Math.round(moa_confidence * 100)}%` : 'N/A'})
+            </Typography>
+          </Box>
         )}
 
         {/* Locations */}

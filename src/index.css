@@ -1,20 +1,120 @@
-@import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: "Poppins";
-}
-.linear-gradient {
-  background: linear-gradient(
-    179.14deg,
-    rgba(32, 18, 63, 0) -7.14%,
-    #000000 87.01%
-  );
+/* ─── Design Tokens (change here → impacts everywhere) ────────── */
+:root {
+  /* ⚡ ZETA READABILITY FLOOR: Every token raised 2 steps above Earth standard */
+  --text-xs: 0.875rem;
+  /* 14px — minimum for any visible label */
+  --text-sm: 1rem;
+  /* 16px — standard body text */
+  --text-base: 1.0625rem;
+  /* 17px */
+  --text-md: 1.125rem;
+  /* 18px */
+  --text-lg: 1.25rem;
+  /* 20px */
+
+  /* Text colors — WCAG AA compliant on white backgrounds */
+  --text-primary: #0f172a;
+  /* headings, strong labels */
+  --text-secondary: #334155;
+  /* body text — was #64748b (TOO LIGHT) */
+  --text-muted: #475569;
+  /* captions, subtle — was #94a3b8 (INVISIBLE) */
+  --text-hint: #64748b;
+  /* lowest-priority labels */
+
+  /* Dark surface labels (Kill Chain signal row) */
+  --text-on-dark: #e2e8f0;
+  --text-on-dark-muted: #94a3b8;
+
+  /* ⚡ Command Center palette */
+  --zeta-red: #dc2626;
+  --zeta-red-light: #fef2f2;
+  --zeta-red-border: #fca5a5;
+  --zeta-amber: #d97706;
+  --zeta-amber-light: #fffbeb;
+  --zeta-green: #16a34a;
+  --zeta-green-light: #f0fdf4;
+  --zeta-blue: #2563eb;
+  --zeta-blue-light: #eff6ff;
+  --zeta-purple: #7c3aed;
+  --zeta-purple-light: #f5f3ff;
+  --zeta-cyan: #0ea5e9;
+  --zeta-cyan-light: #f0f9ff;
+  --zeta-slate: #475569;
+
+  /* Surfaces */
+  --surface-primary: #ffffff;
+  --surface-subtle: #f8fafc;
+  --surface-border: #e2e8f0;
+  --surface-border-hover: #cbd5e1;
+
+  /* Signal states */
+  --signal-fired: var(--zeta-red);
+  --signal-watching: var(--zeta-amber);
+  --signal-baseline: #1e40af;
+  --signal-nodata: var(--text-muted);
+
+  /* Spacing */
+  --section-gap: 48px;
+  --card-padding: 24px;
+  --card-radius: 16px;
 }
 
+/* ─── Global Base ─────────────────────────────────────────────── */
+html {
+  font-size: 16px;
+}
+
+body {
+  font-family: "Inter", "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 1rem;
+  color: var(--text-primary);
+  background-color: #f8fafc;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── MUI Typography global floor ─────────────────────────────── */
+
+/* Nothing smaller than 14px anywhere in the app */
+.MuiTypography-root {
+  min-font-size: var(--text-xs);
+}
+
+.MuiTypography-caption {
+  font-size: var(--text-xs) !important;
+  /* 14px floor */
+  color: var(--text-muted) !important;
+}
+
+.MuiTypography-overline {
+  font-size: var(--text-xs) !important;
+  color: var(--text-muted) !important;
+}
+
+.MuiTypography-body2 {
+  font-size: var(--text-sm) !important;
+  /* 16px */
+  color: var(--text-secondary) !important;
+}
+
+.MuiTypography-body1 {
+  font-size: var(--text-sm) !important;
+  /* 16px */
+}
+
+/* Chips — force readable minimum at 14px */
+.MuiChip-label {
+  font-size: var(--text-xs) !important;
+  font-weight: 700 !important;
+}
+
+/* ─── Calendar Picker (light mode) ────────────────────────────── */
 input[type="date"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
-  filter: invert(0.8);
 }

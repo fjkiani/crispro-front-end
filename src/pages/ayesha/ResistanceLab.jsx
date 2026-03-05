@@ -1,399 +1,265 @@
-import React, { useState } from 'react';
+/**
+ * ResistanceLab — Thin Orchestrator (modularized Feb 2026)
+ *
+ * Single responsibility: orchestrate data loading, simulation API call,
+ * and lay out the 3 modular panels. All UI lives in components/.
+ *
+ * Architecture:
+ *   TumorSettingsPanel → left (inputs + gene toggles + ScenarioExplainer)
+ *   ReasoningPanel     → center (glass-box logic stream)
+ *   OutcomePanel       → right (Evo2 score + Prophet gauges + trigger alerts)
+ *
+ * Data contract transform (profile → timing_context) lives in
+ *   hooks/useTimingContractTransform (to be extracted if it grows).
+ */
+import React, { useState, useCallback } from 'react';
 import {
     Box,
     Container,
     Typography,
     Grid,
-    Paper,
     Button,
-    CircularProgress,
-    Divider
+    Alert,
+    Collapse,
+    IconButton,
 } from '@mui/material';
-import BaselineWorkflow from '../../components/ayesha/resistance/BaselineWorkflow';
-import { styled } from '@mui/material/styles';
-import { Science as ScienceIcon, Terminal as TerminalIcon, Psychology as BrainIcon } from '@mui/icons-material';
+import { Science as ScienceIcon, Psychology as BrainIcon, Close as CloseIcon } from '@mui/icons-material';
 
-// Components (To be built)
-import SimulationControls from '../../components/ayesha/resistance/SimulationControls';
-import ResistanceLogicStream from '../../components/ayesha/resistance/ResistanceLogicStream';
-import ProphetGauges from '../../components/ayesha/resistance/ProphetGauges';
-import NextTestDisplay from '../../components/ayesha/resistance/NextTestDisplay';
-import EMTRiskGauge from '../../components/ayesha/EMTRiskGauge'; // Day 3 Deliverable
-import GeneToggle from '../../components/ayesha/GeneToggle'; // Day 3 Deliverable
+// Modular panels (each independently testable and scalable)
+import TumorSettingsPanel from '../../components/ayesha/resistance/TumorSettingsPanel';
+import ReasoningPanel from '../../components/ayesha/resistance/ReasoningPanel';
+import OutcomePanel from '../../components/ayesha/resistance/OutcomePanel';
 
-// Hooks & Data (The Bridge)
+// Shared styles
+import { PageWrapper, HeaderPanel, LabGrid } from '../../components/ayesha/resistance/LabStyles';
+
+// Data bridge
 import { useTimingChemoFeatures } from '../../hooks/useTimingChemoFeatures';
 import { AYESHA_11_17_25_PROFILE } from '../../constants/patients/ayesha_11_17_25';
 
-const PageWrapper = styled(Box)(({ theme }) => ({
-    minHeight: '100vh',
-    background: '#0a0e14', // Deep cyber dark
-    color: '#e0e0e0',
-    padding: theme.spacing(4, 2),
-}));
+// ─── Data Transform (profile → timing_context contract) ──────────────────────
+const buildTimingContext = (featuresData) => {
+    if (!featuresData?.timing_features_table) return null;
 
-const HeaderPanel = styled(Paper)(({ theme }) => ({
-    background: 'linear-gradient(90deg, #1a202c 0%, #2d3748 100%)',
-    border: '1px solid #4a5568',
-    borderRadius: '8px',
-    padding: theme.spacing(3),
-    marginBottom: theme.spacing(3),
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
-}));
+    const regimens = featuresData.timing_features_table.map((r) => ({
+        regimen_id: r.regimen_id,
+        regimen_name: r.regimen_type,
+        regimen_class: r.regimen_type,
+        start_date: r.regimen_start_date,
+        end_date: r.regimen_end_date,
+        timing_features: {
+            pfi_months: r.PFI_days ? r.PFI_days / 30.4375 : null,
+            ptpi_months: r.PTPI_days ? r.PTPI_days / 30.4375 : null,
+            tfi_months: r.TFI_days ? r.TFI_days / 30.4375 : null,
+            pfs_months: r.PFS_from_regimen_days ? r.PFS_from_regimen_days / 30.4375 : null,
+            os_months: r.OS_from_regimen_days ? r.OS_from_regimen_days / 30.4375 : null,
+            platinum_sensitivity_category: r.PFI_category,
+        },
+        chemosensitivity_features: {
+            kelim_ca125:
+                r.kelim_category || r.kelim_k_value
+                    ? {
+                        k: r.kelim_k_value,
+                        kelim: r.kelim_value,
+                        category: r.kelim_category,
+                        modeling_approach: 'loglinear',
+                        time_window_days: 100,
+                    }
+                    : null,
+            ca125_measurements_used: null,
+        },
+        data_quality: {
+            has_regimen_history: true,
+            has_ca125_data: r.has_ca125_data || false,
+            warnings: [],
+        },
+        source_refs: [],
+    }));
 
-const LabGrid = styled(Grid)(({ theme }) => ({
-    height: '80vh', // Fixed height for dashboard feel
-}));
+    return {
+        schema_version: 'patient_regimen_feature_table.v1',
+        patient_id: 'AK_11_17',
+        disease_type: 'ovarian_cancer',
+        regimens,
+        provenance: {
+            computed_at: new Date().toISOString(),
+            engine: 'timing_chemosensitivity_engine',
+            ruo_disclaimer: 'Frontend-Bridge-Transformed',
+            inputs_used: { source: 'precomputed_ca125_features' },
+        },
+    };
+};
 
-const PanelWrapper = styled(Paper)(({ theme }) => ({
-    height: '100%',
-    background: '#151b24',
-    border: '1px solid #2d3748',
-    borderRadius: '8px',
-    display: 'flex',
-    flexDirection: 'column',
-    overflow: 'hidden',
-    transition: 'border-color 0.3s ease',
-    '&:hover': {
-        borderColor: '#4fd1c5', // Teal highlight
-    },
-}));
-
-const PanelHeader = styled(Box)(({ theme }) => ({
-    padding: theme.spacing(2),
-    borderBottom: '1px solid #2d3748',
-    background: '#1a202c',
-    display: 'flex',
-    alignItems: 'center',
-    gap: theme.spacing(1),
-    '& .MuiTypography-root': {
-        fontWeight: 700,
-        fontSize: '0.9rem',
-        textTransform: 'uppercase',
-        letterSpacing: '1px',
-        color: '#a0aec0',
-    },
-    '& .MuiSvgIcon-root': {
-        color: '#4fd1c5',
-        fontSize: '1.2rem',
-    },
-}));
-
-const PanelContent = styled(Box)(({ theme }) => ({
-    flex: 1,
-    padding: theme.spacing(2),
-    overflowY: 'auto',
-    '&::-webkit-scrollbar': {
-        width: '6px',
-    },
-    '&::-webkit-scrollbar-thumb': {
-        backgroundColor: '#4a5568',
-        borderRadius: '3px',
-    },
-}));
-
+// ─── Page Orchestrator ────────────────────────────────────────────────────────
 const ResistanceLab = () => {
     const [loading, setLoading] = useState(false);
     const [simulationResult, setSimulationResult] = useState(null);
+    const [showOnboarding, setShowOnboarding] = useState(true);
     const [params, setParams] = useState({
         simulate_germline: 'negative',
         simulate_hrd: 42,
         simulate_treatment: ['carboplatin', 'paclitaxel'],
-        gene_toggles: {} // New: Specific gene state overrides
+        gene_toggles: {},
     });
 
-    // Timing Engine Integration
     const { timingFeatures, computeTimingFeatures } = useTimingChemoFeatures();
 
-    // Load Truth on Mount (Replicating AyeshaTrialExplorer pattern)
+    // Load timing context from patient profile on mount
     React.useEffect(() => {
-        const loadEngineContext = async () => {
-            if (timingFeatures) return; // Already loaded
-
+        const loadContext = async () => {
+            if (timingFeatures) return;
             const profile = AYESHA_11_17_25_PROFILE;
             const txHistory = profile.treatment_history || [];
+            if (!txHistory.length) return;
 
-            if (txHistory.length > 0) {
-                const regimenTable = txHistory.map((tx, idx) => ({
-                    patient_id: profile.patient?.patient_id || 'AK',
-                    regimen_id: `regimen_${idx + 1}`,
-                    regimen_start_date: tx.start_date || new Date().toISOString(),
-                    regimen_end_date: tx.end_date || null,
-                    regimen_type: tx.regimen_type || (tx.drugs?.join('+') || 'unknown'),
-                    line_of_therapy: tx.line || idx + 1,
-                    setting: tx.setting || (idx === 0 ? 'frontline' : 'recurrent'),
-                    last_platinum_dose_date: tx.last_platinum_dose_date || null,
-                    progression_date: tx.progression_date || null,
-                    best_response: tx.outcome || tx.best_response || null,
-                }));
+            const regimenTable = txHistory.map((tx, idx) => ({
+                patient_id: profile.patient?.patient_id || 'AK',
+                regimen_id: `regimen_${idx + 1}`,
+                regimen_start_date: tx.start_date || new Date().toISOString(),
+                regimen_end_date: tx.end_date || null,
+                regimen_type: tx.regimen_type || tx.drugs?.join('+') || 'unknown',
+                line_of_therapy: tx.line || idx + 1,
+                setting: tx.setting || (idx === 0 ? 'frontline' : 'recurrent'),
+                last_platinum_dose_date: tx.last_platinum_dose_date || null,
+                progression_date: tx.progression_date || null,
+                best_response: tx.outcome || tx.best_response || null,
+            }));
 
-                const survivalTable = [{
-                    patient_id: profile.patient?.patient_id || 'AK',
-                    vital_status: 'Alive',
-                    death_date: null,
-                    last_followup_date: new Date().toISOString(),
-                }];
-
-                const clinicalTable = [{
-                    patient_id: profile.patient?.patient_id || 'AK',
-                    disease_site: profile.disease?.type || 'ovary',
-                    tumor_subtype: profile.disease?.histology || 'HGSOC',
-                }];
-
-                const ca125Measurements = profile.labs?.ca125_measurements || null;
-
-                try {
-                    console.log("[ResistanceLab] Bridging to Timing Engine...");
-                    await computeTimingFeatures({
-                        regimenTable,
-                        survivalTable,
-                        clinicalTable,
-                        ca125MeasurementsTable: ca125Measurements
-                    });
-                } catch (e) {
-                    console.error("[ResistanceLab] Failed to load timing context:", e);
-                }
+            try {
+                await computeTimingFeatures({
+                    regimenTable,
+                    survivalTable: [{
+                        patient_id: profile.patient?.patient_id || 'AK',
+                        vital_status: 'Alive',
+                        death_date: null,
+                        last_followup_date: new Date().toISOString(),
+                    }],
+                    clinicalTable: [{
+                        patient_id: profile.patient?.patient_id || 'AK',
+                        disease_site: profile.disease?.type || 'ovary',
+                        tumor_subtype: profile.disease?.histology || 'HGSOC',
+                    }],
+                    ca125MeasurementsTable: profile.labs?.ca125_measurements || null,
+                });
+            } catch (e) {
+                console.error('[ResistanceLab] Failed to load timing context:', e);
             }
         };
-        loadEngineContext();
+        loadContext();
     }, [computeTimingFeatures, timingFeatures]);
 
-    // Auto-Run Simulation Once Context is Ready (Day 3 UX)
+    // Auto-run when context is ready
     React.useEffect(() => {
         if (timingFeatures && !simulationResult && !loading) {
-            console.log("[ResistanceLab] Auto-triggering simulation...");
             handleSimulate();
         }
-    }, [timingFeatures, simulationResult, loading]);
+    }, [timingFeatures, simulationResult, loading]); // eslint-disable-line
 
-    const handleGeneToggle = (gene, isMutated) => {
-        setParams(prev => ({
+    const handleGeneToggle = useCallback((gene, isMutated) => {
+        setParams((prev) => ({
             ...prev,
-            gene_toggles: {
-                ...prev.gene_toggles,
-                [gene]: isMutated
-            }
+            gene_toggles: { ...prev.gene_toggles, [gene]: isMutated },
         }));
-    };
-
-    const transformToContract = (featuresData) => {
-        if (!featuresData || !featuresData.timing_features_table) return null;
-
-        const regimens = featuresData.timing_features_table.map(r => ({
-            regimen_id: r.regimen_id,
-            regimen_name: r.regimen_type,
-            regimen_class: r.regimen_type, // simplified
-            start_date: r.regimen_start_date,
-            end_date: r.regimen_end_date,
-
-            timing_features: {
-                pfi_months: r.PFI_days ? (r.PFI_days / 30.4375) : null,
-                ptpi_months: r.PTPI_days ? (r.PTPI_days / 30.4375) : null,
-                tfi_months: r.TFI_days ? (r.TFI_days / 30.4375) : null,
-                pfs_months: r.PFS_from_regimen_days ? (r.PFS_from_regimen_days / 30.4375) : null,
-                os_months: r.OS_from_regimen_days ? (r.OS_from_regimen_days / 30.4375) : null,
-                platinum_sensitivity_category: r.PFI_category
-            },
-
-            chemosensitivity_features: {
-                kelim_ca125: r.kelim_category || r.kelim_k_value ? {
-                    k: r.kelim_k_value,
-                    kelim: r.kelim_value,
-                    category: r.kelim_category,
-                    modeling_approach: 'loglinear', // default for now
-                    time_window_days: 100
-                } : null,
-                ca125_measurements_used: null // Not passed in flat view yet
-            },
-
-            data_quality: {
-                has_regimen_history: true,
-                has_ca125_data: r.has_ca125_data || false,
-                warnings: []
-            },
-
-            source_refs: []
-        }));
-
-        return {
-            schema_version: "patient_regimen_feature_table.v1",
-            patient_id: "AK_11_17", // Should come from profile in real app
-            disease_type: "ovarian_cancer",
-            regimens: regimens,
-            provenance: {
-                computed_at: new Date().toISOString(),
-                engine: "timing_chemosensitivity_engine",
-                ruo_disclaimer: "Frontend-Bridge-Transformed",
-                inputs_used: {
-                    source: "precomputed_ca125_features"
-                }
-            }
-        };
-    };
+    }, []);
 
     const handleSimulate = async () => {
         setLoading(true);
-        setSimulationResult(null); // Clear previous
+        setSimulationResult(null);
         try {
-            // Transform Truth to Contract
-            const timingContext = transformToContract(timingFeatures);
-            console.log("[ResistanceLab] Injecting Contract:", timingContext);
-
+            const timingContext = buildTimingContext(timingFeatures);
             const response = await fetch('/api/ayesha/resistance/simulate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ...params,
-                    timing_context: timingContext // Inject The Truth (Transformed)
-                }),
+                body: JSON.stringify({ ...params, timing_context: timingContext }),
             });
             const data = await response.json();
             setSimulationResult(data);
         } catch (error) {
-            console.error("Simulation failed:", error);
-            // Mock result for offline dev if needed
+            console.error('[ResistanceLab] Simulation failed:', error);
         } finally {
             setLoading(false);
         }
     };
 
+    const isVerified = simulationResult?.prediction?.provenance?.engine === 'ClinicalHeuristicEngine';
+
     return (
         <PageWrapper>
             <Container maxWidth="xl">
+                {/* ── Header ─────────────────────────────────────────────── */}
                 <HeaderPanel elevation={0}>
                     <Box>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                            <Typography variant="h4" sx={{ fontWeight: 800, color: '#fff', letterSpacing: '-1px' }}>
-                                RESISTANCE LAB <span style={{ color: '#4fd1c5', fontSize: '0.6em', verticalAlign: 'super' }}>BETA</span>
+                            <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.5px' }}>
+                                Resistance Intelligence
                             </Typography>
-                            {simulationResult?.prediction?.provenance?.engine === 'ClinicalHeuristicEngine' && (
+                            {isVerified && (
                                 <Box sx={{
-                                    border: '1px solid #4fd1c5',
-                                    color: '#4fd1c5',
-                                    px: 1,
-                                    py: 0.5,
-                                    borderRadius: 1,
-                                    fontSize: '0.7rem',
-                                    fontWeight: 'bold',
-                                    letterSpacing: '1px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 0.5
+                                    border: '1px solid', borderColor: 'primary.main', color: 'primary.main',
+                                    px: 1, py: 0.5, borderRadius: 1, fontSize: '0.75rem',
+                                    fontWeight: 'bold', letterSpacing: '0.5px',
+                                    display: 'flex', alignItems: 'center', gap: 0.5,
                                 }}>
                                     <BrainIcon sx={{ fontSize: 14 }} />
-                                    ENGINE-VERIFIED
+                                    Analysis Verified
                                 </Box>
                             )}
                         </Box>
-                        <Typography variant="subtitle2" sx={{ color: '#a0aec0', mt: 0.5 }}>
-                            PROPHET ENGINE V2.0 // GLASS BOX SIMULATION
+                        <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
+                            Your tumor's resistance profile — updated each cycle
                         </Typography>
                     </Box>
-                    <Box>
-                        {/* Status indicators like CPU load could go here */}
-                        <Button
-                            variant="contained"
-                            startIcon={<ScienceIcon />}
-                            onClick={handleSimulate}
-                            disabled={loading}
-                            sx={{
-                                bgcolor: '#4fd1c5',
-                                color: '#000',
-                                fontWeight: 'bold',
-                                '&:hover': { bgcolor: '#38b2ac' }
-                            }}
-                        >
-                            {loading ? 'CALCULATING...' : 'RUN SIMULATION'}
-                        </Button>
-                    </Box>
+                    <Button
+                        variant="contained"
+                        startIcon={<ScienceIcon />}
+                        onClick={handleSimulate}
+                        disabled={loading}
+                        sx={{ fontWeight: 'bold', '&:hover': { bgcolor: 'primary.dark' } }}
+                    >
+                        {loading ? 'Calculating...' : 'Update My Analysis'}
+                    </Button>
                 </HeaderPanel>
 
+                {/* ── Onboarding ──────────────────────────────────────────── */}
+                <Collapse in={showOnboarding}>
+                    <Alert
+                        severity="info"
+                        sx={{ mb: 3 }}
+                        action={
+                            <IconButton size="small" onClick={() => setShowOnboarding(false)}>
+                                <CloseIcon fontSize="small" />
+                            </IconButton>
+                        }
+                    >
+                        <Typography variant="subtitle2" sx={{ color: 'text.primary', mb: 0.5 }}>How this works</Typography>
+                        <Typography variant="body2">
+                            <strong>Left:</strong> Adjust your tumor settings and explore what each scenario means.&nbsp;
+                            <strong>Center:</strong> See transparent step-by-step clinical reasoning.&nbsp;
+                            <strong>Right:</strong> Your PARP sensitivity score and next clinical steps.
+                        </Typography>
+                    </Alert>
+                </Collapse>
+
+                {/* ── 3-Panel Layout ──────────────────────────────────────── */}
                 <LabGrid container spacing={3}>
-                    {/* LEFT: CONTROLS */}
                     <Grid item xs={12} md={3}>
-                        <PanelWrapper>
-                            <PanelHeader>
-                                <ScienceIcon />
-                                <Typography>Simulation Inputs</Typography>
-                            </PanelHeader>
-                            <PanelContent>
-                                <SimulationControls params={params} setParams={setParams} />
-                                <Box sx={{ mt: 3 }}>
-                                    <GeneToggle
-                                        genes={{
-                                            "NF1": params.gene_toggles?.["NF1"] || false,
-                                            "BRCA1": params.gene_toggles?.["BRCA1"] || false,
-                                            "TP53": params.gene_toggles?.["TP53"] || false,
-                                            "PTEN": params.gene_toggles?.["PTEN"] || false
-                                        }}
-                                        onToggle={handleGeneToggle}
-                                    />
-                                </Box>
-                            </PanelContent>
-                        </PanelWrapper>
+                        <TumorSettingsPanel
+                            params={params}
+                            setParams={setParams}
+                            onGeneToggle={handleGeneToggle}
+                        />
                     </Grid>
-
-                    {/* CENTER: LOGIC STREAM (The Glass Box) */}
                     <Grid item xs={12} md={5}>
-                        <PanelWrapper>
-                            <PanelHeader>
-                                <TerminalIcon />
-                                <Typography>Logic Stream</Typography>
-                            </PanelHeader>
-                            <PanelContent sx={{ bgcolor: '#000', fontFamily: 'monospace' }}>
-                                {loading && (
-                                    <Box sx={{ display: 'center', justifyContent: 'center', p: 4, color: '#4fd1c5' }}>
-                                        <CircularProgress color="inherit" size={24} />
-                                        <Typography sx={{ mt: 2, fontSize: '0.8rem' }}>Executing Prophet Algorithms...</Typography>
-                                    </Box>
-                                )}
-                                {simulationResult && (
-                                    <ResistanceLogicStream steps={simulationResult.logic_steps} />
-                                )}
-                                {!simulationResult && !loading && (
-                                    <Typography sx={{ color: '#4a5568', p: 2, textAlign: 'center' }}>
-                                        Initializing...
-                                    </Typography>
-                                )}
-                            </PanelContent>
-                        </PanelWrapper>
+                        <ReasoningPanel
+                            simulationResult={simulationResult}
+                            loading={loading}
+                        />
                     </Grid>
-
-                    {/* RIGHT: OUTCOME */}
                     <Grid item xs={12} md={4}>
-                        <PanelWrapper>
-                            <PanelHeader>
-                                <BrainIcon />
-                                <Typography>Clinical Orders</Typography>
-                            </PanelHeader>
-                            <PanelContent>
-                                {simulationResult && simulationResult.prediction?.risk_level === 'NOT_APPLICABLE' && (
-                                    <BaselineWorkflow
-                                        prediction={simulationResult.prediction}
-                                        recommendedActions={simulationResult.prediction?.recommended_actions}
-                                        recommendedTests={simulationResult.recommended_tests}
-                                    />
-                                )}
-                                {simulationResult && simulationResult.prediction?.risk_level !== 'NOT_APPLICABLE' && (
-                                    <>
-                                        <ProphetGauges prediction={simulationResult.prediction} />
-
-                                        <Box sx={{ mt: 2 }}>
-                                            <EMTRiskGauge
-                                                riskScore={simulationResult.prediction?.probability || 0}
-                                                zScore={simulationResult.prediction?.provenance?.transcriptomic_z_score}
-                                            />
-                                        </Box>
-
-                                        <Divider sx={{ my: 3, borderColor: '#2d3748' }} />
-                                        <NextTestDisplay tests={simulationResult.recommended_tests} />
-                                    </>
-                                )}
-                            </PanelContent>
-                        </PanelWrapper>
+                        <OutcomePanel
+                            simulationResult={simulationResult}
+                            loading={loading}
+                        />
                     </Grid>
                 </LabGrid>
             </Container>

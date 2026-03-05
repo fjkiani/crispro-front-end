@@ -147,7 +147,10 @@ const SentinelDashboard = ({ simulationResult }) => {
                                     {prediction?.prognosis?.status || 'Active'}
                                 </Typography>
                                 <Typography sx={{ color: '#a0aec0', fontSize: '0.8rem' }}>
-                                    PROGNOSIS (SIG7 PROJECTED)
+                                    PROGNOSIS (CN7 — Copy-Number Signature)
+                                </Typography>
+                                <Typography sx={{ color: '#718096', fontSize: '0.65rem', mt: 0.5, lineHeight: 1.3 }}>
+                                    Structural instability via genome-wide CNA profiles. Requires lpWGS. Research Use Only.
                                 </Typography>
                             </Box>
 

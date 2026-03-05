@@ -20,6 +20,9 @@
 
 import React, { useEffect } from "react";
 import { Routes, useNavigate, useLocation } from "react-router-dom";
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import theme from './theme';
 import { Sidebar, Navbar, MobileNavbar } from "./components";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { useStateContext } from "./context";
@@ -125,30 +128,41 @@ const AppContent = () => {
 
 // MAIN COMPONENT: Provides Contexts
 const App = () => {
-  const queryClient = new QueryClient();
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 5 * 60 * 1000,   // 5 min — stop re-fetching on every page visit
+        cacheTime: 10 * 60 * 1000,  // 10 min
+        refetchOnWindowFocus: false,
+      },
+    },
+  });
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <ErrorBoundary>
-        <AuthProvider>
-          <PersonaProvider>
-            <PatientProvider>
-              <AgentProvider>
-                <SporadicProvider>
-                  <CoPilotProvider>
-                    <AnalysisHistoryProvider>
-                      <ActivityProvider>
-                        <AppContent />
-                      </ActivityProvider>
-                    </AnalysisHistoryProvider>
-                  </CoPilotProvider>
-                </SporadicProvider>
-              </AgentProvider>
-            </PatientProvider>
-          </PersonaProvider>
-        </AuthProvider>
-      </ErrorBoundary>
-    </QueryClientProvider>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <QueryClientProvider client={queryClient}>
+        <ErrorBoundary>
+          <AuthProvider>
+            <PersonaProvider>
+              <PatientProvider>
+                <AgentProvider>
+                  <SporadicProvider>
+                    <CoPilotProvider>
+                      <AnalysisHistoryProvider>
+                        <ActivityProvider>
+                          <AppContent />
+                        </ActivityProvider>
+                      </AnalysisHistoryProvider>
+                    </CoPilotProvider>
+                  </SporadicProvider>
+                </AgentProvider>
+              </PatientProvider>
+            </PersonaProvider>
+          </AuthProvider>
+        </ErrorBoundary>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 };
 

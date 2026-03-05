@@ -65,7 +65,7 @@ export const ZetaSignalCard = ({
                 <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
                     <Box display="flex" alignItems="center" gap={1}>
                         {icon}
-                        <Typography variant="subtitle2" fontWeight="bold" color="text.secondary">
+                        <Typography variant="subtitle2" fontWeight="800" color="text.secondary">
                             {title.toUpperCase()}
                         </Typography>
                     </Box>
@@ -73,7 +73,7 @@ export const ZetaSignalCard = ({
                         label={status}
                         size="small"
                         color={color}
-                        sx={{ fontWeight: 800, height: 20, fontSize: '0.65rem' }}
+                        sx={{ fontWeight: 800, height: 24, fontSize: 'var(--text-xs)', px: 0.5 }}
                     />
                 </Box>
 
@@ -84,15 +84,15 @@ export const ZetaSignalCard = ({
                         size="small"
                         variant={evidenceLevel === 'L3' ? 'filled' : 'outlined'}
                         color={getLevelColor(evidenceLevel)}
-                        sx={{ height: 16, fontSize: '0.6rem', fontWeight: 700 }}
+                        sx={{ height: 20, fontSize: 'var(--text-xs)', fontWeight: 800 }}
                     />
-                    <Typography variant="caption" color="text.secondary" noWrap sx={{ maxWidth: '100%' }}>
+                    <Typography variant="caption" color="text.secondary" noWrap sx={{ maxWidth: '100%', fontSize: 'var(--text-xs)', fontWeight: 500 }}>
                         {inputsUsed}
                     </Typography>
                 </Box>
 
                 {/* Main Evidence Text */}
-                <Typography variant="body2" fontWeight="bold" gutterBottom sx={{ minHeight: 40 }}>
+                <Typography variant="body2" fontWeight="800" gutterBottom sx={{ minHeight: 40, fontSize: 'var(--text-sm)', color: 'text.primary' }}>
                     {evidenceText}
                 </Typography>
 
@@ -104,7 +104,7 @@ export const ZetaSignalCard = ({
                     size="small"
                     onClick={onAction}
                     endIcon={<ArrowForwardIcon />}
-                    sx={{ mt: 'auto', textTransform: 'none' }}
+                    sx={{ mt: 'auto', textTransform: 'none', fontWeight: 700 }}
                 >
                     {actionLabel}
                 </Button>
@@ -147,8 +147,8 @@ export const ZetaPrimaryDirective = ({
                     px: 1.5,
                     py: 0.5,
                     borderRadius: 1,
-                    fontWeight: 'bold',
-                    fontSize: '0.75rem',
+                    fontWeight: 800,
+                    fontSize: 'var(--text-xs)',
                     letterSpacing: 1,
                     boxShadow: 2
                 }}
@@ -162,14 +162,14 @@ export const ZetaPrimaryDirective = ({
                         <Typography variant="h5" fontWeight="900" color={`${color}.main`} gutterBottom>
                             {headline}
                         </Typography>
-                        <Typography variant="h6" color="text.primary" gutterBottom sx={{ fontWeight: 600 }}>
+                        <Typography variant="subtitle1" color="text.primary" gutterBottom sx={{ fontWeight: 800 }}>
                             {subheadline}
                         </Typography>
 
                         <Box component="ul" sx={{ pl: 2, m: 0, mb: 2 }}>
                             {reasoning.map((r, i) => (
                                 <Box component="li" key={i}>
-                                    <Typography variant="body1">{r}</Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.secondary' }}>{r}</Typography>
                                 </Box>
                             ))}
                         </Box>
@@ -180,13 +180,13 @@ export const ZetaPrimaryDirective = ({
                                 label={`EVIDENCE: ${receipts.level}`}
                                 size="small"
                                 color={receipts.level === 'L3' ? 'secondary' : 'default'}
-                                sx={{ borderRadius: 0.5, fontWeight: 'bold' }}
+                                sx={{ borderRadius: 0.5, fontWeight: 800, height: 24, fontSize: 'var(--text-xs)' }}
                             />
-                            <Typography variant="caption" color="text.secondary">
+                            <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: 'var(--text-xs)' }}>
                                 <strong>INPUTS USED:</strong> {receipts.inputs.join(', ')}
                             </Typography>
                             {receipts.missing?.length > 0 && (
-                                <Typography variant="caption" color="error.main">
+                                <Typography variant="caption" color="error.main" sx={{ fontWeight: 700, fontSize: 'var(--text-xs)' }}>
                                     (Missing: {receipts.missing.join(', ')})
                                 </Typography>
                             )}
@@ -200,7 +200,7 @@ export const ZetaPrimaryDirective = ({
                             size="large"
                             onClick={onAction}
                             endIcon={<ArrowForwardIcon />}
-                            sx={{ px: 4, py: 1.5, fontSize: '1.1rem', fontWeight: 'bold' }}
+                            sx={{ px: 4, py: 1.5, fontSize: '1rem', fontWeight: 800 }}
                         >
                             {actionLabel}
                         </Button>
@@ -236,17 +236,17 @@ export const ZetaTrialCard = ({ trial, rank, onClick }) => {
                                 bgcolor: 'grey.100',
                                 borderRadius: 1,
                                 p: 1,
-                                minWidth: 48,
+                                minWidth: 56,
                                 textAlign: 'center'
                             }}
                         >
-                            <Typography variant="caption" display="block" color="text.secondary">Rank</Typography>
-                            <Typography variant="h6" fontWeight="bold" lineHeight={1}>#{rank}</Typography>
+                            <Typography variant="caption" display="block" color="text.secondary" sx={{ fontWeight: 700, fontSize: 'var(--text-xs)' }}>Rank</Typography>
+                            <Typography variant="h6" fontWeight="900" lineHeight={1}>#{rank}</Typography>
                         </Box>
 
                         {/* Content */}
                         <Box>
-                            <Typography variant="subtitle1" fontWeight="bold" noWrap sx={{ maxWidth: 400 }}>
+                            <Typography variant="subtitle2" fontWeight="800" noWrap sx={{ maxWidth: 400, color: 'text.primary' }}>
                                 {trial.nct_id}: {trial.title}
                             </Typography>
 
@@ -255,9 +255,9 @@ export const ZetaTrialCard = ({ trial, rank, onClick }) => {
                                     label={`${Math.round((trial.holistic_score || trial.match_score) * 100)}% Match`}
                                     size="small"
                                     color="success"
-                                    sx={{ height: 20, fontSize: '0.7rem', fontWeight: 'bold' }}
+                                    sx={{ height: 24, fontSize: 'var(--text-xs)', fontWeight: 800, px: 0.5 }}
                                 />
-                                <Typography variant="body2" color="text.secondary">
+                                <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600, fontSize: 'var(--text-xs)' }}>
                                     {trial.phase || 'N/A'} • {trial.locations?.[0]?.city || 'Unknown Loc'}
                                 </Typography>
                                 {/* Mechanism Tags */}
@@ -267,7 +267,7 @@ export const ZetaTrialCard = ({ trial, rank, onClick }) => {
                                         label={tag.replace(/_/g, ' ')}
                                         size="small"
                                         variant="outlined"
-                                        sx={{ height: 20, fontSize: '0.65rem' }}
+                                        sx={{ height: 24, fontSize: 'var(--text-xs)', fontWeight: 700 }}
                                     />
                                 ))}
                             </Box>
@@ -290,7 +290,7 @@ export const IntelGapsList = ({ missingTests, onUpload }) => {
     if (!missingTests || missingTests.length === 0) {
         return (
             <Alert severity="success" icon={<CheckCircleIcon />}>
-                <Typography variant="subtitle2" fontWeight="bold">Results Verified</Typography>
+                <Typography variant="subtitle2" fontWeight="800">Results Verified</Typography>
                 All critical intelligence gathered.
             </Alert>
         );
@@ -299,7 +299,7 @@ export const IntelGapsList = ({ missingTests, onUpload }) => {
     return (
         <Card variant="outlined" sx={{ height: '100%', bgcolor: 'grey.50' }}>
             <CardContent>
-                <Typography variant="subtitle2" fontWeight="bold" gutterBottom color="text.secondary">
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, letterSpacing: 1 }} gutterBottom color="text.secondary">
                     MISSION STATUS: INTEL GAPS
                 </Typography>
                 <Box display="flex" flexDirection="column" gap={1}>
@@ -310,7 +310,7 @@ export const IntelGapsList = ({ missingTests, onUpload }) => {
                             justifyContent="space-between"
                             alignItems="center"
                             sx={{
-                                p: 1,
+                                p: 1.5,
                                 bgcolor: 'background.paper',
                                 borderRadius: 1,
                                 border: '1px solid',
@@ -318,8 +318,8 @@ export const IntelGapsList = ({ missingTests, onUpload }) => {
                             }}
                         >
                             <Box display="flex" gap={1} alignItems="center">
-                                <WarningIcon color="warning" sx={{ fontSize: 16 }} />
-                                <Typography variant="body2" fontWeight="500">
+                                <WarningIcon color="warning" sx={{ fontSize: 18 }} />
+                                <Typography variant="body2" sx={{ fontWeight: 800, color: 'text.primary' }}>
                                     {test.name || test}
                                 </Typography>
                             </Box>
@@ -327,7 +327,7 @@ export const IntelGapsList = ({ missingTests, onUpload }) => {
                                 size="small"
                                 variant="outlined"
                                 color="warning"
-                                sx={{ height: 24, fontSize: '0.65rem' }}
+                                sx={{ height: 28, fontSize: 'var(--text-xs)', fontWeight: 800 }}
                                 onClick={() => onUpload ? onUpload(test.name || test) : null}
                             >
                                 Upload

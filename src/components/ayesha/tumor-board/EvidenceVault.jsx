@@ -90,30 +90,74 @@ export default function EvidenceVault({
                         <Alert severity="info" sx={{ bgcolor: '#1e293b', color: '#94a3b8', mb: 3 }}>No L2 scenarios available.</Alert>
                     ) : (
                         <Grid container spacing={2} sx={{ mb: 4 }}>
-                            {l2Scenarios.slice(0, 12).map((scn) => (
-                                <Grid item xs={12} md={4} key={scn.id}>
-                                    <Card variant="outlined" sx={{ bgcolor: '#1e293b', border: '1px solid #334155', height: '100%' }}>
-                                        <CardContent>
-                                            <Typography variant="subtitle1" sx={{ color: 'white', fontWeight: 700 }}>{scn.name || scn.id}</Typography>
-                                            <Typography variant="caption" sx={{ color: '#64748b', mb: 1, display: 'block' }}>ID: {scn.id}</Typography>
-                                            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 2 }}>
-                                                {safeArray(scn.requires).slice(0, 3).map((r) => (
-                                                    <Chip key={r} size="small" label={r} sx={{ bgcolor: '#334155', color: '#cbd5e1' }} />
-                                                ))}
-                                            </Box>
-                                            <Button
-                                                fullWidth size="small" variant="contained"
-                                                onClick={() => onRunL2(scn.id)}
-                                                sx={{ bgcolor: '#8b5cf6', '&:hover': { bgcolor: '#7c3aed' }, textTransform: 'none' }}
-                                            >
-                                                Launch Preview
-                                            </Button>
-                                        </CardContent>
-                                    </Card>
-                                </Grid>
-                            ))}
+                            {l2Scenarios.slice(0, 12).map((scn) => {
+                                const expectedMech = scn.expected_mechanism;
+                                const previewStatus = scn.preview_status;
+                                const isComputing = previewStatus === 'computing';
+                                const hasPreview = !isComputing && scn.preview != null && expectedMech;
+                                return (
+                                    <Grid item xs={12} md={4} key={scn.id}>
+                                        <Card variant="outlined" sx={{ bgcolor: '#1e293b', border: '1px solid #334155', height: '100%' }}>
+                                            <CardContent>
+                                                <Typography variant="subtitle1" sx={{ color: 'white', fontWeight: 700 }}>{scn.name || scn.id}</Typography>
+                                                <Typography variant="caption" sx={{ color: '#64748b', mb: 1, display: 'block' }}>ID: {scn.id}</Typography>
+                                                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1.5 }}>
+                                                    {safeArray(scn.requires).slice(0, 3).map((r) => (
+                                                        <Chip key={r} size="small" label={r} sx={{ bgcolor: '#334155', color: '#cbd5e1' }} />
+                                                    ))}
+                                                </Box>
+
+                                                {/* Projected preview — real API data only */}
+                                                <Box sx={{ p: 1, borderRadius: 1, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid #334155', mb: 1.5, minHeight: 48 }}>
+                                                    {isComputing && (
+                                                        <Typography variant="caption" sx={{ color: '#64748b', fontStyle: 'italic' }}>
+                                                            Computing preview…
+                                                        </Typography>
+                                                    )}
+                                                    {hasPreview && (
+                                                        <>
+                                                            <Typography variant="caption" sx={{ color: '#475569', display: 'block', mb: 0.5, textTransform: 'uppercase', letterSpacing: 1, fontSize: '0.58rem' }}>
+                                                                PREVIEW
+                                                            </Typography>
+                                                            {expectedMech.top_mechanism && (
+                                                                <Typography variant="caption" sx={{ color: '#94a3b8', display: 'block' }}>
+                                                                    Top: <strong style={{ color: '#c7d2fe' }}>{expectedMech.top_mechanism}</strong>
+                                                                </Typography>
+                                                            )}
+                                                            {expectedMech.ddr_score != null && (
+                                                                <Typography variant="caption" sx={{ color: '#818cf8', display: 'block' }}>
+                                                                    DDR ↑ {(expectedMech.ddr_score * 100).toFixed(0)}
+                                                                </Typography>
+                                                            )}
+                                                            {expectedMech.top_drug && (
+                                                                <Typography variant="caption" sx={{ color: '#4ade80', display: 'block' }}>
+                                                                    {expectedMech.top_drug}
+                                                                </Typography>
+                                                            )}
+                                                        </>
+                                                    )}
+                                                    {!isComputing && !hasPreview && (
+                                                        <Typography variant="caption" sx={{ color: '#334155', fontStyle: 'italic' }}>
+                                                            Preview unavailable
+                                                        </Typography>
+                                                    )}
+                                                </Box>
+
+                                                <Button
+                                                    fullWidth size="small" variant="contained"
+                                                    onClick={() => onRunL2(scn.id)}
+                                                    sx={{ bgcolor: '#8b5cf6', '&:hover': { bgcolor: '#7c3aed' }, textTransform: 'none' }}
+                                                >
+                                                    Launch Preview
+                                                </Button>
+                                            </CardContent>
+                                        </Card>
+                                    </Grid>
+                                );
+                            })}
                         </Grid>
                     )}
+
 
                     <Typography variant="h6" sx={{ color: 'white', mb: 2, fontWeight: 700 }}>Level 3 Deep Simulation</Typography>
                     {l3Scenarios.length === 0 ? (

@@ -1,0 +1,468 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Command Center — Shared Styles
+   All colors reference CSS custom properties from index.css :root
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Page layout ─────────────────────────────────────────────── */
+.cc-page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--section-gap);
+    padding-bottom: 16px;
+}
+
+/* ── Verdict Banner ──────────────────────────────────────────── */
+.cc-verdict__headline {
+    font-size: 1.8rem;
+    font-weight: 900;
+    line-height: 1.2;
+    margin-bottom: 8px;
+}
+
+.cc-verdict__subline {
+    font-size: var(--text-sm);
+    font-weight: 700;
+    color: var(--zeta-slate);
+    margin-bottom: 24px;
+}
+
+.cc-verdict__synthesis {
+    font-size: var(--text-md);
+    color: var(--text-primary);
+    line-height: 1.6;
+    font-weight: 500;
+    margin-bottom: 32px;
+    max-width: 800px;
+}
+
+.cc-status-card {
+    padding: var(--card-padding);
+    border-radius: var(--card-radius);
+    border: 1px solid var(--surface-border);
+    background: var(--surface-subtle);
+    max-width: 640px;
+}
+
+.cc-status-card__label {
+    font-size: var(--text-xs);
+    font-weight: 800;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+}
+
+.cc-status-card__row {
+    font-size: var(--text-sm);
+    color: var(--text-primary);
+    font-weight: 600;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.cc-status-card__row--muted {
+    color: var(--text-muted);
+}
+
+/* ── Section headers ─────────────────────────────────────────── */
+.cc-section-title {
+    font-size: 1.25rem;
+    font-weight: 900;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+}
+
+/* ── Action rows ─────────────────────────────────────────────── */
+.cc-action {
+    padding: var(--card-padding);
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    background: var(--surface-primary);
+    border: 1px solid var(--surface-border);
+    border-radius: 12px;
+}
+
+.cc-action--high-clinical {
+    border-left: 4px solid var(--zeta-red);
+}
+
+.cc-action--high-data {
+    border-left: 4px solid var(--zeta-blue);
+}
+
+.cc-action--medium {
+    border-left: 4px solid var(--zeta-amber);
+}
+
+.cc-action--low {
+    background: var(--surface-subtle);
+    border-color: transparent;
+}
+
+.cc-action__icon {
+    font-size: 1.4rem;
+    flex-shrink: 0;
+}
+
+.cc-action__label {
+    font-size: var(--text-sm);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.cc-action__unlocks {
+    font-size: var(--text-xs);
+    color: var(--text-hint);
+    font-weight: 500;
+}
+
+/* ── Intelligence cards ──────────────────────────────────────── */
+.cc-intel-card {
+    padding: var(--card-padding);
+    border-radius: var(--card-radius);
+    border: 1px solid var(--surface-border);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+        box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+        border-color 0.25s ease;
+}
+
+.cc-intel-card:hover {
+    transform: translateY(-3px);
+}
+
+.cc-intel-card__icon-wrap {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+}
+
+.cc-intel-card__title {
+    font-size: var(--text-sm);
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.cc-intel-card__teaser {
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    font-weight: 500;
+    line-height: 1.5;
+    flex: 1;
+    margin-bottom: 16px;
+}
+
+.cc-intel-card__cta {
+    font-size: var(--text-xs);
+    font-weight: 700;
+}
+
+/* ── Signal panel ────────────────────────────────────────────── */
+.cc-signal-legend {
+    font-size: var(--text-xs);
+    color: var(--text-hint);
+    font-weight: 600;
+    margin-bottom: 24px;
+}
+
+.cc-signal-fired {
+    padding: 16px;
+    background: var(--zeta-red-light);
+    border: 1px solid var(--zeta-red-border);
+    border-radius: 12px;
+    display: flex;
+    gap: 16px;
+    margin-bottom: 8px;
+}
+
+.cc-signal-fired__name {
+    font-size: var(--text-md);
+    font-weight: 800;
+    color: var(--signal-fired);
+}
+
+.cc-signal-fired__reason {
+    font-size: var(--text-xs);
+    color: #991b1b;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.cc-signal-fired__cta {
+    font-size: var(--text-xs);
+    font-weight: 700;
+    color: var(--signal-fired);
+    cursor: pointer;
+}
+
+.cc-signal-tier2 {
+    padding: 16px;
+    border-bottom: 1px solid var(--surface-subtle);
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.cc-signal-tier2__name {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.cc-signal-badge {
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.cc-signal-badge--baseline {
+    background: var(--zeta-blue-light);
+    color: var(--signal-baseline);
+}
+
+.cc-signal-badge--watching {
+    background: var(--zeta-amber-light);
+    color: var(--signal-watching);
+}
+
+.cc-signal-nodata {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 4px 0;
+}
+
+.cc-signal-nodata__text {
+    font-size: var(--text-xs);
+    font-weight: 500;
+    color: var(--signal-nodata);
+}
+
+/* ── Command Banner ─────────────────────────────────────────── */
+.cc-banner {
+    padding: var(--card-padding);
+    border-radius: var(--card-radius);
+    border: 1px solid var(--surface-border);
+    background: var(--surface-primary);
+}
+
+.cc-banner__identity {
+    font-size: 1.6rem;
+    font-weight: 900;
+    color: var(--text-primary);
+    line-height: 1.2;
+    margin: 0 0 6px 0;
+}
+
+.cc-banner__disease {
+    font-size: var(--text-sm);
+    font-weight: 700;
+    color: var(--zeta-slate);
+    margin-bottom: 12px;
+}
+
+.cc-banner__stage {
+    cursor: pointer;
+    border-bottom: 1px dashed var(--text-hint);
+}
+
+.cc-banner__germline {
+    margin-bottom: 12px;
+}
+
+.cc-banner__status-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.cc-banner__dots {
+    margin-bottom: 16px;
+}
+
+.cc-banner__dots-label {
+    font-size: var(--text-xs);
+    font-weight: 800;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.cc-banner__dot-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.cc-banner__dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    display: inline-block;
+    transition: transform 0.2s ease;
+}
+
+.cc-banner__dot:hover {
+    transform: scale(1.3);
+}
+
+.cc-banner__dots-summary {
+    font-size: var(--text-xs);
+    color: var(--text-hint);
+    font-weight: 500;
+}
+
+.cc-banner__timestamp {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    margin-top: 12px;
+    font-weight: 500;
+}
+
+/* ── Completeness Strip ─────────────────────────────────────── */
+.cc-completeness {
+    margin-bottom: 4px;
+}
+
+.cc-completeness__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.cc-completeness__pct {
+    font-size: var(--text-xs);
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.cc-completeness__bar {
+    height: 6px;
+    background: var(--surface-subtle);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 4px;
+}
+
+.cc-completeness__fill {
+    height: 100%;
+    background: var(--zeta-green);
+    border-radius: 3px;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cc-completeness__missing {
+    font-size: var(--text-xs);
+    color: var(--text-hint);
+    font-weight: 500;
+}
+
+/* ── Signal Teaser ──────────────────────────────────────────── */
+.cc-signal-teaser__group {
+    margin-bottom: 16px;
+}
+
+.cc-signal-teaser__group-label {
+    font-size: var(--text-xs);
+    font-weight: 800;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+}
+
+.cc-signal-teaser__item {
+    border-bottom: 1px solid var(--surface-subtle);
+}
+
+.cc-signal-teaser__item:last-child {
+    border-bottom: none;
+}
+
+.cc-signal-teaser__row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+}
+
+.cc-signal-teaser__info {
+    flex: 1;
+    min-width: 0;
+}
+
+.cc-signal-teaser__name {
+    font-size: var(--text-sm);
+    font-weight: 700;
+    color: var(--text-primary);
+    display: block;
+}
+
+.cc-signal-teaser__reason {
+    font-size: var(--text-xs);
+    color: var(--text-hint);
+    font-weight: 500;
+    display: block;
+}
+
+.cc-signal-teaser__action {
+    font-size: var(--text-xs);
+    font-weight: 700;
+    color: var(--zeta-blue);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.cc-signal-teaser__form {
+    padding: 8px 0 16px 26px;
+}
+
+/* ── Journey Cards Grid ─────────────────────────────────────── */
+.cc-journey-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+/* ── RUO footer ──────────────────────────────────────────────── */
+.cc-ruo {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    text-align: center;
+    padding-top: 16px;
+}
+
+/* ── Toggle buttons ──────────────────────────────────────────── */
+.cc-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: var(--text-xs);
+    font-weight: 700;
+    color: var(--text-hint);
+    padding: 8px 0;
+    text-align: left;
+}
+
+.cc-toggle:hover {
+    color: var(--text-secondary);
+}

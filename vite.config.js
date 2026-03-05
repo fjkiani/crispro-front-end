@@ -65,7 +65,18 @@ export default defineConfig({
   },
 
   server: {
-    // No proxy — API calls use API_ROOT env var
+    port: 5173,
+    // Proxy all /api/* requests to the FastAPI backend running on 8000.
+    // Without this, fetch('/api/...') hits Vite (port 5173) and returns 404.
+    // This is the development-only fix — production uses the actual backend URL.
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        secure: false,
+        ws: false,
+      },
+    },
   },
 
   logLevel: 'warn',

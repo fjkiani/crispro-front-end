@@ -111,3 +111,17 @@ CRISPResso2-master/
 *.new
 refactor-api-imports.mjs
 debug_*.py
+
+# ---- Supabase-Migrated Large Data (DO NOT RE-ADD) ----
+# Structured data is in Supabase Postgres (clinical_trials, trials, trials_fresh, cache_store)
+oncology-backend-minimal/data/clinical_trials.db
+oncology-backend-minimal/data/cache.db
+
+# Raw datasets are in Supabase Storage (external-datasets bucket)
+oncology-backend-minimal/data/britoc/
+oncology-backend-minimal/data/external/
+
+# ML models are too large for free-tier storage — download via HuggingFace Hub at runtime
+# Run: python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
+oncology-backend/embedding_models/
+

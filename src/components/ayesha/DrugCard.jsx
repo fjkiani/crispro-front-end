@@ -12,6 +12,7 @@ import {
     Button
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ScoringBreakdown from './ScoringBreakdown';
 
 export function DrugCard({ drug, showSPE = true, showBadges = true, onInform }) {
     const confidence = drug.confidence || 0;
@@ -96,17 +97,40 @@ export function DrugCard({ drug, showSPE = true, showBadges = true, onInform }) 
                     </Accordion>
                 )}
 
+                {/* Scoring Breakdown (expandable — 40/30/15/15) */}
+                <ScoringBreakdown drug={drug} />
+
                 {/* Footer Meta */}
-                <Box mt={2} pt={1} borderTop="1px dashed #eee" display="flex" justifyContent="space-between" alignItems="center">
+                <Box mt={2} pt={1} borderTop="1px dashed #eee" display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1}>
                     <Typography variant="caption" color="text.secondary">
                         Efficacy: {drug.efficacy_score?.toFixed(2)} | Tier: {drug.evidence_tier}
                         {drug.citations_count !== undefined && ` | Citations: ${drug.citations_count}`}
                     </Typography>
-                    {onInform && (
-                        <Button size="small" variant="text" onClick={() => onInform(drug)}>
-                            Inform Doctor
-                        </Button>
-                    )}
+                    <Box display="flex" gap={1} alignItems="center">
+                        {drug.kill_chain_state && (
+                            <Chip
+                                label={`Kill Chain: ${drug.kill_chain_state}`}
+                                size="small"
+                                sx={{
+                                    height: 18, fontSize: '0.6rem', fontWeight: 700,
+                                    bgcolor: drug.kill_chain_state === 'ALERT' ? 'rgba(239,68,68,0.15)' : 'rgba(56,189,248,0.1)',
+                                    color: drug.kill_chain_state === 'ALERT' ? '#f87171' : '#38bdf8',
+                                }}
+                            />
+                        )}
+                        {drug.resistance_risk_policy_ran === false && (
+                            <Chip
+                                label="Policy: awaiting data"
+                                size="small"
+                                sx={{ height: 18, fontSize: '0.6rem', fontWeight: 700, bgcolor: 'rgba(100,116,139,0.1)', color: '#64748b' }}
+                            />
+                        )}
+                        {onInform && (
+                            <Button size="small" variant="text" onClick={() => onInform(drug)}>
+                                Inform Doctor
+                            </Button>
+                        )}
+                    </Box>
                 </Box>
             </CardContent>
         </Card>

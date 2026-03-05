@@ -505,15 +505,15 @@ export default function AyeshaCompleteCare() {
           <Grid item xs={12} md={4}>
             <Typography variant="body2" color="text.secondary">Germline Status</Typography>
             <Typography variant="body1" sx={{ fontWeight: 500, color: patientProfile.germline_status === 'positive' ? 'warning.main' : 'text.primary' }}>
-              {patientProfile.germline_status?.toUpperCase() || 'UNKNOWN'}
+              {patientProfile.germline_status?.toUpperCase() || 'UNKNOWN'} 
               {patientProfile.germline?.mutations?.[0]?.gene && ` (${patientProfile.germline.mutations[0].gene})`}
             </Typography>
           </Grid>
           <Grid item xs={12} md={4}>
             <Typography variant="body2" color="text.secondary">Key Biomarkers</Typography>
             <Typography variant="body1" sx={{ fontWeight: 500 }}>
-              PD-L1: CPS {patientProfile.tumor_context?.biomarkers?.pd_l1_cps || 'N/A'} |
-              p53: {patientProfile.tumor_context?.biomarkers?.p53_status || 'N/A'} |
+              PD-L1: CPS {patientProfile.tumor_context?.biomarkers?.pd_l1_cps || 'N/A'} | 
+              p53: {patientProfile.tumor_context?.biomarkers?.p53_status || 'N/A'} | 
               MMR: {patientProfile.tumor_context?.biomarkers?.mmr_status || 'N/A'}
             </Typography>
           </Grid>
@@ -585,27 +585,27 @@ export default function AyeshaCompleteCare() {
       )}
 
       {/* PLUMBER 7: Germline Alert Component */}
-      {patientProfile.germline?.status === 'POSITIVE' &&
-        patientProfile.germline?.mutations?.some(m => m.classification === 'pathogenic') && (
-          <Alert severity="warning" sx={{ mb: 3 }}>
-            <AlertTitle>Germline Pathogenic Mutation Detected</AlertTitle>
-            {patientProfile.germline.mutations
-              .filter(m => m.classification === 'pathogenic')
-              .map((mutation, idx) => (
-                <Box key={idx}>
-                  <Typography>
-                    <strong>{mutation.gene}</strong>
-                    {mutation.syndrome && ` (${mutation.syndrome})`}
+      {patientProfile.germline?.status === 'POSITIVE' && 
+       patientProfile.germline?.mutations?.some(m => m.classification === 'pathogenic') && (
+        <Alert severity="warning" sx={{ mb: 3 }}>
+          <AlertTitle>Germline Pathogenic Mutation Detected</AlertTitle>
+          {patientProfile.germline.mutations
+            .filter(m => m.classification === 'pathogenic')
+            .map((mutation, idx) => (
+              <Box key={idx}>
+                <Typography>
+                  <strong>{mutation.gene}</strong>
+                  {mutation.syndrome && ` (${mutation.syndrome})`}
+                </Typography>
+                {mutation.risk_increases && mutation.risk_increases.length > 0 && (
+                  <Typography variant="body2" sx={{ mt: 1 }}>
+                    <strong>Risk increases:</strong> {mutation.risk_increases.join(', ')}
                   </Typography>
-                  {mutation.risk_increases && mutation.risk_increases.length > 0 && (
-                    <Typography variant="body2" sx={{ mt: 1 }}>
-                      <strong>Risk increases:</strong> {mutation.risk_increases.join(', ')}
-                    </Typography>
-                  )}
-                </Box>
-              ))}
-          </Alert>
-        )}
+                )}
+              </Box>
+            ))}
+        </Alert>
+      )}
 
       {/* Awaiting NGS Status */}
       {result?.wiwfm_status === "awaiting_ngs" && (
@@ -650,7 +650,7 @@ export default function AyeshaCompleteCare() {
         <Box>
           {/* Integrated Confidence Bar - Only show if not awaiting NGS */}
           {result.wiwfm_status !== "awaiting_ngs" && (result.integrated_confidence || result.summary?.confidence_level) && (
-            <IntegratedConfidenceBar
+          <IntegratedConfidenceBar
               integratedConfidence={result.integrated_confidence || 0.7}
               confidenceBreakdown={result.confidence_breakdown || {
                 drug_component: 0.7,
@@ -677,7 +677,7 @@ export default function AyeshaCompleteCare() {
           {/* PLUMBER 8: Synthetic Lethality Analysis */}
           {result.synthetic_lethality && (
             <Box sx={{ mb: 3 }}>
-              <SyntheticLethalityCard
+              <SyntheticLethalityCard 
                 slResult={result.synthetic_lethality}
                 loading={false}
               />
@@ -694,7 +694,7 @@ export default function AyeshaCompleteCare() {
                 {Object.entries(result.vus_results).map(([gene, vusData]) => {
                   const vusMutation = patientProfile.germline?.mutations?.find(m => m.gene === gene && m.classification === 'VUS');
                   if (!vusMutation) return null;
-
+                  
                   return (
                     <VUSResolutionCard
                       key={gene}
@@ -714,7 +714,7 @@ export default function AyeshaCompleteCare() {
           {/* Phase 3: Essentiality Score Display */}
           {((result.essentiality_scores && result.essentiality_scores.length > 0) || (result.synthetic_lethality?.essentiality_scores && result.synthetic_lethality.essentiality_scores.length > 0)) && (
             <Box sx={{ mb: 3 }}>
-              <EssentialityScoreDisplay
+              <EssentialityScoreDisplay 
                 essentialityScores={(result.essentiality_scores && result.essentiality_scores.length > 0) ? result.essentiality_scores : result.synthetic_lethality.essentiality_scores}
                 title="Gene Essentiality Analysis"
               />
@@ -753,7 +753,7 @@ export default function AyeshaCompleteCare() {
           {result.trials && (
             <Box sx={{ mb: 3 }}>
               {result.trials.trials && result.trials.trials.length > 0 ? (
-                <TrialMatchesCard
+                <TrialMatchesCard 
                   trialMatches={result.trials.trials}
                   loading={false}
                 />
@@ -768,7 +768,7 @@ export default function AyeshaCompleteCare() {
                   {result.trials.summary && (
                     <Box sx={{ mt: 2 }}>
                       <Typography variant="body2" color="text.secondary">
-                        <strong>Candidates:</strong> {result.trials.summary.total_candidates || 0} |
+                        <strong>Candidates:</strong> {result.trials.summary.total_candidates || 0} | 
                         <strong> Top results:</strong> {result.trials.summary.top_results || 0}
                       </Typography>
                     </Box>
@@ -817,17 +817,17 @@ export default function AyeshaCompleteCare() {
                       MBD4 Mutation (Homozygous)
                     </Typography>
                     <Typography variant="body2" paragraph>
-                      <strong>What it means:</strong> You have a mutation in both copies of the MBD4 gene.
-                      This gene normally repairs DNA damage. When it's broken, your cells can't fix certain
+                      <strong>What it means:</strong> You have a mutation in both copies of the MBD4 gene. 
+                      This gene normally repairs DNA damage. When it's broken, your cells can't fix certain 
                       types of DNA damage as well.
                     </Typography>
                     <Typography variant="body2" paragraph>
-                      <strong>Why this matters for treatment:</strong> Because your DNA repair system is compromised,
-                      drugs that create DNA damage (like platinum chemotherapy or PARP inhibitors) can be especially
+                      <strong>Why this matters for treatment:</strong> Because your DNA repair system is compromised, 
+                      drugs that create DNA damage (like platinum chemotherapy or PARP inhibitors) can be especially 
                       effective. Your tumor is more vulnerable to these drugs.
                     </Typography>
                     <Typography variant="body2">
-                      <strong>Risk increases:</strong> This mutation is associated with increased risk for
+                      <strong>Risk increases:</strong> This mutation is associated with increased risk for 
                       acute myeloid leukemia and colorectal cancer. Regular monitoring is recommended.
                     </Typography>
                   </Box>
@@ -840,14 +840,14 @@ export default function AyeshaCompleteCare() {
                       TP53 Mutation (Tumor)
                     </Typography>
                     <Typography variant="body2" paragraph>
-                      <strong>What it means:</strong> Your tumor has a mutation in the TP53 gene, which is
-                      often called the "guardian of the genome." This gene normally stops damaged cells from
+                      <strong>What it means:</strong> Your tumor has a mutation in the TP53 gene, which is 
+                      often called the "guardian of the genome." This gene normally stops damaged cells from 
                       growing and dividing.
                     </Typography>
                     <Typography variant="body2">
-                      <strong>Why this matters for treatment:</strong> When TP53 is broken, tumor cells can
-                      grow unchecked. However, this also means the tumor has lost an important "checkpoint"
-                      that normally protects cells from DNA-damaging drugs. Combined with your MBD4 mutation,
+                      <strong>Why this matters for treatment:</strong> When TP53 is broken, tumor cells can 
+                      grow unchecked. However, this also means the tumor has lost an important "checkpoint" 
+                      that normally protects cells from DNA-damaging drugs. Combined with your MBD4 mutation, 
                       this creates a "double hit" vulnerability that certain drugs can exploit.
                     </Typography>
                   </Box>
@@ -860,13 +860,13 @@ export default function AyeshaCompleteCare() {
                       PDGFRA Variant (VUS - Variant of Uncertain Significance)
                     </Typography>
                     <Typography variant="body2" paragraph>
-                      <strong>What it means:</strong> A variant (genetic change) was found in your PDGFRA gene,
-                      but we don't yet know if it causes disease or is harmless. It could contribute to your
+                      <strong>What it means:</strong> A variant (genetic change) was found in your PDGFRA gene, 
+                      but we don't yet know if it causes disease or is harmless. It could contribute to your 
                       cancer risk, or it could be benign (harmless).
                     </Typography>
                     <Typography variant="body2">
-                      <strong>What we're doing:</strong> We're using advanced AI tools (Evo2, AlphaMissense)
-                      to analyze this variant and determine if it's likely harmful. The results will help
+                      <strong>What we're doing:</strong> We're using advanced AI tools (Evo2, AlphaMissense) 
+                      to analyze this variant and determine if it's likely harmful. The results will help 
                       clarify whether this variant needs monitoring or action.
                     </Typography>
                   </Box>
@@ -879,13 +879,13 @@ export default function AyeshaCompleteCare() {
                       Treatment Opportunity: Synthetic Lethality
                     </Typography>
                     <Typography variant="body2" paragraph>
-                      <strong>What this means:</strong> Your combination of genetic mutations (MBD4 + TP53)
-                      creates a specific vulnerability. When both DNA repair pathways are broken, your tumor
+                      <strong>What this means:</strong> Your combination of genetic mutations (MBD4 + TP53) 
+                      creates a specific vulnerability. When both DNA repair pathways are broken, your tumor 
                       becomes dependent on backup pathways that can be targeted with drugs.
                     </Typography>
                     <Typography variant="body2">
-                      <strong>Why this is good news:</strong> This vulnerability means certain drugs (like
-                      PARP inhibitors, platinum chemotherapy, or ATR inhibitors) may be especially effective
+                      <strong>Why this is good news:</strong> This vulnerability means certain drugs (like 
+                      PARP inhibitors, platinum chemotherapy, or ATR inhibitors) may be especially effective 
                       for you because they target the pathways your tumor now depends on.
                     </Typography>
                   </Box>
@@ -929,7 +929,7 @@ export default function AyeshaCompleteCare() {
                   Confidence Level:
                 </Typography>
                 <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-                  {result.integrated_confidence
+                  {result.integrated_confidence 
                     ? `${Math.round(result.integrated_confidence * 100)}%`
                     : result.summary?.confidence_level || "N/A"}
                 </Typography>

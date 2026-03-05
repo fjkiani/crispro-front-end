@@ -20,9 +20,11 @@ import DrugCardHeader from './ranking/DrugCardHeader';
 import EvidenceRenderer from './ranking/EvidenceRenderer';
 import SafetyPanel from './ranking/SafetyPanel';
 import ProvenanceAccordion from './ranking/ProvenanceAccordion';
+import ScoringBreakdown from './ScoringBreakdown';
 
 // Utils
 import { humanize } from '../../utils/drugRendering';
+import { drugToSlug } from '../../hooks/useDrugDetail';
 import TherapyFitExplainerAgent from './TherapyFitExplainerAgent';
 import { saveDossier } from '../../utils/dossierStore';
 
@@ -87,7 +89,12 @@ export default function DrugRankingPanel({ drugs = [], onViewDetails, context = 
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {drugs.map((drug, idx) => (
-          <Card key={idx} variant="outlined" sx={{ bgcolor: idx === 0 ? 'primary.50' : 'white' }}>
+          <Card key={idx} variant="outlined" sx={{
+            bgcolor: idx === 0 ? 'primary.50' : 'white',
+            cursor: 'pointer',
+            '&:hover': { borderColor: 'primary.main', boxShadow: '0 2px 12px rgba(37,99,235,0.1)' },
+            transition: 'all 0.15s',
+          }} onClick={() => navigate(`/ayesha/journey/drug/${drugToSlug(drug.name || drug.drug)}`)}>
             <CardContent>
               {/* Header */}
               <DrugCardHeader drug={drug} index={idx} />
@@ -122,6 +129,9 @@ export default function DrugRankingPanel({ drugs = [], onViewDetails, context = 
               {/* Sporadic Gates Provenance - Why this confidence? */}
               <ProvenanceAccordion provenance={drug.sporadic_gates_provenance} />
 
+              {/* Scoring Breakdown — 40/30/15/15 weights (expandable) */}
+              <ScoringBreakdown drug={drug} />
+
               {/* Citations (PMIDs) */}
               {drug.citations && drug.citations.length > 0 && (
                 <Box sx={{ mt: 1 }}>
@@ -153,7 +163,7 @@ export default function DrugRankingPanel({ drugs = [], onViewDetails, context = 
                   size="small"
                   color="secondary"
                   startIcon={<AutoAwesomeIcon />}
-                  onClick={() => toggleExplanation(idx)}
+                  onClick={(e) => { e.stopPropagation(); toggleExplanation(idx); }}
                 >
                   {showExplanation[idx] ? 'Hide Agent Analysis' : 'Ask Agent'}
                 </Button>
@@ -162,7 +172,7 @@ export default function DrugRankingPanel({ drugs = [], onViewDetails, context = 
                   variant="outlined"
                   size="small"
                   startIcon={creatingDossier === idx ? <CircularProgress size={20} /> : <AssessmentIcon />} // Use AssessmentIcon
-                  onClick={() => handleInformDoctor(drug, idx)}
+                  onClick={(e) => { e.stopPropagation(); handleInformDoctor(drug, idx); }}
                   disabled={creatingDossier === idx}
                 >
                   Inform Doctor
@@ -173,7 +183,7 @@ export default function DrugRankingPanel({ drugs = [], onViewDetails, context = 
                     variant="outlined"
                     size="small"
                     startIcon={<InfoIcon />}
-                    onClick={() => onViewDetails(drug)}
+                    onClick={(e) => { e.stopPropagation(); onViewDetails(drug); }}
                   >
                     View Details
                   </Button>

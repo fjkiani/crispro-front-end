@@ -136,7 +136,7 @@ const UnlockableRoadmap = ({ currentLevel = 'L1' }) => {
                         title="Tumor Sequencing"
                         description="Sequencing your DNA (NGS) allows for HRD scoring and TMB analysis."
                         status={isUnlocked('L2') ? 'active' : 'locked'}
-                        requires={['NGS', 'HRD Score']}
+                        requires={['NGS somatic mutations', 'HRD score', 'TMB score']}
                         upside="Refines matches to 90%+ confidence."
                     />
                 </Grid>
@@ -146,9 +146,9 @@ const UnlockableRoadmap = ({ currentLevel = 'L1' }) => {
                         level="L3"
                         stepNumber="3"
                         title="Activity Signals"
-                        description="RNA expression and proteomic data reveal if the targets are actually active."
+                        description="RNA expression and CA-125 data reveal pathway activity and tumor burden."
                         status={isUnlocked('L3') ? 'active' : 'locked'}
-                        requires={['RNA-Seq', 'Proteomics']}
+                        requires={['RNA expression data', 'CA-125 lab values']}
                         upside="Functional confirmation of drug sensitivity."
                     />
                 </Grid>

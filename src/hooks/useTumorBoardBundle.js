@@ -18,6 +18,26 @@ const getAuthToken = () => {
   return null;
 };
 
+// ─── localStorage helpers (canonical keys, mirrors DataEntryPanel exports) ────
+function readCA125History() {
+  try {
+    const raw = localStorage.getItem('ayesha_ca125_history_v1');
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) && arr.length > 0 ? arr : null;
+  } catch { return null; }
+}
+
+function readHRD() {
+  try { return JSON.parse(localStorage.getItem('ayesha_hrd_v1') || 'null'); }
+  catch { return null; }
+}
+
+function readRSSInputs() {
+  // Written by RSSEntryForm.jsx under key 'ayesha_rss_inputs_v1'
+  try { return JSON.parse(localStorage.getItem('ayesha_rss_inputs_v1') || 'null'); }
+  catch { return null; }
+}
+
 async function fetchTumorBoardBundle({
   level = 'l1',
   scenarioId = null,
@@ -38,10 +58,36 @@ async function fetchTumorBoardBundle({
   if (ctdnaStatusOverride) params.set('ctdna_status_override', String(ctdnaStatusOverride));
   if (efficacyMode) params.set('efficacy_mode', String(efficacyMode));
 
+  // Read locally-stored patient data and attach to request body.
+  // Backend expects these in tumor_context_additions or directly in the body.
+  // Fields are optional — only attach when present to avoid polluting baseline.
+  const ca125History = readCA125History();
+  const hrdEntry = readHRD();
+  const body = {};
+  if (ca125History) {
+    body.ca125_history = ca125History;
+    // Most recent value as single-reading shortcut
+    const last = ca125History[ca125History.length - 1];
+    if (last?.value) {
+      body.ca125_value = last.value;
+      body.ca125_date = last.date;
+    }
+  }
+  if (hrdEntry?.hrd_score != null) {
+    body.hrd_score = hrdEntry.hrd_score;
+    body.hrd_status = hrdEntry.hrd_status;
+  }
+
+  // Replication Stress Score inputs — enables 8th vector axis (PMID 34552099)
+  const rssInputs = readRSSInputs();
+  if (rssInputs && Object.keys(rssInputs).length > 0) {
+    body.rss_inputs = rssInputs;
+  }
+
   const res = await fetch(`${API_ROOT}/api/ayesha/therapy-fit/bundle?${params.toString()}`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({}),
+    body: JSON.stringify(body),
   });
 
   if (!res.ok) {

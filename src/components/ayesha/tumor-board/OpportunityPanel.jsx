@@ -1,11 +1,11 @@
 /**
  * OpportunityPanel — Consolidated view of actionable opportunities
- * 
+ *
  * Consolidates:
- * - SyntheticLethalityCard (single instance, was duplicated)
- * - ResistanceGateBanner (single instance, was duplicated)  
+ * - KillChainStatusWidget (NEW — 2-of-3 resistance policy monitor)
+ * - SyntheticLethalityCard (single instance)
+ * - ResistanceGateBanner (boardroom_outcome schema — different pipeline from Kill Chain)
  * - Tests Needed with actionable CTAs
- * - Coordination prompts as prioritized cards
  */
 import React, { Suspense } from 'react';
 import {
@@ -19,6 +19,7 @@ import {
     Alert,
     Divider,
 } from '@mui/material';
+import KillChainStatusWidget from '../KillChainStatusWidget';
 import {
     Science as TestIcon,
     OpenInNew as ExternalIcon,
@@ -50,11 +51,15 @@ export default function OpportunityPanel({
                     <Typography variant="overline" sx={{ color: '#f87171', fontWeight: 700, letterSpacing: 1.5, display: 'block', mb: 1.5 }}>
                         DEFENSE — RESISTANCE ASSESSMENT
                     </Typography>
+                    {/* Kill Chain Monitor — 2-of-3 policy state */}
+                    <KillChainStatusWidget resistanceGate={resistanceGate} />
+                    {/* Resistance Gate Banner — boardroom_outcome pipeline (separate from Kill Chain) */}
                     <Suspense fallback={<Box sx={{ height: 60, bgcolor: '#1e293b', borderRadius: 2 }} />}>
                         <ResistanceGateBanner data={resistanceGate} levelKey={levelKey} />
                     </Suspense>
                 </CardContent>
             </Card>
+
 
             {/* Section 2: Synthetic Lethality Targets */}
             <Card sx={{ bgcolor: '#0f172a', border: '1px solid #1e293b', borderRadius: 3 }}>

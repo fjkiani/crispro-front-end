@@ -46,16 +46,16 @@ const AnalysisTelemetryPanel = ({ levelData, isSimulation, scenarioId }) => {
         const pct = value != null ? Math.min((value / maxVal) * 100, 100) : 0;
         const isNull = value === null || value === undefined;
         return (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                <Typography sx={{ color: '#94a3b8', fontSize: '0.7rem', fontFamily: 'monospace', width: 50, textAlign: 'right' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.8 }}>
+                <Typography sx={{ color: '#94a3b8', fontSize: 'var(--text-xs)', fontFamily: 'monospace', width: 60, textAlign: 'right', fontWeight: 600 }}>
                     {label.toUpperCase()}
                 </Typography>
-                <Box sx={{ flex: 1, height: 6, bgcolor: '#1e293b', borderRadius: 1, overflow: 'hidden' }}>
+                <Box sx={{ flex: 1, height: 8, bgcolor: '#1e293b', borderRadius: 1, overflow: 'hidden' }}>
                     {!isNull && (
                         <Box sx={{ width: `${pct}%`, height: '100%', bgcolor: pct > 50 ? '#f59e0b' : '#3b82f6', transition: 'width 0.3s' }} />
                     )}
                 </Box>
-                <Typography sx={{ color: isNull ? '#475569' : '#e2e8f0', fontSize: '0.65rem', fontFamily: 'monospace', width: 40 }}>
+                <Typography sx={{ color: isNull ? '#475569' : '#e2e8f0', fontSize: 'var(--text-xs)', fontFamily: 'monospace', width: 50, fontWeight: 700 }}>
                     {isNull ? 'n/a' : value.toFixed(3)}
                 </Typography>
             </Box>
@@ -71,15 +71,15 @@ const AnalysisTelemetryPanel = ({ levelData, isSimulation, scenarioId }) => {
             {/* Header */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Shield size={14} color={isSimulation ? '#f59e0b' : '#3b82f6'} />
-                    <Typography sx={{ color: '#e2e8f0', fontSize: '0.75rem', fontWeight: 700, letterSpacing: 1 }}>
+                    <Shield size={16} color={isSimulation ? '#f59e0b' : '#3b82f6'} />
+                    <Typography sx={{ color: '#e2e8f0', fontSize: 'var(--text-sm)', fontWeight: 800, letterSpacing: 1.5 }}>
                         {isSimulation ? `SIMULATION: ${scenarioId}` : 'BASELINE ANALYSIS'}
                     </Typography>
                 </Box>
                 {timestamp && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <Clock size={10} color="#64748b" />
-                        <Typography sx={{ color: '#64748b', fontSize: '0.65rem', fontFamily: 'monospace' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                        <Clock size={12} color="#64748b" />
+                        <Typography sx={{ color: '#64748b', fontSize: 'var(--text-xs)', fontFamily: 'monospace', fontWeight: 600 }}>
                             {timestamp}
                         </Typography>
                     </Box>
@@ -87,9 +87,9 @@ const AnalysisTelemetryPanel = ({ levelData, isSimulation, scenarioId }) => {
             </Box>
 
             {/* Provenance Row */}
-            <Box sx={{ display: 'flex', gap: 2, mb: 1.5, flexWrap: 'wrap' }}>
+            <Box sx={{ display: 'flex', gap: 2, mb: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
                 {runId && (
-                    <Typography sx={{ color: '#475569', fontSize: '0.6rem', fontFamily: 'monospace' }}>
+                    <Typography sx={{ color: '#475569', fontSize: 'var(--text-xs)', fontFamily: 'monospace', fontWeight: 700 }}>
                         RUN: {runId.slice(0, 8)}
                     </Typography>
                 )}
@@ -97,14 +97,14 @@ const AnalysisTelemetryPanel = ({ levelData, isSimulation, scenarioId }) => {
                     <Chip
                         label={insightsMode === 'skipped_fast_mode' ? 'FAST MODE' : insightsMode}
                         size="small"
-                        sx={{ height: 18, fontSize: '0.6rem', fontWeight: 700, bgcolor: '#1e293b', color: '#f59e0b', letterSpacing: 0.5 }}
+                        sx={{ height: 22, fontSize: 'var(--text-xs)', fontWeight: 800, bgcolor: '#1e293b', color: '#f59e0b', letterSpacing: 0.5, px: 1 }}
                     />
                 )}
             </Box>
 
             {/* Pathway Scores */}
             <Box sx={{ mb: 1.5 }}>
-                <Typography sx={{ color: '#64748b', fontSize: '0.6rem', fontWeight: 700, letterSpacing: 1, mb: 0.5 }}>
+                <Typography sx={{ color: '#64748b', fontSize: 'var(--text-xs)', fontWeight: 800, letterSpacing: 1.5, mb: 1 }}>
                     PATHWAY DISRUPTION
                 </Typography>
                 <PathwayBar label="DDR" value={pathwayScores?.ddr} />
@@ -116,13 +116,13 @@ const AnalysisTelemetryPanel = ({ levelData, isSimulation, scenarioId }) => {
 
             {/* RUO / Evidence Status */}
             {(citationsCount === 0 || ruoReasons.length > 0) && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pt: 1, borderTop: '1px solid #1e293b' }}>
-                    <AlertTriangle size={12} color="#f59e0b" />
-                    <Typography sx={{ color: '#f59e0b', fontSize: '0.65rem', fontWeight: 600 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pt: 1.5, borderTop: '1px solid #1e293b' }}>
+                    <AlertTriangle size={14} color="#f59e0b" />
+                    <Typography sx={{ color: '#f59e0b', fontSize: 'var(--text-sm)', fontWeight: 800 }}>
                         No citations surfaced (RUO)
                     </Typography>
                     {insightsMode === 'skipped_fast_mode' && (
-                        <Typography sx={{ color: '#64748b', fontSize: '0.6rem', fontStyle: 'italic', ml: 1 }}>
+                        <Typography sx={{ color: '#94a3b8', fontSize: 'var(--text-xs)', fontStyle: 'italic', ml: 1, fontWeight: 500 }}>
                             Pipeline mode: fast (evidence lookup gated)
                         </Typography>
                     )}
@@ -284,18 +284,18 @@ const ScenarioReceiptPanel = React.forwardRef(({ baseline, scenario, scenarioId,
             label={(tier || 'unknown').replace(/_/g, ' ')}
             size="small"
             sx={{
-                height: 16, fontSize: '0.55rem', fontWeight: 700, borderRadius: 0.5,
+                height: 20, fontSize: 'var(--text-xs)', fontWeight: 800, borderRadius: 0.5,
                 bgcolor: `${tierColor(tier)}18`, color: tierColor(tier), border: `1px solid ${tierColor(tier)}33`,
-                textTransform: 'uppercase', letterSpacing: 0.5,
+                textTransform: 'uppercase', letterSpacing: 0.5, px: 0.5
             }}
         />
     );
 
     const CitBadge = ({ count }) => (
         count > 0 ? (
-            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.3 }}>
-                <BookOpen size={9} color="#a78bfa" />
-                <Typography sx={{ color: '#a78bfa', fontSize: '0.6rem', fontWeight: 700, fontFamily: 'monospace' }}>
+            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+                <BookOpen size={12} color="#a78bfa" />
+                <Typography sx={{ color: '#a78bfa', fontSize: 'var(--text-xs)', fontWeight: 800, fontFamily: 'monospace' }}>
                     {count}
                 </Typography>
             </Box>
@@ -303,13 +303,13 @@ const ScenarioReceiptPanel = React.forwardRef(({ baseline, scenario, scenarioId,
     );
 
     const DeltaIcon = ({ val }) => {
-        if (val > 0) return <ArrowUp size={10} color="#22c55e" />;
-        if (val < 0) return <ArrowDown size={10} color="#ef4444" />;
-        return <Minus size={10} color="#475569" />;
+        if (val > 0) return <ArrowUp size={12} color="#22c55e" />;
+        if (val < 0) return <ArrowDown size={12} color="#ef4444" />;
+        return <Minus size={12} color="#475569" />;
     };
 
     const ScoreCell = ({ value, muted }) => (
-        <Typography sx={{ fontFamily: 'monospace', fontSize: '0.7rem', color: muted ? '#475569' : '#e2e8f0' }}>
+        <Typography sx={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)', color: muted ? '#64748b' : '#e2e8f0', fontWeight: muted ? 500 : 700 }}>
             {value === null || value === undefined ? 'n/a' : typeof value === 'number' ? value.toFixed(3) : value}
         </Typography>
     );
@@ -330,19 +330,19 @@ const ScenarioReceiptPanel = React.forwardRef(({ baseline, scenario, scenarioId,
                 borderBottom: `1px solid ${t.headerBorder}`,
                 display: 'flex', alignItems: 'center', gap: 1,
             }}>
-                <FlaskConical size={14} color={t.headerText} />
-                <Typography sx={{ color: t.headerText, fontSize: '0.75rem', fontWeight: 800, letterSpacing: 1.5 }}>
+                <FlaskConical size={16} color={t.headerText} />
+                <Typography sx={{ color: t.headerText, fontSize: 'var(--text-sm)', fontWeight: 900, letterSpacing: 2 }}>
                     HYPOTHETICAL SCENARIO RECEIPT
                 </Typography>
                 {diff && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, ml: 1 }}>
-                        <BookOpen size={10} color="#a78bfa" />
-                        <Typography sx={{ color: '#a78bfa', fontSize: '0.6rem', fontWeight: 600 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, ml: 1.5 }}>
+                        <BookOpen size={12} color="#a78bfa" />
+                        <Typography sx={{ color: '#a78bfa', fontSize: 'var(--text-xs)', fontWeight: 800 }}>
                             {diff.totalScenarioCitations} citation{diff.totalScenarioCitations !== 1 ? 's' : ''}
                         </Typography>
                     </Box>
                 )}
-                <Chip label={scenarioId} size="small" sx={{ ml: 'auto', height: 18, fontSize: '0.6rem', fontWeight: 700, bgcolor: '#f59e0b22', color: '#f59e0b', borderRadius: 0.5 }} />
+                <Chip label={scenarioId} size="small" sx={{ ml: 'auto', height: 22, fontSize: 'var(--text-xs)', fontWeight: 800, bgcolor: '#f59e0b22', color: '#f59e0b', borderRadius: 0.5, px: 1 }} />
             </Box>
 
             {/* 4-Line Receipt (Copy Agent) */}
@@ -354,12 +354,12 @@ const ScenarioReceiptPanel = React.forwardRef(({ baseline, scenario, scenarioId,
                     { label: 'EVIDENCE', icon: '\uD83D\uDCC4', text: receipt.evidence },
                 ].map(({ label, icon, text }) => (
                     <Box key={label} sx={{ display: 'flex', gap: 1.5, mb: 1.5, alignItems: 'flex-start' }}>
-                        <Typography sx={{ fontSize: '0.85rem', lineHeight: 1.4 }}>{icon}</Typography>
+                        <Typography sx={{ fontSize: '1.2rem', lineHeight: 1.2 }}>{icon}</Typography>
                         <Box>
-                            <Typography sx={{ color: '#64748b', fontSize: '0.55rem', fontWeight: 700, letterSpacing: 1.5, mb: 0.2 }}>
+                            <Typography sx={{ color: '#64748b', fontSize: 'var(--text-xs)', fontWeight: 800, letterSpacing: 1.5, mb: 0.5 }}>
                                 {label}
                             </Typography>
-                            <Typography sx={{ color: '#cbd5e1', fontSize: '0.75rem', lineHeight: 1.5 }}>
+                            <Typography sx={{ color: '#cbd5e1', fontSize: 'var(--text-sm)', lineHeight: 1.6, fontWeight: 500 }}>
                                 {text}
                             </Typography>
                         </Box>
@@ -370,43 +370,43 @@ const ScenarioReceiptPanel = React.forwardRef(({ baseline, scenario, scenarioId,
             {/* Drug Comparison Table (Engineering Agent) */}
             {diff && (diff.added.length > 0 || diff.removed.length > 0 || diff.retained.length > 0) && (
                 <Box sx={{ px: 2.5, py: 2, borderTop: '1px solid #1e293b' }}>
-                    <Typography sx={{ color: '#64748b', fontSize: '0.6rem', fontWeight: 700, letterSpacing: 1, mb: 1.5 }}>
+                    <Typography sx={{ color: '#64748b', fontSize: 'var(--text-xs)', fontWeight: 800, letterSpacing: 1.5, mb: 1.5 }}>
                         DRUG CANDIDATE COMPARISON (TOP 3)
                     </Typography>
 
                     {/* Removed drugs */}
                     {diff.removed.map(d => (
                         <Box key={d.name} sx={{
-                            display: 'flex', alignItems: 'center', gap: 1, mb: 1, py: 0.5, px: 1,
+                            display: 'flex', alignItems: 'center', gap: 1.5, mb: 1, py: 1, px: 1.5,
                             bgcolor: '#ef444408', borderRadius: 1, border: '1px solid #ef444415',
                         }}>
-                            <ArrowDown size={10} color="#ef4444" />
-                            <Typography sx={{ color: '#ef4444', fontSize: '0.7rem', fontFamily: 'monospace', textDecoration: 'line-through', minWidth: 90 }}>
+                            <ArrowDown size={14} color="#ef4444" />
+                            <Typography sx={{ color: '#ef4444', fontSize: 'var(--text-sm)', fontFamily: 'monospace', textDecoration: 'line-through', minWidth: 100, fontWeight: 600 }}>
                                 {d.name}
                             </Typography>
                             <ScoreCell value={d.score} muted />
                             <TierBadge tier={d.tier} />
                             <CitBadge count={d.citations} />
-                            <Typography sx={{ color: '#475569', fontSize: '0.6rem', fontStyle: 'italic', ml: 'auto' }}>dropped</Typography>
+                            <Typography sx={{ color: '#475569', fontSize: 'var(--text-xs)', fontStyle: 'italic', ml: 'auto', fontWeight: 600 }}>dropped</Typography>
                         </Box>
                     ))}
 
                     {/* Added drugs */}
                     {diff.added.map(d => (
                         <Box key={d.name} sx={{
-                            display: 'flex', alignItems: 'center', gap: 1, mb: 1, py: 0.5, px: 1,
+                            display: 'flex', alignItems: 'center', gap: 1.5, mb: 1, py: 1, px: 1.5,
                             bgcolor: '#22c55e08', borderRadius: 1, border: '1px solid #22c55e15',
                         }}>
-                            <ArrowUp size={10} color="#22c55e" />
-                            <Typography sx={{ color: '#22c55e', fontSize: '0.7rem', fontFamily: 'monospace', fontWeight: 700, minWidth: 90 }}>
+                            <ArrowUp size={14} color="#22c55e" />
+                            <Typography sx={{ color: '#22c55e', fontSize: 'var(--text-sm)', fontFamily: 'monospace', fontWeight: 800, minWidth: 100 }}>
                                 {d.name}
                             </Typography>
                             <ScoreCell value={d.score} />
                             <TierBadge tier={d.tier} />
                             <CitBadge count={d.citations} />
                             <Chip label="NEW" size="small" sx={{
-                                ml: 'auto', height: 16, fontSize: '0.5rem', fontWeight: 800,
-                                bgcolor: '#22c55e18', color: '#22c55e', borderRadius: 0.5,
+                                ml: 'auto', height: 20, fontSize: 'var(--text-xs)', fontWeight: 900,
+                                bgcolor: '#22c55e18', color: '#22c55e', borderRadius: 0.5, px: 0.8
                             }} />
                         </Box>
                     ))}
@@ -414,19 +414,19 @@ const ScenarioReceiptPanel = React.forwardRef(({ baseline, scenario, scenarioId,
                     {/* Retained drugs */}
                     {diff.retained.map(d => (
                         <Box key={d.name} sx={{
-                            display: 'flex', alignItems: 'center', gap: 1, mb: 1, py: 0.5, px: 1,
+                            display: 'flex', alignItems: 'center', gap: 1.5, mb: 1, py: 1, px: 1.5,
                             bgcolor: '#ffffff03', borderRadius: 1, border: '1px solid #ffffff08',
                         }}>
                             <DeltaIcon val={d.delta} />
-                            <Typography sx={{ color: '#94a3b8', fontSize: '0.7rem', fontFamily: 'monospace', minWidth: 90 }}>{d.name}</Typography>
+                            <Typography sx={{ color: '#94a3b8', fontSize: 'var(--text-sm)', fontFamily: 'monospace', minWidth: 100, fontWeight: 700 }}>{d.name}</Typography>
                             <ScoreCell value={d.before} muted />
-                            <ArrowRight size={8} color="#475569" />
+                            <ArrowRight size={12} color="#475569" />
                             <ScoreCell value={d.after} />
                             {/* Tier change indicator */}
                             {d.tierBefore !== d.tierAfter ? (
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                     <TierBadge tier={d.tierBefore} />
-                                    <ArrowRight size={7} color="#475569" />
+                                    <ArrowRight size={10} color="#475569" />
                                     <TierBadge tier={d.tierAfter} />
                                 </Box>
                             ) : (
@@ -434,9 +434,9 @@ const ScenarioReceiptPanel = React.forwardRef(({ baseline, scenario, scenarioId,
                             )}
                             {/* Citation delta */}
                             {(d.citBefore > 0 || d.citAfter > 0) && (
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3, ml: 0.5 }}>
-                                    <BookOpen size={9} color="#a78bfa" />
-                                    <Typography sx={{ color: '#a78bfa', fontSize: '0.55rem', fontFamily: 'monospace' }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, ml: 1 }}>
+                                    <BookOpen size={12} color="#a78bfa" />
+                                    <Typography sx={{ color: '#a78bfa', fontSize: 'var(--text-xs)', fontFamily: 'monospace', fontWeight: 700 }}>
                                         {d.citBefore !== d.citAfter ? `${d.citBefore}→${d.citAfter}` : d.citAfter}
                                     </Typography>
                                 </Box>
@@ -449,20 +449,20 @@ const ScenarioReceiptPanel = React.forwardRef(({ baseline, scenario, scenarioId,
             {/* Pathway Score Shifts (Engineering Agent) */}
             {diff && diff.pathDiffs.length > 0 && (
                 <Box sx={{ px: 2.5, py: 2, borderTop: '1px solid #1e293b' }}>
-                    <Typography sx={{ color: '#64748b', fontSize: '0.6rem', fontWeight: 700, letterSpacing: 1, mb: 1.5 }}>
+                    <Typography sx={{ color: '#64748b', fontSize: 'var(--text-xs)', fontWeight: 800, letterSpacing: 1.5, mb: 1.5 }}>
                         PATHWAY DISRUPTION SHIFTS
                     </Typography>
                     {diff.pathDiffs.map(p => (
                         <Box key={p.key} sx={{
-                            display: 'flex', alignItems: 'center', gap: 1, mb: 0.8, py: 0.3, px: 1,
+                            display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.8, py: 0.8, px: 1.5,
                             bgcolor: '#ffffff03', borderRadius: 1,
                         }}>
                             <DeltaIcon val={(p.after ?? 0) - (p.before ?? 0)} />
-                            <Typography sx={{ color: '#94a3b8', fontSize: '0.65rem', fontFamily: 'monospace', width: 44, textAlign: 'right', fontWeight: 600 }}>
+                            <Typography sx={{ color: '#94a3b8', fontSize: 'var(--text-xs)', fontFamily: 'monospace', width: 44, textAlign: 'right', fontWeight: 800 }}>
                                 {p.key.toUpperCase()}
                             </Typography>
                             <ScoreCell value={p.before} muted />
-                            <ArrowRight size={8} color="#475569" />
+                            <ArrowRight size={12} color="#475569" />
                             <ScoreCell value={p.after} />
                         </Box>
                     ))}
@@ -474,11 +474,11 @@ const ScenarioReceiptPanel = React.forwardRef(({ baseline, scenario, scenarioId,
                 // Map test name to icon, description, and route-safe key
                 const testMeta = (name) => {
                     const n = (name || '').toLowerCase();
-                    if (n.includes('hrd')) return { icon: <Dna size={18} color="#38bdf8" />, unlocks: 'DDR/PARP mechanism confidence, repair deficiency scoring', key: 'HRD score' };
-                    if (n.includes('tmb')) return { icon: <BarChart3 size={18} color="#a78bfa" />, unlocks: 'Immunotherapy axis, mutational burden classification', key: 'TMB score' };
-                    if (n.includes('rna') || n.includes('expression')) return { icon: <FlaskConical size={18} color="#22c55e" />, unlocks: 'Pathway activation map, mechanism confirmation beyond DNA', key: 'RNA expression data' };
-                    if (n.includes('ca-125') || n.includes('ca125')) return { icon: <TestTube size={18} color="#f59e0b" />, unlocks: 'Treatment response kinetics, early resistance detection', key: 'CA-125 lab values' };
-                    return { icon: <FileText size={18} color="#64748b" />, unlocks: 'Additional analysis depth', key: name };
+                    if (n.includes('hrd')) return { icon: <Dna size={20} color="#38bdf8" />, unlocks: 'DDR/PARP mechanism confidence, repair deficiency scoring', key: 'HRD score' };
+                    if (n.includes('tmb')) return { icon: <BarChart3 size={20} color="#a78bfa" />, unlocks: 'Immunotherapy axis, mutational burden classification', key: 'TMB score' };
+                    if (n.includes('rna') || n.includes('expression')) return { icon: <FlaskConical size={20} color="#22c55e" />, unlocks: 'Pathway activation map, mechanism confirmation beyond DNA', key: 'RNA expression data' };
+                    if (n.includes('ca-125') || n.includes('ca125')) return { icon: <TestTube size={20} color="#f59e0b" />, unlocks: 'Treatment response kinetics, early resistance detection', key: 'CA-125 lab values' };
+                    return { icon: <FileText size={20} color="#64748b" />, unlocks: 'Additional analysis depth', key: name };
                 };
                 return (
                     <Box sx={{
@@ -488,18 +488,18 @@ const ScenarioReceiptPanel = React.forwardRef(({ baseline, scenario, scenarioId,
                         {/* Section Header */}
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
                             <Box sx={{
-                                width: 40, height: 40, borderRadius: '50%',
+                                width: 48, height: 48, borderRadius: '50%',
                                 background: 'linear-gradient(135deg, #38bdf8 0%, #818cf8 100%)',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 boxShadow: '0 0 24px rgba(56, 189, 248, 0.25)',
                             }}>
-                                <Sparkles size={20} color="#fff" />
+                                <Sparkles size={24} color="#fff" />
                             </Box>
                             <Box>
-                                <Typography sx={{ color: t.textPrimary, fontSize: '1.15rem', fontWeight: 800, letterSpacing: 0.3, lineHeight: 1.2 }}>
+                                <Typography sx={{ color: t.textPrimary, fontSize: '1.25rem', fontWeight: 900, letterSpacing: 0.3, lineHeight: 1.2 }}>
                                     What Would Confirm This?
                                 </Typography>
-                                <Typography sx={{ color: t.textMuted, fontSize: '0.85rem', lineHeight: 1.5, mt: 0.3 }}>
+                                <Typography sx={{ color: t.textMuted, fontSize: '0.9rem', lineHeight: 1.5, mt: 0.3, fontWeight: 500 }}>
                                     Upload your results to unlock higher-confidence scoring
                                 </Typography>
                             </Box>
@@ -518,35 +518,35 @@ const ScenarioReceiptPanel = React.forwardRef(({ baseline, scenario, scenarioId,
                                         cursor: 'pointer',
                                         '&:hover': { bgcolor: t.cardHoverBg, border: `1px solid ${t.cardHoverBorder}`, transform: 'translateX(3px)' },
                                     }}
-                                        onClick={() => navigate(`/ayesha/tests-unlocks?upload=${encodeURIComponent(meta.key)}`)}
+                                        onClick={() => navigate(`/ayesha/tests?upload=${encodeURIComponent(meta.key)}`)}
                                     >
                                         {/* Icon */}
                                         <Box sx={{
-                                            width: 44, height: 44, borderRadius: 1.5,
+                                            width: 48, height: 48, borderRadius: 1.5,
                                             bgcolor: t.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                                         }}>
                                             {meta.icon}
                                         </Box>
                                         {/* Text */}
                                         <Box sx={{ flex: 1, minWidth: 0 }}>
-                                            <Typography sx={{ color: t.textPrimary, fontSize: '1rem', fontWeight: 700 }}>
+                                            <Typography sx={{ color: t.textPrimary, fontSize: '1rem', fontWeight: 800 }}>
                                                 {test}
                                             </Typography>
-                                            <Typography sx={{ color: t.textMuted, fontSize: '0.8rem', lineHeight: 1.4, mt: 0.3 }}>
+                                            <Typography sx={{ color: t.textMuted, fontSize: 'var(--text-sm)', lineHeight: 1.4, mt: 0.3, fontWeight: 500 }}>
                                                 Unlocks: {meta.unlocks}
                                             </Typography>
                                         </Box>
                                         {/* Upload button */}
                                         <Button
-                                            size="small"
-                                            onClick={(e) => { e.stopPropagation(); navigate(`/ayesha/tests-unlocks?upload=${encodeURIComponent(meta.key)}`); }}
+                                            size="medium"
+                                            onClick={(e) => { e.stopPropagation(); navigate(`/ayesha/tests?upload=${encodeURIComponent(meta.key)}`); }}
                                             sx={{
-                                                minWidth: 'auto', px: 2, py: 0.75, borderRadius: 1.5,
-                                                fontSize: '0.8rem', fontWeight: 700, textTransform: 'none',
+                                                minWidth: 'auto', px: 2.5, py: 1, borderRadius: 1.5,
+                                                fontSize: '0.85rem', fontWeight: 800, textTransform: 'none',
                                                 color: '#38bdf8', border: '1px solid #38bdf844',
                                                 '&:hover': { bgcolor: '#38bdf818', border: '1px solid #38bdf866' },
                                             }}
-                                            startIcon={<Upload size={14} />}
+                                            startIcon={<Upload size={16} />}
                                         >
                                             Upload
                                         </Button>
@@ -558,10 +558,10 @@ const ScenarioReceiptPanel = React.forwardRef(({ baseline, scenario, scenarioId,
                         {/* Full upload CTA */}
                         <Button
                             fullWidth
-                            onClick={() => navigate('/ayesha/tests-unlocks')}
+                            onClick={() => navigate('/ayesha/tests')}
                             sx={{
                                 mt: 3, py: 1.5, borderRadius: 2,
-                                fontSize: '0.95rem', fontWeight: 700, textTransform: 'none',
+                                fontSize: '1rem', fontWeight: 800, textTransform: 'none',
                                 background: 'linear-gradient(135deg, #38bdf8 0%, #818cf8 100%)',
                                 color: '#fff', letterSpacing: 0.3,
                                 boxShadow: '0 4px 24px rgba(56, 189, 248, 0.2)',
@@ -572,7 +572,7 @@ const ScenarioReceiptPanel = React.forwardRef(({ baseline, scenario, scenarioId,
                                 },
                                 transition: 'all 0.2s ease',
                             }}
-                            startIcon={<Upload size={18} />}
+                            startIcon={<Upload size={20} />}
                         >
                             Upload All Results — Unlock Full Confidence Scoring
                         </Button>
@@ -733,10 +733,10 @@ const AyeshaWeaponCompatibility = () => {
                             WEAPON COMPATIBILITY CENTER
                         </Typography>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Typography variant="caption" sx={{ color: darkMode ? '#64748b' : '#94a3b8' }}>
+                            <Typography variant="caption" sx={{ color: darkMode ? '#64748b' : '#94a3b8', fontSize: 'var(--text-xs)' }}>
                                 ZETA PROTOCOL v2.0 // PATIENT ALIAS: AYESHA
                             </Typography>
-                            {isFetching && <RefreshCw size={12} className="animate-spin text-sky-500" />}
+                            {isFetching && <RefreshCw size={14} className="animate-spin text-sky-500" />}
                         </Box>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -752,14 +752,14 @@ const AyeshaWeaponCompatibility = () => {
                                 transition: 'all 0.3s ease',
                             }}
                         >
-                            {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+                            {darkMode ? <Sun size={20} /> : <Moon size={20} />}
                         </Button>
                         {activeScenario && (
                             <Chip
-                                icon={<Play size={14} />}
+                                icon={<Play size={16} />}
                                 label={`SIMULATION ACTIVE: ${activeScenario}`}
                                 color="warning"
-                                sx={{ fontWeight: 800, borderRadius: 0 }}
+                                sx={{ fontWeight: 800, borderRadius: 0, height: 28, fontSize: 'var(--text-xs)' }}
                             />
                         )}
                     </Box>
@@ -826,7 +826,7 @@ const AyeshaWeaponCompatibility = () => {
                 <Box sx={{ mt: 12, pt: 4, borderTop: '1px solid #1e293b' }}>
                     <Grid container spacing={4}>
                         <Grid item xs={12} md={8}>
-                            <Typography variant="h5" gutterBottom sx={{ fontWeight: 800, color: '#475569', letterSpacing: 1 }}>
+                            <Typography variant="h5" gutterBottom sx={{ fontWeight: 800, color: '#94a3b8', letterSpacing: 1 }}>
                                 SECONDARY ARSENAL (TIER 2 & 3)
                             </Typography>
                             <Suspense fallback={<LoadingFallback />}>

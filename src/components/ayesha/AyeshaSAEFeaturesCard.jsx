@@ -22,6 +22,8 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import InfoIcon from '@mui/icons-material/Info';
 import PsychologyIcon from '@mui/icons-material/Psychology';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import VerifiedIcon from '@mui/icons-material/Verified';
 
 const AyeshaSAEFeaturesCard = ({ sae_features }) => {
   const [expandedFeature, setExpandedFeature] = useState(null);
@@ -54,6 +56,7 @@ const AyeshaSAEFeaturesCard = ({ sae_features }) => {
   const pathway_burden = sae_features.pathway_burden;
   const mechanism_vector = sae_features.mechanism_vector;
   const provenance = sae_features.provenance || {};
+  const pathway_interpretation = sae_features.pathway_interpretation || {};
 
   // Helper: Get impact color
   const getImpactColor = (impact) => {
@@ -131,6 +134,25 @@ const AyeshaSAEFeaturesCard = ({ sae_features }) => {
         </Box>
       )}
 
+      {/* DDR Suppression Alert — US-SAE-01 */}
+      {pathway_interpretation.DDR === 'suppressed' && (
+        <Alert
+          severity="warning"
+          icon={<WarningAmberIcon />}
+          sx={{ mb: 2, bgcolor: 'rgba(237, 108, 2, 0.08)', border: '1px solid rgba(237, 108, 2, 0.3)' }}
+        >
+          <Typography variant="subtitle2" fontWeight="bold">
+            DDR pathway suppressed — consistent with acquired resistance phenotype
+          </Typography>
+          <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+            External validation: AUC 0.79, p=0.004, n=36 OV patients
+            {pathway_interpretation.related_to_kill_chain && (
+              <> · <strong>Related: Check Kill Chain resistance status</strong></>
+            )}
+          </Typography>
+        </Alert>
+      )}
+
       {/* Pathway Burden */}
       {pathway_burden && typeof pathway_burden === 'object' && Object.keys(pathway_burden).length > 0 && (
         <Box sx={{ mb: 2 }}>
@@ -138,17 +160,112 @@ const AyeshaSAEFeaturesCard = ({ sae_features }) => {
             Pathway Burden
           </Typography>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-            {Object.entries(pathway_burden).map(([pathway, burden]) => (
-              <Chip
-                key={pathway}
-                label={`${pathway}: ${(burden * 100).toFixed(0)}%`}
-                color={burden > 0.7 ? 'error' : burden > 0.4 ? 'warning' : 'default'}
-                size="small"
-              />
-            ))}
+            {Object.entries(pathway_burden).map(([pathway, burden]) => {
+              const interp = pathway_interpretation[pathway.toUpperCase()];
+              const interpLabel = interp && interp !== 'unknown' ? ` (${interp})` : '';
+              return (
+                <Chip
+                  key={pathway}
+                  label={`${pathway}: ${(burden * 100).toFixed(0)}%${interpLabel}`}
+                  color={burden > 0.7 ? 'error' : burden > 0.4 ? 'warning' : 'default'}
+                  size="small"
+                />
+              );
+            })}
           </Box>
+          {/* Evidence badge */}
+          {pathway_interpretation.evidence_note && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1 }}>
+              <VerifiedIcon sx={{ fontSize: 12, color: 'text.disabled' }} />
+              <Typography variant="caption" color="text.disabled">
+                {pathway_interpretation.evidence_note} · RUO
+              </Typography>
+            </Box>
+          )}
         </Box>
       )}
+
+      {/* Serial SAE Pathway Interpretation — US-SAE-01/02 */}
+      {(() => {
+        const pi = sae_features.pathway_interpretation;
+        if (!pi) return null;
+
+        const statusConfig = {
+          suppressed: { color: '#e65100', bg: 'rgba(230, 81, 0, 0.08)', border: '#e65100', icon: '⚠️', label: 'Suppressed' },
+          elevated: { color: '#2e7d32', bg: 'rgba(46, 125, 50, 0.08)', border: '#2e7d32', icon: '✅', label: 'Elevated' },
+          normal: { color: '#546e7a', bg: 'rgba(84, 110, 122, 0.05)', border: '#546e7a', icon: '—', label: 'Normal' },
+          unknown: { color: '#757575', bg: 'rgba(0,0,0,0.03)', border: '#bdbdbd', icon: '?', label: 'Unknown' },
+        };
+
+        const ddrStatus = pi.DDR || 'unknown';
+        const e2fStatus = pi.E2F || 'unknown';
+        const cfg = statusConfig[ddrStatus] || statusConfig.unknown;
+        const isNGSProxy = pi.data_modality === 'NGS_proxy';
+        const showKillChainLink = pi.related_to_kill_chain;
+
+        return (
+          <Box sx={{ mb: 2, p: 2, borderRadius: 1, bgcolor: cfg.bg, border: `1px solid ${cfg.border}40` }}>
+            <Typography variant="subtitle2" fontWeight="bold" gutterBottom sx={{ color: cfg.color }}>
+              {cfg.icon} Pathway Activity Interpretation
+            </Typography>
+
+            {/* Per-pathway status row */}
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1 }}>
+              {['DDR', 'E2F', 'PI3K'].map((key) => {
+                const status = pi[key] || 'unknown';
+                const c = statusConfig[status] || statusConfig.unknown;
+                return (
+                  <Chip
+                    key={key}
+                    label={`${key}: ${c.label}`}
+                    size="small"
+                    sx={{ bgcolor: `${c.color}18`, color: c.color, border: `1px solid ${c.color}40`, fontSize: '0.7rem' }}
+                  />
+                );
+              })}
+            </Box>
+
+            {/* DDR suppression explanation */}
+            {ddrStatus === 'suppressed' && (
+              <Typography variant="caption" display="block" sx={{ color: '#78909c', lineHeight: 1.6, mb: 1 }}>
+                <strong style={{ color: cfg.color }}>DDR pathway suppressed</strong> — lower DNA repair activity than
+                expected. This pattern was seen in 79% of platinum-resistant tumor samples in the validation cohort.
+                {showKillChainLink && (
+                  <span style={{ color: '#f59e0b' }}>
+                    {' '}⚡ Connected to Kill Chain monitoring — review Resistance Intelligence for full assessment.
+                  </span>
+                )}
+              </Typography>
+            )}
+
+            {/* E2F suppression explanation */}
+            {e2fStatus === 'suppressed' && (
+              <Typography variant="caption" display="block" sx={{ color: '#78909c', lineHeight: 1.6, mb: 1 }}>
+                <strong style={{ color: '#e65100' }}>E2F activity reduced</strong> — tumor cells may be exiting active
+                cell-division state. Cells not dividing are harder to kill with platinum.
+              </Typography>
+            )}
+
+            {/* Validation evidence badge */}
+            {pi.evidence_note && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, p: 1, bgcolor: 'rgba(0,0,0,0.15)', borderRadius: 0.5 }}>
+                <Typography variant="caption" sx={{ color: '#4fd1c5', fontFamily: 'monospace', fontSize: '0.65rem' }}>
+                  📊 {pi.evidence_note}
+                </Typography>
+              </Box>
+            )}
+
+            {/* Modality disclosure — always honest */}
+            {isNGSProxy && (
+              <Typography variant="caption" display="block" sx={{ color: '#546e7a', fontSize: '0.62rem', mt: 1, lineHeight: 1.5 }}>
+                ⚠️ <em>Estimated from genomic profile (NGS). Validated metric used RNA-seq transcriptional data.
+                  RNA-seq panel would provide direct measurement.</em>
+              </Typography>
+            )}
+          </Box>
+        );
+      })()}
+
 
       {/* Mechanism Vector */}
       {mechanism_vector && typeof mechanism_vector === 'object' && Object.keys(mechanism_vector).length > 0 && (

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Card, CardContent, Typography, Box, Chip, Skeleton, Button, Collapse, Divider } from '@mui/material';
+import { Alert, Card, CardContent, Typography, Box, Chip, Skeleton, Button, Collapse, Divider } from '@mui/material';
 import { Crosshair, Target, Zap, ScrollText, BookOpen, AlertCircle } from 'lucide-react';
 
 const STATIC_BACKUP_EXPLANATION = {
-    explanation: "This weapon system targets the tumor's inability to repair DNA (HRD+). By striking this specific weakness, we induce synthetic lethality—forcing the cancer cell to collapse while sparing healthy tissue.",
+    explanation: "This treatment targets the tumor's inability to repair DNA (HRD+). By exploiting this specific vulnerability, we can induce cancer cell death while sparing healthy tissue — a process known as synthetic lethality.",
     provider: "zeta-static",
     context: "fallback"
 };
@@ -11,136 +11,127 @@ const STATIC_BACKUP_EXPLANATION = {
 const PrimaryWeaponCard = ({ topDrug, patientContext, onInform, isSimulation }) => {
     if (!topDrug) return null;
 
-    // Fallback to defaults if missing fields
     const confidence = Math.round((topDrug.confidence || 0) * 100);
     const llmData = STATIC_BACKUP_EXPLANATION;
     const [showEvidence, setShowEvidence] = useState(false);
 
-    // Extraction of "Proof" fields
     const tier = topDrug.evidence_tier || "Research";
-    const citations = topDrug.citations_count || 0; // Backend: citations_count
+    const citations = topDrug.citations_count || 0;
     const clinicalBand = topDrug.clinical_band || "Likely Responsive";
 
     return (
         <Card sx={{
-            mb: 6,
+            mb: 4,
             position: 'relative',
             overflow: 'hidden',
-            bgcolor: '#0f172a', // Slate-950
-            borderRadius: 0,
-            boxShadow: isSimulation ? '0 0 40px rgba(129, 140, 248, 0.3)' : '0 20px 50px -10px rgba(0, 0, 0, 0.5)',
-            border: isSimulation ? '2px solid #818cf8' : '1px solid #1e293b'
+            bgcolor: 'background.paper',
+            borderRadius: 3,
+            border: isSimulation ? '2px solid' : '1px solid',
+            borderColor: isSimulation ? 'secondary.main' : 'divider',
+            boxShadow: isSimulation ? '0 4px 20px rgba(124, 58, 237, 0.12)' : '0 2px 8px rgba(0,0,0,0.04)',
         }}>
             {/* Simulation Banner */}
             {isSimulation && (
-                <Box sx={{ bgcolor: '#818cf8', color: '#0f172a', py: 0.5, textAlign: 'center', fontWeight: 900, letterSpacing: 2 }}>
-                    SIMULATION MODE ACTIVE // HYPOTHETICAL OUTCOME
+                <Box sx={{ bgcolor: 'secondary.main', color: '#fff', py: 0.75, textAlign: 'center', fontWeight: 700, letterSpacing: 1, fontSize: '0.8125rem' }}>
+                    SIMULATION MODE — HYPOTHETICAL OUTCOME
                 </Box>
             )}
 
-            {/* HUD Overlay Lines */}
-            <Box sx={{ position: 'absolute', top: 20, left: 20, width: 20, height: 20, borderTop: '2px solid #38bdf8', borderLeft: '2px solid #38bdf8' }} />
-            <Box sx={{ position: 'absolute', top: 20, right: 20, width: 20, height: 20, borderTop: '2px solid #38bdf8', borderRight: '2px solid #38bdf8' }} />
-            <Box sx={{ position: 'absolute', bottom: 20, left: 20, width: 20, height: 20, borderBottom: '2px solid #38bdf8', borderLeft: '2px solid #38bdf8' }} />
-            <Box sx={{ position: 'absolute', bottom: 20, right: 20, width: 20, height: 20, borderBottom: '2px solid #38bdf8', borderRight: '2px solid #38bdf8' }} />
-
-            <CardContent sx={{ p: { xs: 3, md: 5 }, position: 'relative', zIndex: 1 }}>
+            <CardContent sx={{ p: { xs: 3, md: 4 }, position: 'relative', zIndex: 1 }}>
                 <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { md: 'flex-start' }, gap: 4 }}>
 
                     {/* Left Content */}
                     <Box sx={{ flex: 1 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
-                            <Crosshair color="#38bdf8" size={20} />
-                            <Typography variant="overline" sx={{ color: '#38bdf8', fontWeight: 800, letterSpacing: 2, fontSize: '0.85rem' }}>
-                                PRIMARY WEAPON SYSTEM
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                            <Crosshair color="#2563eb" size={20} />
+                            <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 700, letterSpacing: 1, fontSize: '0.8125rem' }}>
+                                Recommended Treatment
                             </Typography>
                             <Chip
-                                label={tier === 'I' ? "TIER 1 EVIDENCE" : `TIER ${tier}`}
+                                label={tier === 'I' ? "Tier 1 Evidence" : `Tier ${tier}`}
                                 size="small"
                                 icon={<BookOpen size={12} />}
-                                sx={{ borderRadius: 0, fontWeight: 800, bgcolor: tier === 'I' ? '#22c55e' : '#334155', color: '#fff' }}
+                                sx={{ fontWeight: 600, bgcolor: tier === 'I' ? 'success.light' : '#f1f5f9', color: tier === 'I' ? 'success.dark' : 'text.secondary' }}
                             />
                         </Box>
 
-                        <Typography variant="h1" component="h1" sx={{
-                            fontWeight: 900,
-                            fontSize: { xs: '3rem', md: '4.5rem' },
-                            color: '#fff',
-                            mb: 2,
-                            letterSpacing: '-2px',
-                            textTransform: 'uppercase',
-                            textShadow: '0 0 30px rgba(56, 189, 248, 0.3)'
+                        <Typography variant="h2" component="h1" sx={{
+                            fontWeight: 800,
+                            fontSize: { xs: '2rem', md: '2.75rem' },
+                            color: 'text.primary',
+                            mb: 1.5,
+                            letterSpacing: '-1px',
                         }}>
                             {topDrug.name}
                         </Typography>
 
-                        <Typography variant="h6" sx={{ color: '#94a3b8', fontWeight: 500, maxWidth: '600px', lineHeight: 1.6, fontFamily: 'monospace' }}>
-                            {clinicalBand.toUpperCase()} // Targeting verified vulnerabilities in the tumor's defense matrix.
+                        <Typography variant="body1" sx={{ color: 'text.secondary', fontWeight: 500, maxWidth: '600px', lineHeight: 1.6, fontSize: '1.0625rem' }}>
+                            {clinicalBand} — Targeting verified vulnerabilities in the tumor's defense mechanisms.
                         </Typography>
 
-                        {/* Tactical Context (Target Lock + Evidence) */}
-                        <Box sx={{
-                            mt: 5,
-                            borderRadius: '0 8px 8px 0',
-                            overflow: 'hidden'
-                        }}>
-                            {/* Tabs / Toggles */}
-                            <Box sx={{ display: 'flex', borderBottom: '1px solid #334155' }}>
+                        {/* Tabs: How It Works / Clinical Evidence */}
+                        <Box sx={{ mt: 4, borderRadius: 2, overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}>
+                            <Box sx={{ display: 'flex', borderBottom: '1px solid', borderColor: 'divider', bgcolor: '#f8fafc' }}>
                                 <Box
                                     onClick={() => setShowEvidence(false)}
                                     sx={{
-                                        p: 2, cursor: 'pointer',
-                                        borderBottom: !showEvidence ? '2px solid #38bdf8' : 'none',
-                                        color: !showEvidence ? '#38bdf8' : '#64748b'
+                                        p: 1.5, px: 2.5, cursor: 'pointer',
+                                        borderBottom: !showEvidence ? '2px solid' : 'none',
+                                        borderColor: 'primary.main',
+                                        color: !showEvidence ? 'primary.main' : 'text.secondary',
+                                        fontWeight: !showEvidence ? 600 : 400,
                                     }}
                                 >
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                         <Target size={16} />
-                                        <Typography variant="caption" fontWeight="800" letterSpacing={1}>TARGET LOCK</Typography>
+                                        <Typography variant="body2" fontWeight="inherit">How It Works</Typography>
                                     </Box>
                                 </Box>
                                 <Box
                                     onClick={() => setShowEvidence(true)}
                                     sx={{
-                                        p: 2, cursor: 'pointer',
-                                        borderBottom: showEvidence ? '2px solid #38bdf8' : 'none',
-                                        color: showEvidence ? '#38bdf8' : '#64748b'
+                                        p: 1.5, px: 2.5, cursor: 'pointer',
+                                        borderBottom: showEvidence ? '2px solid' : 'none',
+                                        borderColor: 'primary.main',
+                                        color: showEvidence ? 'primary.main' : 'text.secondary',
+                                        fontWeight: showEvidence ? 600 : 400,
                                     }}
                                 >
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                         <ScrollText size={16} />
-                                        <Typography variant="caption" fontWeight="800" letterSpacing={1}>PROOF & DATA ({citations})</Typography>
+                                        <Typography variant="body2" fontWeight="inherit">Clinical Evidence ({citations})</Typography>
                                     </Box>
                                 </Box>
                             </Box>
 
                             <Box sx={{
                                 p: 3,
-                                background: 'rgba(56, 189, 248, 0.05)',
-                                borderLeft: '4px solid #38bdf8',
-                                minHeight: 120
+                                background: '#fafbff',
+                                borderLeft: '4px solid',
+                                borderColor: 'primary.main',
+                                minHeight: 100
                             }}>
                                 {!showEvidence ? (
-                                    <Typography variant="body1" sx={{ fontSize: '1.1rem', lineHeight: 1.6, color: '#e2e8f0' }}>
+                                    <Typography variant="body1" sx={{ fontSize: '1.0625rem', lineHeight: 1.7, color: 'text.primary' }}>
                                         {llmData.explanation}
                                     </Typography>
                                 ) : (
                                     <Box>
                                         <Box sx={{ display: 'flex', gap: 4, mb: 2 }}>
                                             <Box>
-                                                <Typography variant="caption" color="#64748b">CLINICAL BAND</Typography>
-                                                <Typography variant="body2" color="#fff" fontWeight="700">{clinicalBand}</Typography>
+                                                <Typography variant="caption" color="text.secondary">Clinical Band</Typography>
+                                                <Typography variant="body2" color="text.primary" fontWeight="700">{clinicalBand}</Typography>
                                             </Box>
                                             <Box>
-                                                <Typography variant="caption" color="#64748b">EVIDENCE TIER</Typography>
-                                                <Typography variant="body2" color="#fff" fontWeight="700">{tier}</Typography>
+                                                <Typography variant="caption" color="text.secondary">Evidence Tier</Typography>
+                                                <Typography variant="body2" color="text.primary" fontWeight="700">{tier}</Typography>
                                             </Box>
                                             <Box>
-                                                <Typography variant="caption" color="#64748b">CITATIONS</Typography>
-                                                <Typography variant="body2" color="#fff" fontWeight="700">{citations} Papers</Typography>
+                                                <Typography variant="caption" color="text.secondary">Citations</Typography>
+                                                <Typography variant="body2" color="text.primary" fontWeight="700">{citations} Papers</Typography>
                                             </Box>
                                         </Box>
-                                        <Alert severity="info" sx={{ bgcolor: 'rgba(56,189,248,0.1)', color: '#bae6fd', border: '1px solid #0ea5e9' }} icon={<AlertCircle size={20} color="#38bdf8" />}>
+                                        <Alert severity="info" icon={<AlertCircle size={20} />}>
                                             Clinical evidence suggests high sensitivity in similar HRD+ contexts.
                                         </Alert>
                                     </Box>
@@ -150,32 +141,26 @@ const PrimaryWeaponCard = ({ topDrug, patientContext, onInform, isSimulation }) 
 
                         {/* Action Buttons */}
                         {onInform && !isSimulation && (
-                            <Box sx={{ mt: 4 }}>
+                            <Box sx={{ mt: 3 }}>
                                 <Button
                                     variant="contained"
                                     onClick={() => onInform(topDrug)}
-                                    startIcon={<Zap />}
+                                    startIcon={<Zap size={18} />}
                                     sx={{
-                                        bgcolor: '#38bdf8',
-                                        color: '#0f172a',
                                         py: 1.5,
                                         px: 4,
-                                        borderRadius: 0,
-                                        textTransform: 'uppercase',
-                                        fontWeight: 800,
-                                        letterSpacing: 1,
-                                        '&:hover': { bgcolor: '#7dd3fc' },
-                                        boxShadow: '0 0 20px rgba(56, 189, 248, 0.4)'
+                                        fontWeight: 700,
+                                        fontSize: '0.9375rem',
                                     }}
                                 >
-                                    Authorize Strike (Generate Dossier)
+                                    Generate Detailed Report
                                 </Button>
                             </Box>
                         )}
                         {isSimulation && (
-                            <Box sx={{ mt: 4 }}>
-                                <Button disabled variant="outlined" sx={{ color: '#64748b', borderColor: '#334155' }}>
-                                    SIMULATION MODE - DOSSIER GENERATION LOCKED
+                            <Box sx={{ mt: 3 }}>
+                                <Button disabled variant="outlined" sx={{ color: 'text.disabled', borderColor: 'divider' }}>
+                                    Simulation Mode — Report Generation Locked
                                 </Button>
                             </Box>
                         )}
@@ -185,32 +170,33 @@ const PrimaryWeaponCard = ({ topDrug, patientContext, onInform, isSimulation }) 
                     <Box sx={{
                         display: 'flex',
                         flexDirection: 'column',
-                        alignItems: { xs: 'flex-start', md: 'flex-end' },
-                        minWidth: 200,
-                        borderLeft: { xs: '1px solid #334155', md: 'none' },
-                        pl: { xs: 3, md: 0 }
+                        alignItems: { xs: 'flex-start', md: 'center' },
+                        justifyContent: 'center',
+                        minWidth: 160,
+                        p: 3,
+                        bgcolor: '#f8fafc',
+                        borderRadius: 2,
+                        border: '1px solid',
+                        borderColor: 'divider',
                     }}>
                         <Typography variant="h1" sx={{
-                            fontSize: { xs: '4rem', md: '7rem' },
+                            fontSize: { xs: '3.5rem', md: '4.5rem' },
                             fontWeight: 900,
-                            color: '#fff',
+                            color: 'primary.main',
                             lineHeight: 1,
-                            letterSpacing: '-4px',
-                            textShadow: '0 0 40px rgba(255, 255, 255, 0.2)'
+                            letterSpacing: '-3px',
                         }}>
                             {confidence}%
                         </Typography>
                         <Typography variant="overline" sx={{
-                            color: '#38bdf8',
-                            fontWeight: 800,
-                            fontSize: '0.85rem',
-                            letterSpacing: 3,
+                            color: 'text.secondary',
+                            fontWeight: 700,
+                            fontSize: '0.75rem',
+                            letterSpacing: 2,
                             mt: 1,
-                            textAlign: 'right',
-                            display: 'block',
-                            width: '100%'
+                            textAlign: 'center',
                         }}>
-                            COMPATIBILITY
+                            Compatibility
                         </Typography>
                     </Box>
                 </Box>
