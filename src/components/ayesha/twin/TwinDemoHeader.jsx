@@ -8,15 +8,15 @@ import { Science } from '@mui/icons-material';
  */
 export default function TwinDemoHeader() {
   return (
-    <Card sx={{ p: 3, mb: 3, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
+    <Card sx={{ p: 3, mb: 3, bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', boxShadow: 'none' }}>
       <Stack direction="row" spacing={2} alignItems="center">
-        <Science sx={{ fontSize: 48, color: 'white' }} />
+        <Science sx={{ fontSize: 40, color: 'primary.main' }} />
         <Box>
-          <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold', mb: 1 }}>
-            🔬 Ayesha's Digital Twin
+          <Typography variant="h4" sx={{ color: 'text.primary', fontWeight: 700, mb: 0.5 }}>
+            AK — digital twin
           </Typography>
-          <Typography variant="subtitle1" sx={{ color: 'rgba(255,255,255,0.9)' }}>
-            Your personalized precision oncology analysis powered by AI
+          <Typography variant="subtitle1" sx={{ color: 'text.secondary' }}>
+            Research-use analysis to discuss with your care team (RUO).
           </Typography>
         </Box>
       </Stack>

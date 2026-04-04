@@ -47,6 +47,7 @@ import TherapyRecommendationList from './components/TherapyRecommendationList';
 import MutationInputForm from './components/MutationInputForm';
 import ClinicalDossierModal from './components/ClinicalDossierModal';
 import AIExplanationPanel from './components/AIExplanationPanel';
+import { EvidenceMatrixTable } from './components/EvidenceMatrixTable';
 
 // Import hook
 import { useSyntheticLethality } from './hooks/useSyntheticLethality';
@@ -317,6 +318,19 @@ const SyntheticLethalityAnalyzer = () => {
                   {results.recommended_therapies?.length || 0} therapies identified
                 </Typography>
               </Alert>
+
+              {/* V3 Evidence Matrix */}
+              {results?.provenance?.evidence_matrix && (
+                <Box>
+                  <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Biotech color="primary" />
+                    Multi-Modal Evidence Matrix
+                  </Typography>
+                  <Paper elevation={1} sx={{ p: 2, borderRadius: 2 }}>
+                    <EvidenceMatrixTable matrix={results.provenance.evidence_matrix} />
+                  </Paper>
+                </Box>
+              )}
 
               {/* Essentiality Scores */}
               <Box>

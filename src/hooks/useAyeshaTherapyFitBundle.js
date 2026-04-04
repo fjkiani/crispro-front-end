@@ -73,6 +73,8 @@ const fetchStrictBundle = async ({ level = 'all', scenario_id = null, l3_scenari
     preview_cache: scenariosData.preview_cache,
     contract_version: bundleData.contract_version || "v2.0",
     io_harm_prevention: l1Data?.io_harm_prevention || null,
+    tests_needed: bundleData.tests_needed || [],
+    synthetic_lethality: bundleData.synthetic_lethality || l1Data?.synthetic_lethality || null,
   };
 };
 

@@ -3,7 +3,7 @@ import { Box, Typography, Card, Divider, Chip, Alert } from '@mui/material';
 import { Science } from '@mui/icons-material';
 import MutationScoringPipeline from '../MutationScoringPipeline';
 import PathwayDisruptionMap from '../PathwayDisruptionMap';
-import SyntheticLethalityFlow from '../SyntheticLethalityFlow';
+import OpportunityPanel from '../tumor-board/OpportunityPanel';
 import ResistanceProphetCard from '../ResistanceProphetCard';
 
 /**
@@ -51,12 +51,12 @@ export default function DigitalTwinSection({ digitalTwinData }) {
   return (
     <Box sx={{ mb: 4 }}>
       {/* Section Header */}
-      <Card sx={{ p: 3, mb: 3, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
-        <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold', mb: 1 }}>
-          🧬 Digital Twin - Mechanistic Biology Analysis
+      <Card sx={{ p: 3, mb: 3, bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', boxShadow: 'none' }}>
+        <Typography variant="h5" sx={{ color: 'text.primary', fontWeight: 700, mb: 1 }}>
+          Digital twin — mechanistic biology
         </Typography>
-        <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)' }}>
-          See the biology behind every prediction - This is the MOAT
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          Biology behind the predictions (RUO). Not a substitute for pathology or clinical review.
         </Typography>
       </Card>
 
@@ -106,17 +106,21 @@ export default function DigitalTwinSection({ digitalTwinData }) {
         )}
       </Box>
 
-      {/* Section 3: Synthetic Lethality Mechanism */}
+      {/* Section 3: Actionable Opportunities (upgraded from SyntheticLethalityFlow) */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Science color="primary" />
-          3. Why PARP Inhibitors Work For You
+          3. Actionable Opportunities
         </Typography>
         <Typography variant="body2" color="text.secondary" gutterBottom>
-          See the complete synthetic lethality mechanism: BER loss → HR dependency → PARP blocks HR → cell death
+          Kill Chain status, synthetic lethality detection, resistance gates, and recommended tests
         </Typography>
-        <SyntheticLethalityFlow
-          slData={digitalTwinData.syntheticLethality || null}
+        <OpportunityPanel
+          slPayload={digitalTwinData.syntheticLethality || null}
+          resistanceGate={digitalTwinData.resistancePrediction?.resistance_gate || null}
+          levelKey="L1"
+          testsNeeded={[]}
+          missing={[]}
         />
       </Box>
 

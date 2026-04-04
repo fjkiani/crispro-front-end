@@ -23,20 +23,6 @@ import {
  * Shows the complete SL mechanism.
  * Consumes real Bundle data: synthetic_lethality object.
  */
-// Static hardcoded SL data for Ayesha's known MBD4+TP53 → PARP inhibitor profile
-// Used as fallback when backend does not return synthetic_lethality_detected=true
-const AYESHA_STATIC_SL = {
-    synthetic_lethality_detected: true,
-    detected: true,
-    mechanism: "MBD4 loss disables Base Excision Repair (BER). TP53 silences apoptosis. Tumor survives solely on Homologous Recombination (HR). PARP inhibitors trap PARP at DNA break sites, collapsing HR — triggering cell death. Both hits required.",
-    double_hit_description: "MBD4 (BER loss) + TP53 (apoptosis silencing) → HR-only survival → PARP trap → lethal",
-    genes_involved: ["MBD4", "TP53"],
-    recommended_drugs: [
-        { drug_name: "Olaparib", name: "Olaparib", confidence: 0.87, tier: "1A", evidence_tier: "1A", mechanism: "PARP1/2 trapping at unrepaired BER sites → replication fork collapse → HR-dependent lethality" },
-        { drug_name: "Niraparib", name: "Niraparib", confidence: 0.79, tier: "1B", evidence_tier: "1B", mechanism: "PARP trapping + PARP1 selectivity for tumors with HRD" },
-        { drug_name: "Rucaparib", name: "Rucaparib", confidence: 0.74, tier: "2A", evidence_tier: "2A", mechanism: "Broad PARP1/2/3 trapping, active in germline MBD4-loss models" }
-    ]
-};
 
 export default function SyntheticLethalityFlow({ slData }) {
     const detected = Boolean(
@@ -45,26 +31,44 @@ export default function SyntheticLethalityFlow({ slData }) {
         false
     );
 
-    // Use static hardcoded data if backend doesn't return detected SL
-    const effectiveData = (slData && detected) ? slData : AYESHA_STATIC_SL;
+    if (!slData || !detected) {
+        return (
+            <Box>
+                <Box display="flex" alignItems="center" gap={1} mb={2}>
+                    <ScienceIcon sx={{ color: 'text.secondary', fontSize: 24 }} />
+                    <Box>
+                        <Typography variant="subtitle1" fontWeight={700} color="text.secondary">
+                            No Synthetic Lethality Detected
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" lineHeight={1.2}>
+                            Patient's genomic profile does not exhibit targetable SL dependencies.
+                        </Typography>
+                    </Box>
+                </Box>
+            </Box>
+        );
+    }
+
+    const effectiveData = slData;
 
     const genes = (
         effectiveData.genes_involved ||
         (Array.isArray(effectiveData.essentiality_scores) ? effectiveData.essentiality_scores.map(s => s?.gene).filter(Boolean) : []) ||
+        (Array.isArray(effectiveData.broken_pathways) ? effectiveData.broken_pathways : []) ||
         []
     );
     const description = effectiveData.double_hit_description || effectiveData.mechanism || "Synthetic lethality detected.";
 
     // Normalize drug objects across schemas
     const drugsRaw = Array.isArray(effectiveData.recommended_drugs) ? effectiveData.recommended_drugs : [];
-    const drugs = drugsRaw.map((d) => ({
+    const _drugs = drugsRaw.map((d) => ({
         name: d?.name || d?.drug_name || d?.drug || "Therapy",
         confidence: typeof d?.confidence === "number" ? d.confidence : (typeof d?.patient_fit_confidence === "number" ? d.patient_fit_confidence : 0.6),
         tier: d?.tier || d?.evidence_tier || d?.evidenceTier || "Research",
         drug_class: d?.drug_class || d?.drugClass || null,
         mechanism: d?.mechanism || null,
     }));
-    const topDrug = drugs.length > 0 ? drugs[0] : null;
+    const topDrug = _drugs.length > 0 ? _drugs[0] : null;
 
     // Determine mechanism state for visualization
     const isBerLoss = genes.some(g => String(g || "").toUpperCase().includes('MBD4'));

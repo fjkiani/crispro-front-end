@@ -16,6 +16,10 @@ import { Schedule, TrendingUp, TrendingDown, TrendingFlat } from '@mui/icons-mat
 
 import JourneyLayout from '../../../components/ayesha/journey/JourneyLayout';
 import { CLINICAL_TEST_REGISTRY } from '../../../constants/clinicalTestRegistry';
+import CA125EntryForm from '../../../components/ayesha/CA125EntryForm';
+import HRDEntryForm from '../../../components/ayesha/inputs/HRDEntryForm';
+import CtDNAEntryForm from '../../../components/ayesha/inputs/CtDNAEntryForm';
+import RepairCapacityEntryForm from '../../../components/ayesha/inputs/RepairCapacityEntryForm';
 
 // ── Test Detail sub-components ────────────────────────────────────────────────
 import DetailHero from '../../../components/ayesha/test-detail/DetailHero';
@@ -166,6 +170,40 @@ function KELIMSection({ kelim }) {
     );
 }
 
+// ── Entry Form Section (slug → form mapping) ────────────────────────────────
+const SLUG_ENTRY_FORMS = {
+    ca125_kinetics: { Form: CA125EntryForm, label: 'CA-125 Value Entry' },
+    hrd: { Form: HRDEntryForm, label: 'HRD Score Entry' },
+    hrd_score: { Form: HRDEntryForm, label: 'HRD Score Entry' },
+    ctdna_mrd: { Form: CtDNAEntryForm, label: 'ctDNA / MRD Entry' },
+    repair_capacity: { Form: RepairCapacityEntryForm, label: 'Repair Capacity Entry' },
+};
+
+function DataEntrySection({ slug }) {
+    const config = SLUG_ENTRY_FORMS[slug];
+    if (!config) {
+        return (
+            <Paper sx={{ p: 2, borderRadius: 2.5, border: '1px dashed', borderColor: 'divider', bgcolor: '#fafafa' }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#64748b', fontSize: '0.82rem', mb: 0.5 }}>
+                    📝 Data Entry
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'text.disabled' }}>
+                    No input form available for this test. Data must be entered from the Tests &amp; Gaps page.
+                </Typography>
+            </Paper>
+        );
+    }
+    const { Form, label } = config;
+    return (
+        <Paper sx={{ p: 2, borderRadius: 2.5, border: '1.5px solid #f59e0b', bgcolor: '#fffbeb' }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#92400e', fontSize: '0.85rem', mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                ✏️ {label}
+            </Typography>
+            <Form />
+        </Paper>
+    );
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function TestDetailPage() {
@@ -253,6 +291,7 @@ export default function TestDetailPage() {
                                     )}
 
                                     <MonitoringSidebar entry={entry} />
+                                    <DataEntrySection slug={slug} />
                                 </Box>
                             </Box>
                         </>

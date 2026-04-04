@@ -14,6 +14,7 @@ import MedicationIcon from '@mui/icons-material/Medication';
 import InfoIcon from '@mui/icons-material/Info';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import AssessmentIcon from '@mui/icons-material/Assessment';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 
 // Modular Components
 import DrugCardHeader from './ranking/DrugCardHeader';
@@ -36,8 +37,9 @@ import { saveDossier } from '../../utils/dossierStore';
  * @param {Array} drugs - Array of drug recommendation objects
  * @param {Function} onViewDetails - Optional callback when "Details" clicked
  * @param {Object} context - Analysis context for dossier generation (level, scenario, inputs)
+ * @param {boolean} navigateOnCardClick - If false (e.g. tumor board packet), card click does not route; use the explicit button instead.
  */
-export default function DrugRankingPanel({ drugs = [], onViewDetails, context = {}, title }) {
+export default function DrugRankingPanel({ drugs = [], onViewDetails, context = {}, title, navigateOnCardClick = true }) {
   const [showExplanation, setShowExplanation] = useState({});
   const [creatingDossier, setCreatingDossier] = useState(null); // drug index -> loading state
   const navigate = useNavigate();
@@ -88,13 +90,24 @@ export default function DrugRankingPanel({ drugs = [], onViewDetails, context = 
       </Box>
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {drugs.map((drug, idx) => (
-          <Card key={idx} variant="outlined" sx={{
-            bgcolor: idx === 0 ? 'primary.50' : 'white',
-            cursor: 'pointer',
-            '&:hover': { borderColor: 'primary.main', boxShadow: '0 2px 12px rgba(37,99,235,0.1)' },
-            transition: 'all 0.15s',
-          }} onClick={() => navigate(`/ayesha/journey/drug/${drugToSlug(drug.name || drug.drug)}`)}>
+        {drugs.map((drug, idx) => {
+          const manifestCitations = Array.isArray(drug?.evidence_manifest?.citations)
+            ? drug.evidence_manifest.citations
+            : [];
+          const citationPmids = Array.isArray(drug?.citations) && drug.citations.length > 0
+            ? drug.citations
+            : manifestCitations.map((citation) => citation?.pmid).filter(Boolean);
+          const citationsCount = typeof drug?.citations_count === 'number'
+            ? drug.citations_count
+            : citationPmids.length;
+
+          return (
+            <Card key={idx} variant="outlined" sx={{
+              bgcolor: idx === 0 ? 'primary.50' : 'white',
+              cursor: navigateOnCardClick ? 'pointer' : 'default',
+              '&:hover': navigateOnCardClick ? { borderColor: 'primary.main', boxShadow: '0 2px 12px rgba(37,99,235,0.1)' } : {},
+              transition: 'all 0.15s',
+            }} onClick={navigateOnCardClick ? () => navigate(`/ayesha/journey/drug/${drugToSlug(drug.name || drug.drug)}`) : undefined}>
             <CardContent>
               {/* Header */}
               <DrugCardHeader drug={drug} index={idx} />
@@ -113,11 +126,11 @@ export default function DrugRankingPanel({ drugs = [], onViewDetails, context = 
               <EvidenceRenderer rationale={drug.rationale} />
 
               {/* If we only have citations_count (not actual PMIDs), be explicit */}
-              {typeof drug.citations_count === 'number' && (!drug.citations || drug.citations.length === 0) && (
+              {citationsCount >= 0 && citationPmids.length === 0 && (
                 <Box sx={{ mt: 1 }}>
                   <Typography variant="caption" color="text.secondary">
-                    {drug.citations_count > 0
-                      ? `Citations surfaced: ${drug.citations_count} (PMIDs not attached in this response)`
+                    {citationsCount > 0
+                      ? `Citations surfaced: ${citationsCount} (PMIDs not attached in this response)`
                       : 'No citations surfaced in this response.'}
                   </Typography>
                 </Box>
@@ -133,10 +146,10 @@ export default function DrugRankingPanel({ drugs = [], onViewDetails, context = 
               <ScoringBreakdown drug={drug} />
 
               {/* Citations (PMIDs) */}
-              {drug.citations && drug.citations.length > 0 && (
+              {citationPmids.length > 0 && (
                 <Box sx={{ mt: 1 }}>
                   <Typography variant="caption" color="text.secondary">
-                    Citations: {drug.citations.slice(0, 3).map(pmid => (
+                    Citations: {citationPmids.slice(0, 3).map(pmid => (
                       <a
                         key={pmid}
                         href={`https://pubmed.ncbi.nlm.nih.gov/${pmid}`}
@@ -188,11 +201,24 @@ export default function DrugRankingPanel({ drugs = [], onViewDetails, context = 
                     View Details
                   </Button>
                 )}
+
+                {!navigateOnCardClick && (
+                  <Button
+                    variant="contained"
+                    size="small"
+                    color="primary"
+                    endIcon={<OpenInNewIcon sx={{ fontSize: 18 }} />}
+                    onClick={() => navigate(`/ayesha/journey/drug/${drugToSlug(drug.name || drug.drug)}`)}
+                  >
+                    Full reasoning & pathways
+                  </Button>
+                )}
               </Box>
 
             </CardContent>
-          </Card>
-        ))}
+            </Card>
+          );
+        })}
       </Box>
     </Card>
   );
@@ -217,5 +243,6 @@ DrugRankingPanel.propTypes = {
     label_status: PropTypes.string // added to prop types
   })),
   onViewDetails: PropTypes.func,
-  context: PropTypes.object
+  context: PropTypes.object,
+  navigateOnCardClick: PropTypes.bool,
 };

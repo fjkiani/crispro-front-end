@@ -1,11 +1,13 @@
 
 import React, { Suspense } from 'react';
 import { Box, Typography, Card, CardContent } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 
 const SyntheticLethalityCard = React.lazy(() => import('../SyntheticLethalityCard'));
 const ResistanceGateBanner = React.lazy(() => import('../ResistanceGateBanner'));
 
 export default function StrategicPriorities({ slPayload, resistanceGate, levelKey }) {
+    const navigate = useNavigate();
     return (
         <Card
             sx={{
@@ -45,7 +47,7 @@ export default function StrategicPriorities({ slPayload, resistanceGate, levelKe
                     </Typography>
 
                     <Suspense fallback={<Box sx={{ height: 200, bgcolor: '#1e293b', borderRadius: 2 }} />}>
-                        <SyntheticLethalityCard data={slPayload} levelKey={levelKey} />
+                        <SyntheticLethalityCard data={slPayload} levelKey={levelKey} onShowTrials={(axis) => navigate(`/ayesha/trials-full?axis=${axis}`)} />
                     </Suspense>
                 </Box>
             </CardContent>

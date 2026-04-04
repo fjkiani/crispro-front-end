@@ -33,6 +33,7 @@ export default function CommandBanner({
     disease = {},
     germline = {},
     biomarkerChips = [],
+    chipOverflow = null,
     stateEstimate = 'BASELINE',
     pfiDays = null,
     signalDots = [],
@@ -105,23 +106,42 @@ export default function CommandBanner({
                         {chip.label}
                     </span>
                 ))}
+                {chipOverflow && !chipOverflow.expanded && (
+                    <span
+                        className="cc-signal-badge"
+                        style={{ cursor: 'pointer', background: 'var(--zeta-slate, #64748b)12', color: 'var(--zeta-slate, #64748b)' }}
+                        onClick={chipOverflow.onToggle}
+                    >
+                        +{chipOverflow.total - chipOverflow.showing} more
+                    </span>
+                )}
+                {chipOverflow?.expanded && (
+                    <span
+                        className="cc-signal-badge"
+                        style={{ cursor: 'pointer', background: 'var(--zeta-slate, #64748b)12', color: 'var(--zeta-slate, #64748b)' }}
+                        onClick={chipOverflow.onToggle}
+                    >
+                        ▴ Show less
+                    </span>
+                )}
             </div>
 
-            {/* Signal dot strip */}
-            <div className="cc-banner__dots">
-                <span className="cc-banner__dots-label">Kill Chain Signals</span>
-                <div className="cc-banner__dot-row">
-                    {signalDots.map((dot, i) => (
-                        <span
-                            key={i}
-                            className="cc-banner__dot"
-                            style={{ background: LIGHT_STATES[dot.state]?.color || '#94a3b8' }}
-                            title={`${dot.name}: ${LIGHT_STATES[dot.state]?.label || 'Unknown'}`}
-                        />
-                    ))}
-                </div>
-                <span className="cc-banner__dots-summary">
-                    {geneCoverage.covered ?? 0} of {geneCoverage.total ?? 26} genes covered
+            {/* Kill Chain summary — single clickable line (GAP-24) */}
+            <div
+                className="cc-banner__dots"
+                onClick={() => navigate('/ayesha/journey/monitoring')}
+                style={{ cursor: 'pointer' }}
+            >
+                <span className="cc-banner__dots-summary" style={{ fontSize: '0.82rem' }}>
+                    Kill Chain: {signalDots.filter(d => d.state === 'CLEAR').length} clear
+                    {' · '}
+                    {signalDots.filter(d => d.state === 'NO_DATA').length} awaiting data
+                    {signalDots.filter(d => d.state === 'FIRED').length > 0 &&
+                        ` · ${signalDots.filter(d => d.state === 'FIRED').length} fired`}
+                    {' · '}
+                    {geneCoverage.covered ?? 0}/{geneCoverage.total ?? 26} genes
+                    {' → '}
+                    <span style={{ textDecoration: 'underline' }}>View signals</span>
                 </span>
             </div>
 

@@ -61,7 +61,7 @@ export default function EnginePanel() {
                 <Shield sx={{ fontSize: 24, color: 'var(--text-primary)' }} />
                 <Box sx={{ flex: 1 }}>
                     <Typography sx={{ fontWeight: 800, fontSize: 'var(--text-md)', color: 'var(--text-primary)' }}>
-                        Kill Chain Engine Monitor
+                        Cancer Kill Chain Engine Monitor
                     </Typography>
                     <Typography sx={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)' }}>
                         {summary.fired > 0

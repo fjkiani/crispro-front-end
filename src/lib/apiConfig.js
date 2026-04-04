@@ -11,10 +11,11 @@
  *   fetch(`${API_ROOT}/api/...`)
  */
 
-const RENDER_BACKEND = 'https://crispro-backend-v2.onrender.com';
-const RENDER_WS = 'wss://crispro-backend-v2.onrender.com';
+/** Fallback when VITE_* unset (e.g. fresh clone). Production builds must set env via .env.production / CI. */
+const LOCAL_BACKEND = 'http://localhost:8000';
+const LOCAL_WS = 'ws://localhost:8000';
 
-export const API_ROOT = import.meta.env.VITE_API_ROOT || RENDER_BACKEND;
-export const WS_ROOT = import.meta.env.VITE_WS_ROOT || RENDER_WS;
+export const API_ROOT = import.meta.env.VITE_API_ROOT || LOCAL_BACKEND;
+export const WS_ROOT = import.meta.env.VITE_WS_ROOT || LOCAL_WS;
 
 export default API_ROOT;

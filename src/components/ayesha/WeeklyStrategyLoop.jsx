@@ -59,13 +59,14 @@ function StatusBadge({ status }) {
  *   bundle.levels.L1.completeness.missing: string[]
  *   bundle.levels.L1.completeness.confidence_cap: number (0–1)
  *   bundle.levels.L1.completeness.completeness_score: number (0–1)
- *   bundle.levels.L1.drugs: Array<{ drug_name, efficacy_score, ... }>
+ *   bundle.levels.L1.efficacy.drugs — WIWFM rows (preferred)
+ *   bundle.levels.L1.drugs — legacy alias
  */
 function deriveStepperState(bundle) {
     const L1 = bundle?.levels?.L1;
     const completeness = L1?.completeness ?? {};
     const missing = completeness.missing ?? [];
-    const drugs = L1?.drugs ?? [];
+    const drugs = L1?.efficacy?.drugs ?? L1?.drugs ?? [];
     const confidenceCap = completeness.confidence_cap;
     const completenessScore = completeness.completeness_score;
 
@@ -116,7 +117,7 @@ const STEPS = [
     { key: 'act', icon: <ActIcon />, title: 'Act', subtitle: 'Next steps' },
 ];
 
-export default function WeeklyStrategyLoop({ bundle, bundleLoading, bundleError }) {
+export default function WeeklyStrategyLoop({ bundle, bundleLoading, bundleError, dataGaps = [] }) {
     const navigate = useNavigate();
 
     // Three-state: Loading
@@ -149,6 +150,12 @@ export default function WeeklyStrategyLoop({ bundle, bundleLoading, bundleError 
 
     // Three-state: Data
     const state = deriveStepperState(bundle);
+
+    // Inject dataGaps into Measure and Act steps
+    if (dataGaps.length > 0) {
+        state.measure.gaps = dataGaps.filter(g => g.priority === 'HIGH' || g.priority === 'MEDIUM');
+        state.act.gaps = dataGaps;
+    }
 
     return (
         <Paper sx={{
@@ -207,6 +214,31 @@ export default function WeeklyStrategyLoop({ bundle, bundleLoading, bundleError 
                             <Typography variant="body2" sx={{ fontSize: '0.8rem', color: 'text.secondary', lineHeight: 1.4 }}>
                                 {step.label}
                             </Typography>
+                            {/* Inline data gap items */}
+                            {step.gaps?.length > 0 && (
+                                <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                                    {step.gaps.slice(0, 3).map((gap, i) => (
+                                        <Box key={i} sx={{
+                                            display: 'flex', alignItems: 'center', gap: 0.75,
+                                            p: '4px 8px', borderRadius: 1,
+                                            bgcolor: gap.priority === 'HIGH' ? 'rgba(239,68,68,0.06)' : 'rgba(245,158,11,0.06)',
+                                            border: `1px solid ${gap.priority === 'HIGH' ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)'}`,
+                                        }}>
+                                            <Typography variant="caption" sx={{ fontSize: '0.65rem', fontWeight: 700, color: gap.priority === 'HIGH' ? '#dc2626' : '#d97706' }}>
+                                                {gap.priority}
+                                            </Typography>
+                                            <Typography variant="caption" sx={{ fontSize: '0.68rem', color: 'text.secondary', flex: 1 }}>
+                                                {gap.label || gap.test_name || gap.name}
+                                            </Typography>
+                                        </Box>
+                                    ))}
+                                    {step.gaps.length > 3 && (
+                                        <Typography variant="caption" sx={{ fontSize: '0.65rem', color: 'text.disabled', pl: 1 }}>
+                                            +{step.gaps.length - 3} more
+                                        </Typography>
+                                    )}
+                                </Box>
+                            )}
                         </Box>
                     );
                 })}

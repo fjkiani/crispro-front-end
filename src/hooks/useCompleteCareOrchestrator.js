@@ -112,6 +112,22 @@ const buildRequestFromProfile = (profile) => {
       .filter((m) => m.gene), // Only include mutations with gene name
   };
 
+  // ── SAE mechanism vector (8D canonical: ddr, mapk, pi3k, vegf, her2, io, efflux, rss)
+  // Derived from Ayesha's profile: MBD4 homozygous pathogenic + TP53 IHC-abnormal → DDR-dominant,
+  // PD-L1 CPS 5 → modest IO, BRCA wildtype → low homologous repair signal.
+  // This vector ACTIVATES mechanism-fit ranking + holistic scoring in routes.py and trial_service.
+  // Without it, the backend falls back to offline MoA-confidence sort ("offline ranking fallback").
+  const saeVector = {
+    ddr:    0.88,  // MBD4/BER deficiency + TP53-mutant → dominant DDR axis
+    mapk:   0.12,  // Low MAPK — no KRAS/BRAF detected
+    pi3k:   0.15,  // Low PI3K — no PIK3CA detected
+    vegf:   0.10,  // Low angiogenic signal
+    her2:   0.05,  // HER2-negative confirmed
+    io:     0.30,  // PD-L1 CPS 5 = borderline positive → moderate IO eligibility
+    efflux: 0.05,  // No MDR1 signal detected
+    rss:    0.00,  // No repair-shift event yet (pre-CA-125 series)
+  };
+
   return {
     ca125_value: profile.labs?.ca125_value || null,
     stage: profile.disease?.stage || "IVB",
@@ -123,6 +139,8 @@ const buildRequestFromProfile = (profile) => {
     ecog_status: profile.clinical?.ecog_status || null,
     tumor_context: tumor_context,
     treatment_history: [],  // Treatment-naive per profile
+    // ── Mechanism vector: activates holistic scoring + live ranking ─────────
+    sae_mechanism_vector: saeVector,
     // IO safest selection inputs (RUO)
     patient_age: profile.patient?.demographics?.age || null,
     autoimmune_history: profile.patient?.autoimmune_history || [],
@@ -413,8 +431,9 @@ export const useCompleteCareOrchestrator = () => {
       return;
     }
 
-    // Stale-while-revalidate: serve cached result instantly
-    const cacheKey = `care:${patientProfile?.patient?.id || 'ayesha'}`;
+    // Stale-while-revalidate: serve cached result instantly (lite vs full — different payloads)
+    const cacheTier = options?.skip_auxiliary_parallel_requests ? 'lite' : 'full';
+    const cacheKey = `care:${patientProfile?.patient?.id || 'ayesha'}:${cacheTier}`;
     const cached = carePlanCache.get(cacheKey);
     if (cached) {
       if (!result) setResult(cached); // Show stale data while fetching fresh
@@ -430,7 +449,9 @@ export const useCompleteCareOrchestrator = () => {
       // Build request from REAL patient profile - no hard-coding
       const baseRequest = buildRequestFromProfile(patientProfile);
       // Merge with options (allows overriding max_trials, etc.)
-      const requestBody = { ...baseRequest, ...options };
+      const merged = { ...baseRequest, ...options };
+      const skipAuxiliary = !!merged.skip_auxiliary_parallel_requests;
+      const { skip_auxiliary_parallel_requests: _skipAux, ...requestBody } = merged;
 
       console.log('[useCompleteCareOrchestrator] Request body built from profile:', {
         stage: requestBody.stage,
@@ -440,15 +461,15 @@ export const useCompleteCareOrchestrator = () => {
         germline_variants_count: requestBody.germline_variants?.length || 0
       });
 
-      // KEY OPTIMIZATION: Start all independent requests in parallel!
-      // 1. VUS Resolution
-      const vusPromise = fetchVUSResults(patientProfile);
-
-      // 2. Essentiality Scores
-      const essentialityPromise = fetchEssentialityScores(patientProfile);
-
-      // 3. Synthetic Lethality (Always fetch in parallel to be safe/fast)
-      const slPromise = fetchSyntheticLethality(patientProfile);
+      // Parallel “auxiliary” calls (VUS / essentiality / SL). Optional skip for profile-lite loads:
+      // main complete_care_v2 still runs; SL can come from WIWFM provenance.
+      const vusPromise = skipAuxiliary ? Promise.resolve({}) : fetchVUSResults(patientProfile);
+      const essentialityPromise = skipAuxiliary
+        ? Promise.resolve([])
+        : fetchEssentialityScores(patientProfile);
+      const slPromise = skipAuxiliary
+        ? Promise.resolve(null)
+        : fetchSyntheticLethality(patientProfile);
 
       // 4. Main Care Plan API call
       const mainPlanPromise = fetch(`${API_ROOT}/api/ayesha/complete_care_v2`, {

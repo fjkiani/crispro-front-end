@@ -22,17 +22,16 @@ export default function SignalTeaser({
 }) {
     const navigate = useNavigate();
     const [expandedSignal, setExpandedSignal] = useState(null);
+    const [showBaseline, setShowBaseline] = useState(false); // GAP-19: collapsed by default
 
     const activeSignals = signals.filter(s => s.type === 'ACTIVE');
     const baselineSignals = signals.filter(s => s.type === 'BASELINE');
 
     const handleSignalClick = (signal) => {
-        // If this signal has an inline entry form, toggle it
         if (entryForms[signal.id]) {
             setExpandedSignal(expandedSignal === signal.id ? null : signal.id);
             return;
         }
-        // Otherwise navigate to the test slug
         if (signal.testSlug) {
             navigate(`/ayesha/journey/test/${signal.testSlug}`);
         }
@@ -90,23 +89,33 @@ export default function SignalTeaser({
                 {counts.baseline > 0 && <span>🔵 {counts.baseline} baseline</span>}
             </div>
 
-            {/* Active monitors */}
+            {/* Active monitors — 2-col grid (GAP-26) */}
             {activeSignals.length > 0 && (
                 <div className="cc-signal-teaser__group">
                     <div className="cc-signal-teaser__group-label">
                         Active Monitors ({activeSignals.length})
                     </div>
-                    {activeSignals.map(renderSignal)}
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                        gap: '0.25rem',
+                    }}>
+                        {activeSignals.map(renderSignal)}
+                    </div>
                 </div>
             )}
 
-            {/* Baseline flags */}
+            {/* Baseline flags — collapsed by default (GAP-19) */}
             {baselineSignals.length > 0 && (
                 <div className="cc-signal-teaser__group">
-                    <div className="cc-signal-teaser__group-label">
-                        Baseline Flags ({baselineSignals.length})
+                    <div
+                        className="cc-signal-teaser__group-label"
+                        onClick={() => setShowBaseline(v => !v)}
+                        style={{ cursor: 'pointer', userSelect: 'none' }}
+                    >
+                        {showBaseline ? '▾' : '▸'} Baseline Flags ({baselineSignals.length})
                     </div>
-                    {baselineSignals.map(renderSignal)}
+                    {showBaseline && baselineSignals.map(renderSignal)}
                 </div>
             )}
 

@@ -97,12 +97,15 @@ export default function MOACard({ drug }) {
     const moaCategory = drug.moa_category || drug.moa || 'Unknown mechanism';
     const evidenceTier = drug.evidence_tier || 'research';
     const labelStatus = drug.label_status || 'UNKNOWN';
-    const citations = drug.citations || [];
-    const citationsCount = drug.citations_count || 0;
     const clinvar = drug.clinvar || {};
     const manifest = drug.evidence_manifest || {};
     const meetsGate = drug.meets_evidence_gate;
     const drugName = drug.name || drug.drug_name || 'This drug';
+    const manifestCitations = Array.isArray(manifest.citations) ? manifest.citations : [];
+    const citations = Array.isArray(drug.citations) && drug.citations.length > 0
+        ? drug.citations.map((pmid) => ({ pmid }))
+        : manifestCitations;
+    const citationsCount = drug.citations_count || citations.length || 0;
 
     return (
         <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
@@ -248,13 +251,13 @@ export default function MOACard({ drug }) {
                             📚 PubMed References
                         </Typography>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                            {citations.map((pmid) => (
+                            {citations.map((citation, idx) => (
                                 <Chip
-                                    key={pmid}
-                                    label={`PMID:${pmid}`}
+                                    key={citation.pmid || idx}
+                                    label={`PMID:${citation.pmid}`}
                                     size="small"
                                     component="a"
-                                    href={`https://pubmed.ncbi.nlm.nih.gov/${pmid}`}
+                                    href={`https://pubmed.ncbi.nlm.nih.gov/${citation.pmid}`}
                                     target="_blank"
                                     clickable
                                     icon={<OpenInNew sx={{ fontSize: 12 }} />}

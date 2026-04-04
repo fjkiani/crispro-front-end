@@ -21,6 +21,8 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import LaunchIcon from '@mui/icons-material/Launch';
 
+import { EvidenceMatrixTable } from '../SyntheticLethality/components/EvidenceMatrixTable';
+
 function safeArray(v) {
   return Array.isArray(v) ? v : [];
 }
@@ -42,12 +44,14 @@ function prettyJson(obj) {
   }
 }
 
+
 export function SyntheticLethalityCard({ slData, data, onShowTrials, levelKey: levelKeyProp }) {
   const payload = slData || data;
   const detected = payload?.synthetic_lethality_detected === true;
   const levelKey = String(levelKeyProp || 'L1').toUpperCase();
 
   const prov = safeObj(payload?.provenance);
+  const evidenceMatrix = prov?.evidence_matrix;
   const status = String(prov?.status || 'unknown');
   const receiptsOk = status === 'ok';
 
@@ -62,7 +66,19 @@ export function SyntheticLethalityCard({ slData, data, onShowTrials, levelKey: l
     const ids = new Set(essential.map((p) => String(p?.pathway_id || '')).filter(Boolean));
     const checkpointAxis = ids.has('ATR') || ids.has('WEE1');
     const parpAxis = ids.has('HR') || ids.has('PARP');
-    return { checkpointAxis, parpAxis, essentialIds: ids };
+
+    const checkpointMeta =
+      essential.find((p) => p?.pathway_id === 'ATR' || p?.pathway_id === 'WEE1')?.essentiality_metadata || {};
+    const parpMeta =
+      essential.find((p) => p?.pathway_id === 'HR' || p?.pathway_id === 'PARP')?.essentiality_metadata || {};
+
+    return {
+      checkpointAxis,
+      parpAxis,
+      essentialIds: ids,
+      checkpointDepMap: safeArray(checkpointMeta.depmap_lines),
+      parpDepMap: safeArray(parpMeta.depmap_lines),
+    };
   }, [essential]);
 
   const checkpointDrugs = useMemo(() => {
@@ -178,6 +194,32 @@ export function SyntheticLethalityCard({ slData, data, onShowTrials, levelKey: l
           </Box>
         </Drawer>
 
+        {/* --- Biological Rationale --- */}
+        {(payload?.double_hit_description || payload?.explanation?.summary) && (
+          <Accordion defaultExpanded sx={{ mb: 1.5, '&:before': { display: 'none' }, boxShadow: 'none', border: '1px solid #e2e8f0', borderRadius: '12px !important' }}>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography sx={{ fontWeight: 900 }}>Biological Rationale</Typography>
+            </AccordionSummary>
+            <AccordionDetails sx={{ pt: 0, px: 2, pb: 2 }}>
+              {payload?.double_hit_description && (
+                <Box sx={{ mb: 2, p: 1.5, borderRadius: 2, border: '1px solid #fed7aa', bgcolor: '#fff7ed' }}>
+                  <Typography variant="caption" sx={{ fontWeight: 900, color: '#ea580c', display: 'block', mb: 0.5 }}>
+                    Double-Hit Vulnerability
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#9a3412' }}>
+                    {payload.double_hit_description}
+                  </Typography>
+                </Box>
+              )}
+              {payload?.explanation?.summary && (
+                <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap' }}>
+                  {payload.explanation.summary}
+                </Typography>
+              )}
+            </AccordionDetails>
+          </Accordion>
+        )}
+
         {/* 3 stacked blocks (always expanded; patient-safe) */}
         <Accordion defaultExpanded sx={{ mb: 1.5 }}>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
@@ -257,6 +299,23 @@ export function SyntheticLethalityCard({ slData, data, onShowTrials, levelKey: l
                     Axis: ATR/CHK1 and/or WEE1 (rendered because these pathways appear in `essential_pathways`).
                   </Typography>
 
+                  {opportunity.checkpointDepMap?.length > 0 && (
+                    <Box sx={{ mt: 1.5, p: 1, borderRadius: 2, bgcolor: '#f1f5f9', border: '1px dashed #cbd5e1' }}>
+                      <Typography variant="caption" sx={{ fontWeight: 900, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <ScienceIcon fontSize="inherit" /> DepMap Quantitative Proof
+                      </Typography>
+                      <Box component="ul" sx={{ m: 0, pl: 2, mt: 0.5 }}>
+                        {opportunity.checkpointDepMap.map((line, idx) => (
+                          <li key={idx}>
+                            <Typography variant="body2" sx={{ color: '#334155', fontStyle: 'italic' }}>
+                              {line}
+                            </Typography>
+                          </li>
+                        ))}
+                      </Box>
+                    </Box>
+                  )}
+
                   {checkpointDrugs.length > 0 ? (
                     <Box sx={{ mt: 1 }}>
                       <Typography variant="caption" sx={{ fontWeight: 900, color: 'text.secondary' }}>
@@ -333,6 +392,23 @@ export function SyntheticLethalityCard({ slData, data, onShowTrials, levelKey: l
                   <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
                     Even if HR/PARP appear in `essential_pathways`, patient-level interpretation should be gated by missing data.
                   </Typography>
+
+                  {opportunity.parpDepMap?.length > 0 && (
+                    <Box sx={{ mt: 1.5, mb: 1.5, p: 1, borderRadius: 2, bgcolor: '#fffbed', border: '1px dashed #fcd34d' }}>
+                      <Typography variant="caption" sx={{ fontWeight: 900, color: '#92400e', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <ScienceIcon fontSize="inherit" /> DepMap Quantitative Proof
+                      </Typography>
+                      <Box component="ul" sx={{ m: 0, pl: 2, mt: 0.5 }}>
+                        {opportunity.parpDepMap.map((line, idx) => (
+                          <li key={idx}>
+                            <Typography variant="body2" sx={{ color: '#92400e', fontStyle: 'italic' }}>
+                              {line}
+                            </Typography>
+                          </li>
+                        ))}
+                      </Box>
+                    </Box>
+                  )}
 
                   {parpRequires.length > 0 ? (
                     <Box sx={{ mt: 1 }}>
@@ -421,6 +497,27 @@ export function SyntheticLethalityCard({ slData, data, onShowTrials, levelKey: l
             </Box>
           </AccordionDetails>
         </Accordion>
+
+        <Accordion defaultExpanded>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography sx={{ fontWeight: 900 }}>Multi-Modal Evidence Matrix</Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              5-layer deterministic proof evaluating pharmacological vulnerability across established modalities.
+            </Typography>
+            {evidenceMatrix ? (
+              <EvidenceMatrixTable matrix={evidenceMatrix} />
+            ) : (
+              <Box sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: 1, border: '1px dashed #cbd5e1', mt: 1 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', textAlign: 'center' }}>
+                  Evidence matrix is still evaluating or unavailable for this SL target.
+                </Typography>
+              </Box>
+            )}
+          </AccordionDetails>
+        </Accordion>
+
       </CardContent>
     </Card>
   );

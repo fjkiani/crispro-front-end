@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Box, Alert, CircularProgress, Typography, Grid, Card, CardContent } from '@mui/material';
 
 // Custom hooks
@@ -9,8 +9,12 @@ import { useAyeshaCareData } from '../../hooks/ayesha/useAyeshaCareData';
 import { transformToDigitalTwin } from '../../utils/ayesha/digitalTwinTransform';
 
 // Ayesha clinical components (SOC / CA-125 / SAE Phase-1)
-import { SOCRecommendationCard, CA125Tracker, NextTestCard, HintTilesPanel, MechanismChips } from '../../components/ayesha';
+import { SOCRecommendationCard, CA125Tracker, HintTilesPanel, MechanismChips } from '../../components/ayesha';
 import EssentialityScoreDisplay from '../../components/ayesha/EssentialityScoreDisplay';
+import DrugRankingPanel from '../../components/ayesha/DrugRankingPanel';
+import MechanismInsightPanel from '../../components/ayesha/tests/MechanismInsightPanel';
+import { useTestsPageState } from '../../hooks/ayesha/useTestsPageState';
+import '../../components/therapy-fit/therapy-fit.css';
 
 // Modular components
 import {
@@ -18,7 +22,6 @@ import {
   TwinDemoControls,
   PatientProfileCard,
   FoodRecommendationsCard,
-  DrugRecommendationsCard,
   ProvenanceCard,
   DigitalTwinSection
 } from '../../components/ayesha/twin';
@@ -36,6 +39,7 @@ import {
  */
 export default function AyeshaTwinDemo() {
   const { profile, buildRequest } = useAyeshaProfile();
+  const [mechanismViewMode, setMechanismViewMode] = useState('expected');
 
   // Load complete care data with all features enabled for Digital Twin
   const { result: careData, loading, error, refresh } = useAyeshaCareData({
@@ -70,6 +74,9 @@ export default function AyeshaTwinDemo() {
     analysis_summary: careData.summary || {},
     provenance: careData.provenance || {},
   }) : null;
+
+  // Pathway coverage for MechanismInsightPanel (via therapy fit data)
+  const testsState = useTestsPageState();
 
   return (
     <Box sx={{ p: 4, maxWidth: 1400, mx: 'auto' }}>
@@ -155,9 +162,20 @@ export default function AyeshaTwinDemo() {
                 </Grid>
               )}
 
-              {careData.next_test_recommender?.recommendations && (
-                <Grid item xs={12} md={6}>
-                  <NextTestCard recommendations={careData.next_test_recommender.recommendations} />
+              {/* 🧠 Biological Pathway Analysis (replaces basic NextTestCard) */}
+              {testsState && testsState.coverage && testsState.coverage.length > 0 && (
+                <Grid item xs={12}>
+                  <MechanismInsightPanel
+                    coverage={testsState.coverage}
+                    expectedMechanism={testsState.expectedMechanism}
+                    mechanismViewMode={mechanismViewMode}
+                    onViewModeChange={setMechanismViewMode}
+                    scenarioRequires={testsState.scenarioRequires || []}
+                    activeScenarioCard={testsState.activeScenarioCard || null}
+                    scenarioAlignment={testsState.scenarioAlignment || null}
+                    isPreview={false}
+                    activeLevelKey="L1"
+                  />
                 </Grid>
               )}
 
@@ -191,9 +209,11 @@ export default function AyeshaTwinDemo() {
             analysisSummary={careData.summary || {}}
           />
 
-          {/* 💊 Therapy Fit Rankings */}
-          <DrugRecommendationsCard
-            drugRecommendations={careData.wiwfm || careData.drug_recommendations || []}
+          {/* 💊 Therapy Fit Rankings — upgraded from DrugRecommendationsCard */}
+          <DrugRankingPanel
+            drugs={careData.wiwfm?.drugs || careData.wiwfm?.recommendations || careData.drug_recommendations || []}
+            context={{ level: 'L1', scenario: 'Digital Twin', provenance: careData.provenance }}
+            title="Therapy Fit Rankings"
           />
 
           {/* Provenance */}

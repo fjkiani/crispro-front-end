@@ -27,6 +27,7 @@ import MOACard from '../../../components/ayesha/drug-detail/MOACard';
 import InsightsCard from '../../../components/ayesha/drug-detail/InsightsCard';
 import PathwayScoresGrid from '../../../components/ayesha/drug-detail/PathwayScoresGrid';
 import ScoringWaterfall from '../../../components/ayesha/drug-detail/ScoringWaterfall';
+import LiteratureCitations from '../../../components/ayesha/drug-detail/LiteratureCitations';
 
 // ── Sidebar components ────────────────────────────────────────────────────────
 import NextStepsSidebar from '../../../components/ayesha/drug-detail/NextStepsSidebar';
@@ -126,6 +127,9 @@ export default function DrugDetailPage() {
                                 <SignalCards
                                     rationale={rationale}
                                     drug={drug}
+                                />
+                                <LiteratureCitations
+                                    citations={drug?.evidence_manifest?.citations || []}
                                 />
                                 <UnlockSection
                                     completeness={completeness}

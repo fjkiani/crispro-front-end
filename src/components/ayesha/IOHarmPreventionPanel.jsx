@@ -343,6 +343,7 @@ export default function IOHarmPreventionPanel({
     checkpointExpression,
     ioProfileCard,
     safetyGate,
+    suppressFooterDisclaimer = false,
 }) {
     const [showCheckpoints, setShowCheckpoints] = useState(false);
 
@@ -524,21 +525,22 @@ export default function IOHarmPreventionPanel({
             {/* === irAE EDUCATION === */}
             <IrAEEducationSection />
 
-            {/* === RUO DISCLAIMER === */}
-            <Box sx={{
-                display: 'flex', alignItems: 'flex-start', gap: 1,
-                p: 2, borderRadius: 2,
-                bgcolor: '#fffbeb',
-                border: '1px solid #fde68a',
-            }}>
-                <Warning sx={{ fontSize: 18, color: '#f59e0b', mt: 0.2, flexShrink: 0 }} />
-                <Typography variant="caption" sx={{ color: '#92400e', fontSize: '0.75rem', lineHeight: 1.5 }}>
-                    <strong>Research Use Only.</strong> Internally evaluated on 29 HGSOC patients from one
-                    clinical trial (NeoPembrOV). Not a validated clinical predictor. The risk-benefit
-                    assessment is a policy framework, not a diagnostic. All treatment decisions must be
-                    made by the oncologist in consultation with the patient.
-                </Typography>
-            </Box>
+            {!suppressFooterDisclaimer && (
+                <Box sx={{
+                    display: 'flex', alignItems: 'flex-start', gap: 1,
+                    p: 2, borderRadius: 2,
+                    bgcolor: '#fffbeb',
+                    border: '1px solid #fde68a',
+                }}>
+                    <Warning sx={{ fontSize: 18, color: '#f59e0b', mt: 0.2, flexShrink: 0 }} />
+                    <Typography variant="caption" sx={{ color: '#92400e', fontSize: '0.75rem', lineHeight: 1.5 }}>
+                        <strong>Research Use Only.</strong> Internally evaluated on 29 HGSOC patients from one
+                        clinical trial (NeoPembrOV). Not a validated clinical predictor. The risk-benefit
+                        assessment is a policy framework, not a diagnostic. All treatment decisions must be
+                        made by the oncologist in consultation with the patient.
+                    </Typography>
+                </Box>
+            )}
         </Box>
     );
 }

@@ -9,8 +9,11 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { API_ROOT } from '../../lib/apiConfig';
 
-const API_BASE = import.meta.env.VITE_API_ROOT || 'https://crispro-backend-v2.onrender.com';
+const API_BASE = API_ROOT;
+/** Vite public asset base (e.g. `/` or `/app/`); keeps `/data/ovarian.json` correct for subpath deploys */
+const PUBLIC_BASE = (import.meta.env.BASE_URL || '/').replace(/\/?$/, '/');
 
 /**
  * Minimal client-side SPE gate for fallback mode only.
@@ -103,11 +106,10 @@ const useRepurposingArsenal = () => {
                 console.warn('⚡ Backend API unavailable — loading arsenal from static JSON', e?.name);
             }
 
-            // Fallback: load ovarian.json directly
-            const jsonRes = await fetch('/data/ovarian.json');
+            // Fallback: load ovarian.json from static public/ (must exist in frontend public/data/)
+            const jsonRes = await fetch(`${PUBLIC_BASE}data/ovarian.json`);
             if (!jsonRes.ok) {
-                // Try alternative path
-                const altRes = await fetch('/ovarian.json');
+                const altRes = await fetch(`${PUBLIC_BASE}ovarian.json`);
                 if (!altRes.ok) throw new Error('Could not load ovarian.json from any path');
                 const rawDrugs = await altRes.json();
                 const drugs = rawDrugs.map(transformDrug).filter(Boolean);

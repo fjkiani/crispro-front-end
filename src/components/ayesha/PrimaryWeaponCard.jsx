@@ -8,16 +8,17 @@ const STATIC_BACKUP_EXPLANATION = {
     context: "fallback"
 };
 
-const PrimaryWeaponCard = ({ topDrug, patientContext, onInform, isSimulation }) => {
-    if (!topDrug) return null;
+const PrimaryWeaponCard = ({ topDrug, drug, patientContext, onInform, isSimulation }) => {
+    const resolvedDrug = topDrug || drug;
+    if (!resolvedDrug) return null;
 
-    const confidence = Math.round((topDrug.confidence || 0) * 100);
+    const confidence = Math.round((resolvedDrug.confidence || 0) * 100);
     const llmData = STATIC_BACKUP_EXPLANATION;
     const [showEvidence, setShowEvidence] = useState(false);
 
-    const tier = topDrug.evidence_tier || "Research";
-    const citations = topDrug.citations_count || 0;
-    const clinicalBand = topDrug.clinical_band || "Likely Responsive";
+    const tier = resolvedDrug.evidence_tier || "Research";
+    const citations = resolvedDrug.citations_count || 0;
+    const clinicalBand = resolvedDrug.clinical_band || "Likely Responsive";
 
     return (
         <Card sx={{
@@ -62,7 +63,7 @@ const PrimaryWeaponCard = ({ topDrug, patientContext, onInform, isSimulation }) 
                             mb: 1.5,
                             letterSpacing: '-1px',
                         }}>
-                            {topDrug.name}
+                            {resolvedDrug.name}
                         </Typography>
 
                         <Typography variant="body1" sx={{ color: 'text.secondary', fontWeight: 500, maxWidth: '600px', lineHeight: 1.6, fontSize: '1.0625rem' }}>
@@ -144,7 +145,7 @@ const PrimaryWeaponCard = ({ topDrug, patientContext, onInform, isSimulation }) 
                             <Box sx={{ mt: 3 }}>
                                 <Button
                                     variant="contained"
-                                    onClick={() => onInform(topDrug)}
+                                    onClick={() => onInform(resolvedDrug)}
                                     startIcon={<Zap size={18} />}
                                     sx={{
                                         py: 1.5,

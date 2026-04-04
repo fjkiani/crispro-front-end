@@ -34,6 +34,7 @@ export const drugToSlug = (name) =>
  *
  * 1. GET /drug/{name}?level=l1 — exact match + scoring data
  * 2. POST /bundle?level=l1     — completeness, pathway scores, provenance context
+ * 3. POST /bundle?...include_synthetic_lethality=true — background enrichment only
  */
 const fetchDrugDetail = async (slug) => {
     const drugName = slugToDrugName(slug);
@@ -43,7 +44,7 @@ const fetchDrugDetail = async (slug) => {
 
     const [drugRes, bundleRes] = await Promise.all([
         fetch(`${API_ROOT}/api/ayesha/therapy-fit/drug/${encodeURIComponent(drugName)}?level=l1`, { headers }),
-        fetch(`${API_ROOT}/api/ayesha/therapy-fit/bundle?level=l1&include_synthetic_lethality=true&efficacy_mode=comprehensive`, {
+        fetch(`${API_ROOT}/api/ayesha/therapy-fit/bundle?level=l1`, {
             method: 'POST',
             headers,
             body: JSON.stringify({}),
@@ -82,9 +83,32 @@ const fetchDrugDetail = async (slug) => {
         pathwayScores,
         provenance,
         allDrugs,
-        // SL lives at the TOP level of the bundle response, not inside levels.L1
-        synthetic_lethality: bundleData?.synthetic_lethality || l1Bundle?.synthetic_lethality,
+        // Load synthetic lethality separately so it never blocks first paint.
+        synthetic_lethality: null,
     };
+};
+
+const fetchSyntheticLethality = async () => {
+    const token = getAuthToken();
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const bundleRes = await fetch(
+        `${API_ROOT}/api/ayesha/therapy-fit/bundle?level=l1&include_synthetic_lethality=true&efficacy_mode=comprehensive`,
+        {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({}),
+        }
+    );
+
+    if (!bundleRes.ok) {
+        throw new Error(`Synthetic lethality bundle failed: ${bundleRes.statusText}`);
+    }
+
+    const bundleData = await bundleRes.json();
+    const l1Bundle = bundleData?.levels?.L1 || {};
+    return bundleData?.synthetic_lethality || l1Bundle?.synthetic_lethality || null;
 };
 
 /**
@@ -94,13 +118,34 @@ const fetchDrugDetail = async (slug) => {
  * @param {object} options — extra react-query options
  */
 export function useDrugDetail(slug, options = {}) {
-    return useQuery({
+    const detailQuery = useQuery({
         queryKey: ['drug-detail', slug],
         queryFn: () => fetchDrugDetail(slug),
         enabled: !!slug,
-        staleTime: 5 * 60 * 1000,   // 5 minutes — backend SL call is ~10s; cache aggressively
+        staleTime: 5 * 60 * 1000,
         gcTime: 10 * 60 * 1000,     // Keep in memory for 10 min
         retry: 1,
         ...options,
     });
+
+    const syntheticLethalityQuery = useQuery({
+        queryKey: ['drug-detail-sl', slug],
+        queryFn: () => fetchSyntheticLethality(),
+        enabled: !!slug && !!detailQuery.data?.found,
+        staleTime: 5 * 60 * 1000,
+        gcTime: 10 * 60 * 1000,
+        retry: 0,
+    });
+
+    return {
+        ...detailQuery,
+        data: detailQuery.data
+            ? {
+                ...detailQuery.data,
+                synthetic_lethality:
+                    syntheticLethalityQuery.data ?? detailQuery.data.synthetic_lethality ?? null,
+            }
+            : detailQuery.data,
+        isFetchingSyntheticLethality: syntheticLethalityQuery.isFetching,
+    };
 }

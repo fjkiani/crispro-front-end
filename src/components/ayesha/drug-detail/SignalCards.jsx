@@ -9,7 +9,7 @@
  */
 import React, { useState } from 'react';
 import {
-    Box, Typography, Paper, Chip, Tooltip, Collapse, IconButton, Grid,
+    Box, Typography, Paper, Chip, Tooltip, Collapse, IconButton, Stack,
 } from '@mui/material';
 import { Info, ExpandMore, ExpandLess } from '@mui/icons-material';
 import {
@@ -24,8 +24,9 @@ import {
 // ── Strength Pill ────────────────────────────────────────────────────────────
 
 function StrengthPill({ strength }) {
-    const label = strength.toUpperCase();
-    const colors = signalStrengthColor(strength);
+    const safeStrength = typeof strength === 'number' ? strength.toString() : (strength || 'neutral');
+    const label = String(safeStrength).toUpperCase();
+    const colors = signalStrengthColor(safeStrength);
     return (
         <Chip
             label={label}
@@ -178,21 +179,42 @@ function MetricPill({ label, value, muted }) {
     );
 }
 
+function normalizeRationale(rationale) {
+    if (Array.isArray(rationale)) {
+        return rationale.reduce((acc, item) => {
+            if (item && typeof item === 'object' && item.type) {
+                acc[item.type] = item;
+            }
+            return acc;
+        }, {});
+    }
+
+    return (rationale && typeof rationale === 'object') ? rationale : {};
+}
+
 // ── Container ────────────────────────────────────────────────────────────────
 
 export default function SignalCards({ rationale, drug }) {
     if (!rationale) return null;
 
-    const seq = rationale.sequence || {};
-    const path = rationale.pathway || {};
-    const evi = rationale.evidence || {};
+    const normalizedRationale = normalizeRationale(rationale);
+    const seq = normalizedRationale.sequence || {};
+    const path = normalizedRationale.pathway || {};
+    const evi = normalizedRationale.evidence || {};
+    const manifestCitations = Array.isArray(drug?.evidence_manifest?.citations)
+        ? drug.evidence_manifest.citations.length
+        : 0;
 
     const seqExplained = explainSequenceSignal(seq.value, seq.percentile);
     const pathExplained = explainPathwaySignal(path.percentile, {
         [path.primary_pathway || 'alignment']: path.percentile,
         ...(path.breakdown || {}),
     });
-    const eviExplained = explainEvidenceSignal(evi.strength, evi.citations_count || drug?.citations_count, drug?.meets_evidence_gate);
+    const eviExplained = explainEvidenceSignal(
+        evi.strength,
+        evi.citations_count ?? drug?.citations_count ?? manifestCitations,
+        drug?.meets_evidence_gate
+    );
 
     return (
         <Box>
@@ -208,11 +230,11 @@ export default function SignalCards({ rationale, drug }) {
                 We look at three independent signals to determine how well this drug matches your tumor.
             </Typography>
 
-            <Grid container spacing={2.5}>
-                <Grid item xs={12} md={4}><SignalCard signalKey="sequence" explained={seqExplained} /></Grid>
-                <Grid item xs={12} md={4}><SignalCard signalKey="pathway" explained={pathExplained} /></Grid>
-                <Grid item xs={12} md={4}><SignalCard signalKey="evidence" explained={eviExplained} /></Grid>
-            </Grid>
+            <Stack spacing={2.5} sx={{ width: '100%' }}>
+                <SignalCard signalKey="sequence" explained={seqExplained} />
+                <SignalCard signalKey="pathway" explained={pathExplained} />
+                <SignalCard signalKey="evidence" explained={eviExplained} />
+            </Stack>
         </Box>
     );
 }

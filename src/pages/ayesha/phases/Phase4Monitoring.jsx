@@ -70,6 +70,7 @@ function computeIntakeRiskProps(signals) {
     let baselineCount = 0;
     let activeCount = 0;
     const baselineSignals = [];
+    const signalSlugs = [];     // { name, slug } for each firing baseline signal
 
     for (const id of Object.keys(SIGNAL_DEFINITIONS)) {
         const sig = signals[id];
@@ -79,13 +80,14 @@ function computeIntakeRiskProps(signals) {
         if (def.type === 'BASELINE' && (key === 'FIRED' || key === 'BASELINE_NOTED')) {
             baselineCount++;
             baselineSignals.push(def.name);
+            if (def.slug) signalSlugs.push({ name: def.shortName || def.name, slug: def.slug });
         }
         if (def.type === 'ACTIVE' && key === 'FIRED') {
             activeCount++;
         }
     }
 
-    return { baselineCount, activeCount, baselineSignals };
+    return { baselineCount, activeCount, baselineSignals, signalSlugs };
 }
 
 // ── Page Orchestrator ────────────────────────────────────────────────────────

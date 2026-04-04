@@ -9,6 +9,10 @@
  *   models.py  L67-70   — detection thresholds
  *
  * Authored: 2026-03-04 (ENGINE_LIGHT_DASHBOARD.mdc §3)
+ *
+ * Updated: 2026-03-05 (Sprint 5 — added `slug` field for test-page navigation)
+ *   slug → used by IntakeRiskWarning CTA and any signal → test page link.
+ *   Format: kebab-case, matches clinicalTestRegistry entries.
  */
 
 // ── Engine Light States ──────────────────────────────────────────────────────
@@ -24,6 +28,7 @@ export const LIGHT_STATES = {
 export const SIGNAL_DEFINITIONS = {
     CA125_RISING: {
         id: 'CA125_RISING',
+        slug: 'ca-125',                          // → /ayesha/tests/ca-125
         name: 'CA-125 Rising',
         shortName: 'CA-125',
         type: 'ACTIVE',
@@ -35,6 +40,7 @@ export const SIGNAL_DEFINITIONS = {
     },
     HRD_SHIFT: {
         id: 'HRD_SHIFT',
+        slug: 'hrd',                             // → /ayesha/tests/hrd
         name: 'HRD Score Shift',
         shortName: 'HRD',
         type: 'ACTIVE',
@@ -47,6 +53,7 @@ export const SIGNAL_DEFINITIONS = {
     },
     REPAIR_SHIFT: {
         id: 'REPAIR_SHIFT',
+        slug: 'rad51',                           // → /ayesha/tests/rad51
         name: 'Repair Capacity Shift',
         shortName: 'Repair',
         type: 'ACTIVE',
@@ -59,6 +66,7 @@ export const SIGNAL_DEFINITIONS = {
     },
     CTDNA_MRD: {
         id: 'CTDNA_MRD',
+        slug: 'ctdna',                           // → /ayesha/tests/ctdna
         name: 'ctDNA / MRD',
         shortName: 'ctDNA',
         type: 'ACTIVE',
@@ -70,6 +78,7 @@ export const SIGNAL_DEFINITIONS = {
     },
     NRF2_ACTIVATION: {
         id: 'NRF2_ACTIVATION',
+        slug: 'somatic-ngs',                     // → /ayesha/tests/somatic-ngs
         name: 'NRF2 Activation',
         shortName: 'NRF2',
         type: 'ACTIVE',
@@ -82,6 +91,7 @@ export const SIGNAL_DEFINITIONS = {
     },
     SLC31A1_LOSS: {
         id: 'SLC31A1_LOSS',
+        slug: 'rna-seq',                         // → /ayesha/tests/rna-seq
         name: 'SLC31A1 (CTR1) Loss',
         shortName: 'SLC31A1',
         type: 'ACTIVE',
@@ -94,6 +104,7 @@ export const SIGNAL_DEFINITIONS = {
     },
     HRD_BASELINE: {
         id: 'HRD_BASELINE',
+        slug: 'hrd',                             // → /ayesha/tests/hrd
         name: 'HRD Baseline',
         shortName: 'HRD-BL',
         type: 'BASELINE',
@@ -106,6 +117,7 @@ export const SIGNAL_DEFINITIONS = {
     },
     SLFN11_PRIOR: {
         id: 'SLFN11_PRIOR',
+        slug: 'methylation',                     // → /ayesha/tests/methylation
         name: 'SLFN11 Silencing',
         shortName: 'SLFN11',
         type: 'BASELINE',

@@ -7,7 +7,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -33,6 +33,8 @@ const isRecruiting = (t) =>
 
 const AyeshaTrialsOnly = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const axisFilter = searchParams.get('axis');
   const { profile } = useAyeshaProfile();
   const [filter, setFilter] = useState('all');
 
@@ -51,10 +53,19 @@ const AyeshaTrialsOnly = () => {
   const trials = result?.trials?.trials || [];
 
   const filteredTrials = useMemo(() => {
-    if (filter === 'recruiting') return trials.filter(isRecruiting);
-    if (filter === 'non-recruiting') return trials.filter(t => !isRecruiting(t));
-    return trials;
-  }, [trials, filter]);
+    let list = trials;
+    if (filter === 'recruiting') list = list.filter(isRecruiting);
+    else if (filter === 'non-recruiting') list = list.filter(t => !isRecruiting(t));
+
+    if (axisFilter === 'checkpoint_axis') {
+      list = list.filter(t => {
+        const txt = JSON.stringify(t).toLowerCase();
+        return txt.includes('atr') || txt.includes('wee1') || txt.includes('ceralasertib') || txt.includes('adavosertib');
+      });
+    }
+
+    return list;
+  }, [trials, filter, axisFilter]);
 
   const recruitingCount = useMemo(() => trials.filter(isRecruiting).length, [trials]);
   const nonRecruitingCount = trials.length - recruitingCount;

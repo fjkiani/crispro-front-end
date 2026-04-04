@@ -42,15 +42,15 @@ function deriveState(policyRan, conclusionIsDefault, killChainState) {
 
 function stateTheme(state) {
     if (state === 'alert') return {
-        bg: '#1a0505', border: '#7f1d1d', accent: '#ef4444', text: '#fca5a5',
-        label: '⚠️ RESISTANCE SIGNAL DETECTED', icon: AlertTriangle, iconColor: '#ef4444',
+        bg: '#fef2f2', border: '#fecaca', accent: '#dc2626', text: '#991b1b',
+        label: '⚠️ RESISTANCE SIGNAL DETECTED', icon: AlertTriangle, iconColor: '#dc2626',
     };
     if (state === 'monitoring') return {
-        bg: '#0a1628', border: '#1e3a5f', accent: '#38bdf8', text: '#7dd3fc',
-        label: 'MONITORING', icon: Activity, iconColor: '#38bdf8',
+        bg: '#eff6ff', border: '#bfdbfe', accent: '#2563eb', text: '#1e40af',
+        label: 'MONITORING', icon: Activity, iconColor: '#2563eb',
     };
     return {
-        bg: '#0f172a', border: '#1e293b', accent: '#64748b', text: '#94a3b8',
+        bg: '#f8fafc', border: '#e2e8f0', accent: '#64748b', text: '#475569',
         label: 'AWAITING DATA', icon: ShieldIcon, iconColor: '#64748b',
     };
 }
@@ -67,21 +67,21 @@ function CA125Row({ history }) {
                 const pct = Math.round((v / max) * 100);
                 return (
                     <Box key={i} sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
-                        <Typography variant="caption" sx={{ color: '#94a3b8', fontSize: '0.6rem' }}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem' }}>
                             {v.toLocaleString()}
                         </Typography>
-                        <Box sx={{ width: '100%', height: 32, bgcolor: '#1e293b', borderRadius: 1, display: 'flex', alignItems: 'flex-end' }}>
+                        <Box sx={{ width: '100%', height: 32, bgcolor: 'action.hover', borderRadius: 1, display: 'flex', alignItems: 'flex-end' }}>
                             <Box sx={{
                                 width: '100%',
                                 height: `${pct}%`,
                                 minHeight: 3,
-                                bgcolor: pct > 75 ? '#ef4444' : pct > 50 ? '#f59e0b' : '#38bdf8',
+                                bgcolor: pct > 75 ? 'error.main' : pct > 50 ? 'warning.main' : 'info.main',
                                 borderRadius: 1,
                                 transition: 'height 0.4s ease',
                             }} />
                         </Box>
                         {e.date && (
-                            <Typography variant="caption" sx={{ color: '#475569', fontSize: '0.55rem' }}>
+                            <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.55rem' }}>
                                 {String(e.date).slice(5, 10)}
                             </Typography>
                         )}
@@ -128,7 +128,7 @@ export default function KillChainStatusWidget({ resistanceGate }) {
 
             {/* ── Header row ── */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5, position: 'relative' }}>
-                <Box sx={{ p: 0.75, borderRadius: 1.5, bgcolor: 'rgba(255,255,255,0.04)', border: `1px solid ${theme.border}` }}>
+                <Box sx={{ p: 0.75, borderRadius: 1.5, bgcolor: 'action.selected', border: `1px solid`, borderColor: theme.border }}>
                     <Icon size={18} color={theme.iconColor} strokeWidth={1.75} />
                 </Box>
 
@@ -145,14 +145,18 @@ export default function KillChainStatusWidget({ resistanceGate }) {
                 <Chip
                     label="RUO"
                     size="small"
-                    sx={{ bgcolor: 'rgba(100,116,139,0.2)', color: '#94a3b8', fontWeight: 700, fontSize: '0.6rem', height: 18 }}
+                    sx={{ bgcolor: 'action.hover', color: 'text.secondary', fontWeight: 700, fontSize: '0.6rem', height: 18 }}
                 />
 
                 {/* Policy state */}
                 <Chip
                     label={`Policy: ${policyRan ? 'RUNNING' : 'INACTIVE'}`}
                     size="small"
-                    sx={{ bgcolor: policyRan ? 'rgba(34,197,94,0.1)' : 'rgba(100,116,139,0.1)', color: policyRan ? '#4ade80' : '#64748b', fontWeight: 700, fontSize: '0.6rem', height: 18 }}
+                    sx={{
+                        bgcolor: policyRan ? 'success.light' : 'action.hover',
+                        color: policyRan ? 'success.dark' : 'text.secondary',
+                        fontWeight: 700, fontSize: '0.6rem', height: 18,
+                    }}
                 />
             </Box>
 
@@ -160,16 +164,16 @@ export default function KillChainStatusWidget({ resistanceGate }) {
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 1.5 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                     <Clock size={12} color="#64748b" />
-                    <Typography variant="caption" sx={{ color: '#64748b' }}>
-                        State: <strong style={{ color: killChainState ? theme.text : '#475569' }}>
+                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                        State: <strong style={{ color: killChainState ? theme.text : undefined }}>
                             {killChainState ?? '—'}
                         </strong>
                     </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                     <Activity size={12} color="#64748b" />
-                    <Typography variant="caption" sx={{ color: '#64748b' }}>
-                        CA-125: <strong style={{ color: n125 > 0 ? '#7dd3fc' : '#475569' }}>
+                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                        CA-125: <strong style={{ color: n125 > 0 ? theme.accent : undefined }}>
                             {n125 > 0 ? `${n125} reading${n125 > 1 ? 's' : ''} logged` : 'no data'}
                         </strong>
                     </Typography>
@@ -179,7 +183,7 @@ export default function KillChainStatusWidget({ resistanceGate }) {
             {/* ── CA-125 sparkline (collapsed by default, shown if data exists) ── */}
             {n125 > 1 && (
                 <Box sx={{ mb: 1.5 }}>
-                    <Typography variant="caption" sx={{ color: '#475569', display: 'block', mb: 0.5, textTransform: 'uppercase', letterSpacing: 1, fontSize: '0.6rem' }}>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5, textTransform: 'uppercase', letterSpacing: 1, fontSize: '0.6rem' }}>
                         CA-125 History ({n125} readings)
                     </Typography>
                     <CA125Row history={ca125History} />
@@ -188,13 +192,13 @@ export default function KillChainStatusWidget({ resistanceGate }) {
 
             {/* ── Awaiting state: explicit "what's needed" ── */}
             {state === 'awaiting' && (
-                <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(100,116,139,0.08)', border: '1px solid #1e293b', mb: 1.5 }}>
-                    <Typography variant="caption" sx={{ color: '#64748b', lineHeight: 1.6, display: 'block' }}>
+                <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'action.hover', border: '1px solid', borderColor: 'divider', mb: 1.5 }}>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', lineHeight: 1.6, display: 'block' }}>
                         Kill Chain policy requires ≥2 of:{' '}
-                        <strong style={{ color: '#94a3b8' }}>CA-125 series (≥3 readings)</strong>,{' '}
-                        <strong style={{ color: '#94a3b8' }}>HRD shift (≥15 points)</strong>,{' '}
-                        <strong style={{ color: '#94a3b8' }}>DNA repair signal</strong>{' '}
-                        <span style={{ color: '#64748b' }}>
+                        <strong style={{ fontWeight: 700 }}>CA-125 series (≥3 readings)</strong>,{' '}
+                        <strong style={{ fontWeight: 700 }}>HRD shift (≥15 points)</strong>,{' '}
+                        <strong style={{ fontWeight: 700 }}>DNA repair signal</strong>{' '}
+                        <span>
                             (capacity drop ≥0.20 <em>or</em> DDR pathway suppressed below 40%)
                         </span>.
                         Log readings or run NGS update to activate monitoring.
@@ -205,16 +209,19 @@ export default function KillChainStatusWidget({ resistanceGate }) {
             {/* ── Expandable provenance ── */}
             <Box
                 onClick={() => setExpanded(x => !x)}
-                sx={{ display: 'flex', alignItems: 'center', gap: 0.5, cursor: 'pointer', mb: expanded ? 1 : 0, opacity: 0.7, '&:hover': { opacity: 1 } }}
+                sx={{
+                    display: 'flex', alignItems: 'center', gap: 0.5, cursor: 'pointer', mb: expanded ? 1 : 0,
+                    color: 'text.secondary', opacity: 0.85, '&:hover': { opacity: 1 },
+                }}
             >
-                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 700 }}>
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700 }}>
                     {expanded ? 'Hide' : 'View'} provenance
                 </Typography>
-                {expanded ? <ChevronUp size={12} color="#64748b" /> : <ChevronDown size={12} color="#64748b" />}
+                {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
             </Box>
             <Collapse in={expanded}>
-                <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(0,0,0,0.2)', border: '1px solid #1e293b', mb: 1.5 }}>
-                    <Typography variant="caption" sx={{ color: '#475569', fontFamily: 'Roboto Mono, monospace', display: 'block', lineHeight: 1.8 }}>
+                <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'action.hover', border: '1px solid', borderColor: 'divider', mb: 1.5 }}>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: 'Roboto Mono, monospace', display: 'block', lineHeight: 1.8 }}>
                         Source: kill_chain_v0<br />
                         Policy: 2-of-3 (CA-125 + HRD + REPAIR_SHIFT)<br />
                         policy_ran: {String(policyRan)}<br />
@@ -225,31 +232,30 @@ export default function KillChainStatusWidget({ resistanceGate }) {
                 </Box>
             </Collapse>
 
-            <Divider sx={{ borderColor: '#1e293b', mb: 1.5 }} />
+            <Divider sx={{ mb: 1.5 }} />
 
             {/* ── Actions ── */}
             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                 <Button
                     size="small"
+                    variant="contained"
+                    color="primary"
                     startIcon={<Plus size={13} />}
                     onClick={() => navigate('/ayesha/tests')}
-                    sx={{
-                        textTransform: 'none', fontWeight: 700, fontSize: '0.75rem',
-                        bgcolor: 'rgba(99,102,241,0.15)', color: '#a5b4fc',
-                        border: '1px solid rgba(99,102,241,0.3)',
-                        '&:hover': { bgcolor: 'rgba(99,102,241,0.25)' },
-                    }}
+                    sx={{ textTransform: 'none', fontWeight: 700, fontSize: '0.75rem' }}
                 >
                     Add HRD reading
                 </Button>
                 <Button
                     size="small"
+                    variant="outlined"
+                    color="inherit"
                     startIcon={<Eye size={13} />}
                     onClick={() => setExpanded(x => !x)}
                     sx={{
                         textTransform: 'none', fontWeight: 700, fontSize: '0.75rem',
-                        color: '#64748b', border: '1px solid #1e293b',
-                        '&:hover': { borderColor: '#94a3b8', color: '#94a3b8' },
+                        color: 'text.secondary', borderColor: 'divider',
+                        '&:hover': { borderColor: 'text.secondary' },
                     }}
                 >
                     View provenance
@@ -258,7 +264,7 @@ export default function KillChainStatusWidget({ resistanceGate }) {
 
             {/* ── RUO footer disclaimer — always present ── */}
             <Box sx={{ mt: 1.5 }}>
-                <Typography variant="caption" sx={{ color: '#475569', fontSize: '0.62rem', lineHeight: 1.5, display: 'block' }}>
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.62rem', lineHeight: 1.5, display: 'block' }}>
                     ⚠️ Research Use Only — not clinical guidance.
                     Based on biomarker signals only.
                     Median lead-time 82d (n=5, gated analysis, RUO gated ≤365d pre-recurrence).

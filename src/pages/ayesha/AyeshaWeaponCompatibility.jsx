@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Box, Container, Typography, Alert, CircularProgress, Skeleton, Button, Chip, Grid } from '@mui/material';
 import { useAyeshaTherapyFitBundle } from '../../hooks/useAyeshaTherapyFitBundle';
 import { useTargetedTherapyBrief } from '../../hooks/useTargetedTherapyBrief';
-import { RefreshCw, Play, Shield, Activity, AlertTriangle, Clock, ArrowRight, ArrowUp, ArrowDown, Minus, FlaskConical, FileText, BookOpen, Sparkles, Upload, TestTube, Dna, BarChart3, Sun, Moon } from 'lucide-react';
+import { RefreshCw, Play, Shield, AlertTriangle, Clock, ArrowRight, ArrowUp, ArrowDown, Minus, FlaskConical, FileText, BookOpen, Sparkles, Upload, TestTube, Dna, BarChart3 } from 'lucide-react';
 
 // Zeta Components
 import DefenseAnalysisBanner from '../../components/ayesha/DefenseAnalysisBanner';
@@ -16,15 +16,13 @@ import AyeshaDrugPanel from '../../components/ayesha/AyeshaDrugPanel';
 import { API_ROOT } from '../../lib/apiConfig';
 
 
-const LoadingFallback = () => <Skeleton variant="rectangular" height={300} sx={{ borderRadius: 0, mb: 4, bgcolor: '#1e293b' }} />;
+const LoadingFallback = () => <Skeleton variant="rectangular" height={300} sx={{ borderRadius: 1, mb: 4, bgcolor: 'grey.200' }} />;
 
 // ─── Fix 3: Analysis Telemetry Panel ────────────────────────────────
 // Reads ONLY stable fields present in both /bundle and /analyze shapes.
 const AnalysisTelemetryPanel = ({ levelData, isSimulation, scenarioId }) => {
     if (!levelData) return null;
 
-    // Tolerant reads: support both /bundle (efficacy.*) and /analyze (* at root)
-    // AND both key styles: snake_case (pathway_scores) and concatenated (pathwayscores)
     const provenance = levelData?.efficacy?.provenance ?? levelData?.provenance ?? {};
     const pathwayScores = levelData?.efficacy?.pathway_scores
         ?? levelData?.efficacy?.pathwayscores
@@ -41,21 +39,20 @@ const AnalysisTelemetryPanel = ({ levelData, isSimulation, scenarioId }) => {
     const insightsMode = provenance?.insights ?? null;
     const runId = provenance?.run_id ?? provenance?.runid ?? null;
 
-    // Pathway score bar helper
     const PathwayBar = ({ label, value, maxVal = 0.5 }) => {
         const pct = value != null ? Math.min((value / maxVal) * 100, 100) : 0;
         const isNull = value === null || value === undefined;
         return (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.8 }}>
-                <Typography sx={{ color: '#94a3b8', fontSize: 'var(--text-xs)', fontFamily: 'monospace', width: 60, textAlign: 'right', fontWeight: 600 }}>
+                <Typography sx={{ color: 'text.secondary', fontSize: 'var(--text-xs)', fontFamily: 'monospace', width: 60, textAlign: 'right', fontWeight: 600 }}>
                     {label.toUpperCase()}
                 </Typography>
-                <Box sx={{ flex: 1, height: 8, bgcolor: '#1e293b', borderRadius: 1, overflow: 'hidden' }}>
+                <Box sx={{ flex: 1, height: 8, bgcolor: 'grey.200', borderRadius: 1, overflow: 'hidden' }}>
                     {!isNull && (
-                        <Box sx={{ width: `${pct}%`, height: '100%', bgcolor: pct > 50 ? '#f59e0b' : '#3b82f6', transition: 'width 0.3s' }} />
+                        <Box sx={{ width: `${pct}%`, height: '100%', bgcolor: pct > 50 ? 'warning.main' : 'primary.main', transition: 'width 0.3s' }} />
                     )}
                 </Box>
-                <Typography sx={{ color: isNull ? '#475569' : '#e2e8f0', fontSize: 'var(--text-xs)', fontFamily: 'monospace', width: 50, fontWeight: 700 }}>
+                <Typography sx={{ color: isNull ? 'text.disabled' : 'text.primary', fontSize: 'var(--text-xs)', fontFamily: 'monospace', width: 50, fontWeight: 700 }}>
                     {isNull ? 'n/a' : value.toFixed(3)}
                 </Typography>
             </Box>
@@ -64,32 +61,30 @@ const AnalysisTelemetryPanel = ({ levelData, isSimulation, scenarioId }) => {
 
     return (
         <Box sx={{
-            mb: 4, p: 2, bgcolor: '#0f172a', border: '1px solid',
-            borderColor: isSimulation ? '#f59e0b44' : '#1e293b',
+            mb: 4, p: 2, bgcolor: 'background.paper', border: 1,
+            borderColor: isSimulation ? 'warning.light' : 'divider',
             borderRadius: 1,
         }}>
-            {/* Header */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Shield size={16} color={isSimulation ? '#f59e0b' : '#3b82f6'} />
-                    <Typography sx={{ color: '#e2e8f0', fontSize: 'var(--text-sm)', fontWeight: 800, letterSpacing: 1.5 }}>
+                    <Shield size={16} color={isSimulation ? '#d97706' : '#2563eb'} />
+                    <Typography sx={{ color: 'text.primary', fontSize: 'var(--text-sm)', fontWeight: 800, letterSpacing: 1.5 }}>
                         {isSimulation ? `SIMULATION: ${scenarioId}` : 'BASELINE ANALYSIS'}
                     </Typography>
                 </Box>
                 {timestamp && (
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
                         <Clock size={12} color="#64748b" />
-                        <Typography sx={{ color: '#64748b', fontSize: 'var(--text-xs)', fontFamily: 'monospace', fontWeight: 600 }}>
+                        <Typography sx={{ color: 'text.secondary', fontSize: 'var(--text-xs)', fontFamily: 'monospace', fontWeight: 600 }}>
                             {timestamp}
                         </Typography>
                     </Box>
                 )}
             </Box>
 
-            {/* Provenance Row */}
             <Box sx={{ display: 'flex', gap: 2, mb: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
                 {runId && (
-                    <Typography sx={{ color: '#475569', fontSize: 'var(--text-xs)', fontFamily: 'monospace', fontWeight: 700 }}>
+                    <Typography sx={{ color: 'text.secondary', fontSize: 'var(--text-xs)', fontFamily: 'monospace', fontWeight: 700 }}>
                         RUN: {runId.slice(0, 8)}
                     </Typography>
                 )}
@@ -97,14 +92,13 @@ const AnalysisTelemetryPanel = ({ levelData, isSimulation, scenarioId }) => {
                     <Chip
                         label={insightsMode === 'skipped_fast_mode' ? 'FAST MODE' : insightsMode}
                         size="small"
-                        sx={{ height: 22, fontSize: 'var(--text-xs)', fontWeight: 800, bgcolor: '#1e293b', color: '#f59e0b', letterSpacing: 0.5, px: 1 }}
+                        sx={{ height: 22, fontSize: 'var(--text-xs)', fontWeight: 800, bgcolor: 'grey.100', color: 'warning.dark', letterSpacing: 0.5, px: 1 }}
                     />
                 )}
             </Box>
 
-            {/* Pathway Scores */}
             <Box sx={{ mb: 1.5 }}>
-                <Typography sx={{ color: '#64748b', fontSize: 'var(--text-xs)', fontWeight: 800, letterSpacing: 1.5, mb: 1 }}>
+                <Typography sx={{ color: 'text.secondary', fontSize: 'var(--text-xs)', fontWeight: 800, letterSpacing: 1.5, mb: 1 }}>
                     PATHWAY DISRUPTION
                 </Typography>
                 <PathwayBar label="DDR" value={pathwayScores?.ddr} />
@@ -114,15 +108,14 @@ const AnalysisTelemetryPanel = ({ levelData, isSimulation, scenarioId }) => {
                 <PathwayBar label="PI3K" value={pathwayScores?.pi3k} />
             </Box>
 
-            {/* RUO / Evidence Status */}
             {(citationsCount === 0 || ruoReasons.length > 0) && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pt: 1.5, borderTop: '1px solid #1e293b' }}>
-                    <AlertTriangle size={14} color="#f59e0b" />
-                    <Typography sx={{ color: '#f59e0b', fontSize: 'var(--text-sm)', fontWeight: 800 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pt: 1.5, borderTop: 1, borderColor: 'divider', flexWrap: 'wrap' }}>
+                    <AlertTriangle size={14} color="#ed6c02" />
+                    <Typography sx={{ color: 'warning.dark', fontSize: 'var(--text-sm)', fontWeight: 800 }}>
                         No citations surfaced (RUO)
                     </Typography>
                     {insightsMode === 'skipped_fast_mode' && (
-                        <Typography sx={{ color: '#94a3b8', fontSize: 'var(--text-xs)', fontStyle: 'italic', ml: 1, fontWeight: 500 }}>
+                        <Typography sx={{ color: 'text.secondary', fontSize: 'var(--text-xs)', fontStyle: 'italic', ml: 1, fontWeight: 500 }}>
                             Pipeline mode: fast (evidence lookup gated)
                         </Typography>
                     )}
@@ -233,34 +226,33 @@ function generateReceiptLines(scenario, diff, completeness, scenarioMeta) {
 // Flow: Scenario click → receipt slides in → compare baseline → CTA
 // ═══════════════════════════════════════════════════════════════════════
 
-const ScenarioReceiptPanel = React.forwardRef(({ baseline, scenario, scenarioId, scenarioMeta, completeness, darkMode = true }, ref) => {
+const ScenarioReceiptPanel = React.forwardRef(({ baseline, scenario, scenarioId, scenarioMeta, completeness }, ref) => {
     const navigate = useNavigate();
     if (!scenario || !scenarioId) return null;
 
-    // Theme tokens
     const t = {
-        panelBg: darkMode ? 'linear-gradient(135deg, #0f172a 0%, #0c1527 50%, #0f172a 100%)' : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 50%, #ffffff 100%)',
-        panelBorder: darkMode ? '#f59e0b33' : '#e2e8f0',
-        panelShadow: darkMode ? '0 0 30px rgba(245, 158, 11, 0.06), inset 0 1px 0 rgba(255,255,255,0.03)' : '0 4px 24px rgba(0,0,0,0.08)',
-        headerBg: darkMode ? 'linear-gradient(90deg, #1e293b 0%, #1a2332 100%)' : 'linear-gradient(90deg, #f1f5f9 0%, #e2e8f0 100%)',
-        headerBorder: darkMode ? '#f59e0b22' : '#e2e8f0',
-        headerText: darkMode ? '#f59e0b' : '#b45309',
-        bodyBg: 'transparent',
-        labelColor: darkMode ? '#64748b' : '#94a3b8',
-        textPrimary: darkMode ? '#e2e8f0' : '#0f172a',
-        textSecondary: darkMode ? '#cbd5e1' : '#334155',
-        textMuted: darkMode ? '#94a3b8' : '#64748b',
-        scoreColor: darkMode ? '#e2e8f0' : '#0f172a',
-        scoreMuted: darkMode ? '#475569' : '#94a3b8',
-        sectionBg: darkMode ? '#ffffff05' : '#f8fafc',
-        sectionBorder: darkMode ? '#ffffff0a' : '#e2e8f0',
-        ctaBg: darkMode ? 'linear-gradient(180deg, #0c1527 0%, #111b2e 100%)' : 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
-        ctaBorder: darkMode ? '#f59e0b33' : '#e2e8f0',
-        cardBg: darkMode ? '#ffffff05' : '#ffffff',
-        cardBorder: darkMode ? '#ffffff0a' : '#e2e8f0',
-        cardHoverBg: darkMode ? '#ffffff0a' : '#f1f5f9',
-        cardHoverBorder: darkMode ? '#38bdf822' : '#38bdf844',
-        iconBg: darkMode ? '#ffffff08' : '#f1f5f9',
+        panelBg: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 50%, #ffffff 100%)',
+        panelBorder: '#e2e8f0',
+        panelShadow: '0 4px 24px rgba(0,0,0,0.08)',
+        headerBg: 'linear-gradient(90deg, #f1f5f9 0%, #e2e8f0 100%)',
+        headerBorder: '#e2e8f0',
+        headerText: '#b45309',
+        labelColor: '#64748b',
+        textPrimary: '#0f172a',
+        textSecondary: '#334155',
+        textMuted: '#64748b',
+        scoreColor: '#0f172a',
+        scoreMuted: '#64748b',
+        ctaBg: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
+        ctaBorder: '#e2e8f0',
+        cardBg: '#ffffff',
+        cardBorder: '#e2e8f0',
+        cardHoverBg: '#f1f5f9',
+        cardHoverBorder: 'rgba(56, 189, 248, 0.27)',
+        iconBg: '#f1f5f9',
+        divider: '#e2e8f0',
+        rowMutedBg: '#f8fafc',
+        rowMutedBorder: '#e2e8f0',
     };
 
     const diff = useMemo(() => computeScenarioDiff(baseline, scenario), [baseline, scenario]);
@@ -309,7 +301,7 @@ const ScenarioReceiptPanel = React.forwardRef(({ baseline, scenario, scenarioId,
     };
 
     const ScoreCell = ({ value, muted }) => (
-        <Typography sx={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)', color: muted ? '#64748b' : '#e2e8f0', fontWeight: muted ? 500 : 700 }}>
+        <Typography sx={{ fontFamily: 'monospace', fontSize: 'var(--text-sm)', color: muted ? t.scoreMuted : t.scoreColor, fontWeight: muted ? 500 : 700 }}>
             {value === null || value === undefined ? 'n/a' : typeof value === 'number' ? value.toFixed(3) : value}
         </Typography>
     );
@@ -356,10 +348,10 @@ const ScenarioReceiptPanel = React.forwardRef(({ baseline, scenario, scenarioId,
                     <Box key={label} sx={{ display: 'flex', gap: 1.5, mb: 1.5, alignItems: 'flex-start' }}>
                         <Typography sx={{ fontSize: '1.2rem', lineHeight: 1.2 }}>{icon}</Typography>
                         <Box>
-                            <Typography sx={{ color: '#64748b', fontSize: 'var(--text-xs)', fontWeight: 800, letterSpacing: 1.5, mb: 0.5 }}>
+                            <Typography sx={{ color: t.labelColor, fontSize: 'var(--text-xs)', fontWeight: 800, letterSpacing: 1.5, mb: 0.5 }}>
                                 {label}
                             </Typography>
-                            <Typography sx={{ color: '#cbd5e1', fontSize: 'var(--text-sm)', lineHeight: 1.6, fontWeight: 500 }}>
+                            <Typography sx={{ color: t.textSecondary, fontSize: 'var(--text-sm)', lineHeight: 1.6, fontWeight: 500 }}>
                                 {text}
                             </Typography>
                         </Box>
@@ -369,8 +361,8 @@ const ScenarioReceiptPanel = React.forwardRef(({ baseline, scenario, scenarioId,
 
             {/* Drug Comparison Table (Engineering Agent) */}
             {diff && (diff.added.length > 0 || diff.removed.length > 0 || diff.retained.length > 0) && (
-                <Box sx={{ px: 2.5, py: 2, borderTop: '1px solid #1e293b' }}>
-                    <Typography sx={{ color: '#64748b', fontSize: 'var(--text-xs)', fontWeight: 800, letterSpacing: 1.5, mb: 1.5 }}>
+                <Box sx={{ px: 2.5, py: 2, borderTop: `1px solid ${t.divider}` }}>
+                    <Typography sx={{ color: t.labelColor, fontSize: 'var(--text-xs)', fontWeight: 800, letterSpacing: 1.5, mb: 1.5 }}>
                         DRUG CANDIDATE COMPARISON (TOP 3)
                     </Typography>
 
@@ -415,10 +407,10 @@ const ScenarioReceiptPanel = React.forwardRef(({ baseline, scenario, scenarioId,
                     {diff.retained.map(d => (
                         <Box key={d.name} sx={{
                             display: 'flex', alignItems: 'center', gap: 1.5, mb: 1, py: 1, px: 1.5,
-                            bgcolor: '#ffffff03', borderRadius: 1, border: '1px solid #ffffff08',
+                            bgcolor: t.rowMutedBg, borderRadius: 1, border: `1px solid ${t.rowMutedBorder}`,
                         }}>
                             <DeltaIcon val={d.delta} />
-                            <Typography sx={{ color: '#94a3b8', fontSize: 'var(--text-sm)', fontFamily: 'monospace', minWidth: 100, fontWeight: 700 }}>{d.name}</Typography>
+                            <Typography sx={{ color: t.textMuted, fontSize: 'var(--text-sm)', fontFamily: 'monospace', minWidth: 100, fontWeight: 700 }}>{d.name}</Typography>
                             <ScoreCell value={d.before} muted />
                             <ArrowRight size={12} color="#475569" />
                             <ScoreCell value={d.after} />
@@ -448,17 +440,17 @@ const ScenarioReceiptPanel = React.forwardRef(({ baseline, scenario, scenarioId,
 
             {/* Pathway Score Shifts (Engineering Agent) */}
             {diff && diff.pathDiffs.length > 0 && (
-                <Box sx={{ px: 2.5, py: 2, borderTop: '1px solid #1e293b' }}>
-                    <Typography sx={{ color: '#64748b', fontSize: 'var(--text-xs)', fontWeight: 800, letterSpacing: 1.5, mb: 1.5 }}>
+                <Box sx={{ px: 2.5, py: 2, borderTop: `1px solid ${t.divider}` }}>
+                    <Typography sx={{ color: t.labelColor, fontSize: 'var(--text-xs)', fontWeight: 800, letterSpacing: 1.5, mb: 1.5 }}>
                         PATHWAY DISRUPTION SHIFTS
                     </Typography>
                     {diff.pathDiffs.map(p => (
                         <Box key={p.key} sx={{
                             display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.8, py: 0.8, px: 1.5,
-                            bgcolor: '#ffffff03', borderRadius: 1,
+                            bgcolor: t.rowMutedBg, borderRadius: 1, border: `1px solid ${t.rowMutedBorder}`,
                         }}>
                             <DeltaIcon val={(p.after ?? 0) - (p.before ?? 0)} />
-                            <Typography sx={{ color: '#94a3b8', fontSize: 'var(--text-xs)', fontFamily: 'monospace', width: 44, textAlign: 'right', fontWeight: 800 }}>
+                            <Typography sx={{ color: t.textMuted, fontSize: 'var(--text-xs)', fontFamily: 'monospace', width: 44, textAlign: 'right', fontWeight: 800 }}>
                                 {p.key.toUpperCase()}
                             </Typography>
                             <ScoreCell value={p.before} muted />
@@ -586,17 +578,6 @@ const ScenarioReceiptPanel = React.forwardRef(({ baseline, scenario, scenarioId,
 const AyeshaWeaponCompatibility = () => {
     const navigate = useNavigate();
     const [creatingDossier, setCreatingDossier] = useState(false);
-    const [darkMode, setDarkMode] = useState(() => {
-        const saved = localStorage.getItem('ayesha_theme');
-        return saved === null ? true : saved === 'dark';
-    });
-    const toggleTheme = () => {
-        setDarkMode(prev => {
-            const next = !prev;
-            localStorage.setItem('ayesha_theme', next ? 'dark' : 'light');
-            return next;
-        });
-    };
 
     // ZETA PROTOCOL: Simulation State
     const [activeScenario, setActiveScenario] = useState(null);
@@ -630,10 +611,10 @@ const AyeshaWeaponCompatibility = () => {
 
     if (bundleLoading) {
         return (
-            <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', bgcolor: '#020617' }}>
-                <CircularProgress sx={{ color: '#38bdf8' }} />
-                <Typography sx={{ mt: 2, color: '#94a3b8', fontWeight: 700, letterSpacing: 1 }}>
-                    {activeScenario ? `RUNNING WAR GAME SIMULATION: ${activeScenario}...` : "INITIALIZING WEAPON SYSTEMS..."}
+            <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', bgcolor: 'grey.50' }}>
+                <CircularProgress />
+                <Typography sx={{ mt: 2, color: 'text.secondary', fontWeight: 600 }}>
+                    {activeScenario ? `Running simulation: ${activeScenario}…` : 'Loading therapy fit…'}
                 </Typography>
             </Box>
         );
@@ -723,43 +704,44 @@ const AyeshaWeaponCompatibility = () => {
     };
 
     return (
-        <Box sx={{ minHeight: '100vh', bgcolor: darkMode ? '#020617' : '#f8fafc', pb: 12, transition: 'background-color 0.3s ease' }}>
+        <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50', pb: 12 }}>
 
             {/* Header / Title Bar */}
-            <Box sx={{ borderBottom: `1px solid ${darkMode ? '#1e293b' : '#e2e8f0'}`, bgcolor: darkMode ? '#0f172a' : '#ffffff', py: 2, transition: 'all 0.3s ease' }}>
+            <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper', py: 2 }}>
                 <Container maxWidth="xl" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Box>
-                        <Typography variant="h6" sx={{ fontWeight: 900, color: darkMode ? '#fff' : '#0f172a', letterSpacing: 2 }}>
-                            WEAPON COMPATIBILITY CENTER
+                        <Typography variant="h6" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: 1 }}>
+                            Therapy fit — weapon compatibility
                         </Typography>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Typography variant="caption" sx={{ color: darkMode ? '#64748b' : '#94a3b8', fontSize: 'var(--text-xs)' }}>
-                                ZETA PROTOCOL v2.0 // PATIENT ALIAS: AYESHA
+                            <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: 'var(--text-xs)' }}>
+                                Ayesha profile · RUO
                             </Typography>
-                            {isFetching && <RefreshCw size={14} className="animate-spin text-sky-500" />}
+                            {isFetching && (
+                                <Box
+                                    component="span"
+                                    sx={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        animation: 'wcSpin 0.9s linear infinite',
+                                        '@keyframes wcSpin': {
+                                            from: { transform: 'rotate(0deg)' },
+                                            to: { transform: 'rotate(360deg)' },
+                                        },
+                                    }}
+                                >
+                                    <RefreshCw size={14} color="#0288d1" />
+                                </Box>
+                            )}
                         </Box>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        {/* Theme Toggle */}
-                        <Button
-                            onClick={toggleTheme}
-                            sx={{
-                                minWidth: 'auto', p: 1, borderRadius: 2,
-                                color: darkMode ? '#f59e0b' : '#64748b',
-                                border: `1px solid ${darkMode ? '#f59e0b33' : '#e2e8f0'}`,
-                                bgcolor: darkMode ? '#f59e0b11' : '#f1f5f9',
-                                '&:hover': { bgcolor: darkMode ? '#f59e0b22' : '#e2e8f0' },
-                                transition: 'all 0.3s ease',
-                            }}
-                        >
-                            {darkMode ? <Sun size={20} /> : <Moon size={20} />}
-                        </Button>
                         {activeScenario && (
                             <Chip
                                 icon={<Play size={16} />}
-                                label={`SIMULATION ACTIVE: ${activeScenario}`}
+                                label={`Simulation: ${activeScenario}`}
                                 color="warning"
-                                sx={{ fontWeight: 800, borderRadius: 0, height: 28, fontSize: 'var(--text-xs)' }}
+                                sx={{ fontWeight: 700, height: 28, fontSize: 'var(--text-xs)' }}
                             />
                         )}
                     </Box>
@@ -789,7 +771,6 @@ const AyeshaWeaponCompatibility = () => {
                         scenarioId={activeScenario}
                         scenarioMeta={activeScenarioMeta}
                         completeness={baselineCompleteness}
-                        darkMode={darkMode}
                     />
                 )}
 
@@ -823,11 +804,11 @@ const AyeshaWeaponCompatibility = () => {
                 </Box>
 
                 {/* 5. Secondary Arsenal & Drug Retrieval */}
-                <Box sx={{ mt: 12, pt: 4, borderTop: '1px solid #1e293b' }}>
+                <Box sx={{ mt: 12, pt: 4, borderTop: 1, borderColor: 'divider' }}>
                     <Grid container spacing={4}>
                         <Grid item xs={12} md={8}>
-                            <Typography variant="h5" gutterBottom sx={{ fontWeight: 800, color: '#94a3b8', letterSpacing: 1 }}>
-                                SECONDARY ARSENAL (TIER 2 & 3)
+                            <Typography variant="h5" gutterBottom sx={{ fontWeight: 800, color: 'text.secondary', letterSpacing: 0.5 }}>
+                                Secondary options (tier 2 and 3)
                             </Typography>
                             <Suspense fallback={<LoadingFallback />}>
                                 <AyeshaDrugPanel

@@ -72,12 +72,14 @@ export function buildResistanceClassProps(somaticGenes = [], metadata = {}) {
     return sorted.map(classId => {
         const meta = classes[classId] || {};
         return {
+            class_id: classId,                    // canonical ID — used for vector/axis lookups
             class_name: meta.name || classId,
             icon: meta.icon || '🔬',
             severity: deriveSeverity(classId, priority),
-            signals: classToGenes[classId],  // which patient genes triggered it
+            signals: classToGenes[classId],      // patient genes that triggered this class
             description: meta.whatHappens || '',
             treatment_shift: meta.treatmentShift || '',
+            compound_rule: meta.compound_rule || null,  // non-null only for compound-rule classes
         };
     });
 }

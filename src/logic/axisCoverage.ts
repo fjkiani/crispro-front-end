@@ -78,11 +78,27 @@ function scoreToStatus01(score: number): AxisStatus {
   return "Low";
 }
 
-function pickRecommendedTest(missing: string[]): string | null {
-  // Deterministic priority order for "what unlocks richer levels":
-  // L2 gate: NGS coords + HRD + TMB
-  // L3 gate: RNA + CA-125
+/** Per-axis test affinity — which test is most relevant to unlock this pathway. */
+const AXIS_TEST_AFFINITY: Record<string, string[]> = {
+  ddr: [CANONICAL_MISSING_STRINGS.HRD, CANONICAL_MISSING_STRINGS.NGS_COORDS],
+  mapk: [CANONICAL_MISSING_STRINGS.NGS_COORDS, CANONICAL_MISSING_STRINGS.RNA],
+  pi3k: [CANONICAL_MISSING_STRINGS.RNA, CANONICAL_MISSING_STRINGS.NGS_COORDS],
+  vegf: [CANONICAL_MISSING_STRINGS.RNA, CANONICAL_MISSING_STRINGS.CA125],
+  her2: [CANONICAL_MISSING_STRINGS.NGS_COORDS, CANONICAL_MISSING_STRINGS.RNA],
+  io: [CANONICAL_MISSING_STRINGS.TMB, CANONICAL_MISSING_STRINGS.RNA],
+  efflux: [CANONICAL_MISSING_STRINGS.RNA],
+};
+
+function pickRecommendedTest(missing: string[], axis?: string): string | null {
   const s = new Set(missing);
+  // 1) Prefer the test most relevant to THIS axis
+  if (axis) {
+    const affinities = AXIS_TEST_AFFINITY[normalizeAxisKey(axis)] || [];
+    for (const test of affinities) {
+      if (s.has(test)) return test;
+    }
+  }
+  // 2) Fall back to global priority order
   if (s.has(CANONICAL_MISSING_STRINGS.NGS_COORDS)) return CANONICAL_MISSING_STRINGS.NGS_COORDS;
   if (s.has(CANONICAL_MISSING_STRINGS.HRD)) return CANONICAL_MISSING_STRINGS.HRD;
   if (s.has(CANONICAL_MISSING_STRINGS.TMB)) return CANONICAL_MISSING_STRINGS.TMB;
@@ -226,7 +242,7 @@ export function computeAxisCoverage({
       status: "Unknown" as const,
       evidence: { kind: "none" as const, note: "Insufficient structured data" as const },
       missingData: missing.slice(),
-      recommendedTest: pickRecommendedTest(missing),
+      recommendedTest: pickRecommendedTest(missing, axis),
     };
   });
 }

@@ -1,28 +1,33 @@
 import React, { useState } from 'react';
 import { Box, Typography, Card, CardContent, Chip, Collapse, Grid } from '@mui/material';
+import { alpha, useTheme } from '@mui/material/styles';
 import { ShieldAlert, ShieldCheck, Radar, Shield } from 'lucide-react';
 
 /**
- * ZETA COMPONENT: Defense Analysis Banner
- * Replaces ResistanceGateBanner.
- * 
- * Philosophy: "Know the Enemy's Shields"
- * - Outcome B (Veto) -> "SHIELDS UP" (High Alert)
- * - Outcome A (Pass) -> "SHIELDS DOWN" (Vulnerable)
+ * Defense Analysis Banner — light UI (resistance gate summary).
  */
 const DefenseAnalysisBanner = ({ data, levelKey }) => {
+    const theme = useTheme();
     const lvl = String(levelKey || 'L1').toUpperCase();
     const [expanded, setExpanded] = useState(true);
 
     if (!data || !data.boardroom_outcome) {
         return (
-            <Card sx={{ mb: 4, borderRadius: 0, border: '1px solid #334155', bgcolor: '#0f172a' }}>
+            <Card
+                sx={{
+                    mb: 4,
+                    borderRadius: 1,
+                    border: 1,
+                    borderColor: 'divider',
+                    bgcolor: 'background.paper',
+                }}
+            >
                 <CardContent>
-                    <Typography variant="overline" sx={{ fontWeight: 800, color: '#94a3b8', letterSpacing: 2 }}>
+                    <Typography variant="overline" sx={{ fontWeight: 800, color: 'text.secondary', letterSpacing: 2 }}>
                         DEFENSE ANALYSIS
                     </Typography>
-                    <Typography variant="body2" sx={{ color: '#64748b', mt: 1, fontFamily: 'monospace' }}>
-                        // DATA STREAM: OFFLINE (NO INTEL)
+                    <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1, fontFamily: 'monospace' }}>
+                        No resistance-gate data yet for {lvl}.
                     </Typography>
                 </CardContent>
             </Card>
@@ -30,135 +35,156 @@ const DefenseAnalysisBanner = ({ data, levelKey }) => {
     }
 
     const { boardroom_outcome, signals = [] } = data;
-    const { outcome, label, summary, action } = boardroom_outcome;
+    const { outcome, summary, action } = boardroom_outcome;
 
-    const isShieldsUp = outcome === 'B'; // Veto
-    const isShieldsDown = outcome === 'A'; // Pass
+    const isShieldsUp = outcome === 'B';
+    const isShieldsDown = outcome === 'A';
 
-    // Zeta Theme: High Contrast, Military/Sci-Fi
-    const theme = isShieldsUp ? {
-        // Red / Danger
-        bg: '#450a0a',
-        border: '#dc2626',
-        text: '#fecaca',
-        accent: '#ef4444',
-        iconColor: '#f87171'
-    } : isShieldsDown ? {
-        // Green / Go
-        bg: '#052e16',
-        border: '#16a34a',
-        text: '#dcfce7',
-        accent: '#22c55e',
-        iconColor: '#4ade80'
-    } : {
-        // Grey / Unknown
-        bg: '#1e293b',
-        border: '#475569',
-        text: '#cbd5e1',
-        accent: '#94a3b8',
-        iconColor: '#cbd5e1'
-    };
+    const palette = isShieldsUp
+        ? {
+            bg: alpha(theme.palette.error.main, 0.08),
+            border: theme.palette.error.main,
+            main: theme.palette.error.main,
+            strong: theme.palette.error.dark,
+            icon: theme.palette.error.main,
+        }
+        : isShieldsDown
+            ? {
+                bg: alpha(theme.palette.success.main, 0.08),
+                border: theme.palette.success.main,
+                main: theme.palette.success.main,
+                strong: theme.palette.success.dark,
+                icon: theme.palette.success.main,
+            }
+            : {
+                bg: alpha(theme.palette.grey[500], 0.08),
+                border: theme.palette.grey[400],
+                main: theme.palette.text.secondary,
+                strong: theme.palette.text.primary,
+                icon: theme.palette.grey[600],
+            };
 
     return (
-        <Card sx={{
-            mb: 4,
-            borderRadius: 0, // Sharp corners for military feel
-            border: `1px solid ${theme.border}`,
-            borderLeft: `6px solid ${theme.border}`,
-            bgcolor: theme.bg,
-            boxShadow: isShieldsUp ? '0 0 20px rgba(220, 38, 38, 0.4)' : 'none',
-        }}>
+        <Card
+            sx={{
+                mb: 4,
+                borderRadius: 1,
+                border: 1,
+                borderColor: palette.border,
+                borderLeft: 6,
+                borderLeftColor: palette.border,
+                bgcolor: palette.bg,
+                boxShadow: isShieldsUp ? `0 0 0 1px ${alpha(theme.palette.error.main, 0.2)}` : 'none',
+            }}
+        >
             <CardContent sx={{ pb: '16px !important' }}>
                 <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 3 }}>
 
-                    {/* Status Icon */}
-                    <Box sx={{
-                        p: 2,
-                        bgcolor: 'rgba(0,0,0,0.3)',
-                        border: `1px solid ${theme.border}`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                    }}>
-                        {isShieldsUp ? <ShieldAlert size={40} color={theme.iconColor} /> :
-                            isShieldsDown ? <ShieldCheck size={40} color={theme.iconColor} /> :
-                                <Radar size={40} color={theme.iconColor} />}
+                    <Box
+                        sx={{
+                            p: 2,
+                            bgcolor: alpha(theme.palette.common.black, 0.04),
+                            border: 1,
+                            borderColor: palette.border,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }}
+                    >
+                        {isShieldsUp ? (
+                            <ShieldAlert size={40} color={palette.icon} />
+                        ) : isShieldsDown ? (
+                            <ShieldCheck size={40} color={palette.icon} />
+                        ) : (
+                            <Radar size={40} color={palette.icon} />
+                        )}
                     </Box>
 
-                    {/* Main Intel */}
                     <Box sx={{ flex: 1 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                            <Typography variant="overline" sx={{ fontWeight: 800, color: theme.accent, letterSpacing: 3 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1, alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+                            <Typography variant="overline" sx={{ fontWeight: 800, color: palette.main, letterSpacing: 2 }}>
                                 DEFENSE ANALYSIS (SHIELDS)
                             </Typography>
                             <Chip
-                                label={isShieldsUp ? "SHIELDS ACTIVE" : "SHIELDS DOWN"}
+                                label={isShieldsUp ? 'SHIELDS ACTIVE' : 'SHIELDS DOWN'}
+                                size="small"
                                 sx={{
-                                    bgcolor: theme.border,
-                                    color: '#fff',
-                                    fontWeight: 900,
-                                    borderRadius: 0,
-                                    height: 24,
-                                    letterSpacing: 1
+                                    bgcolor: alpha(palette.border, 0.15),
+                                    color: palette.strong,
+                                    fontWeight: 800,
+                                    borderRadius: 0.5,
+                                    border: 1,
+                                    borderColor: alpha(palette.border, 0.5),
                                 }}
                             />
                         </Box>
 
-                        <Typography variant="h4" sx={{
-                            fontWeight: 900,
-                            color: '#fff',
-                            letterSpacing: -0.5,
-                            mb: 1,
-                            textTransform: 'uppercase'
-                        }}>
-                            {isShieldsUp ? "RESISTANCE DETECTED" : "NO RESISTANCE"}
+                        <Typography
+                            variant="h5"
+                            sx={{
+                                fontWeight: 800,
+                                color: palette.strong,
+                                letterSpacing: -0.3,
+                                mb: 1,
+                                textTransform: 'uppercase',
+                            }}
+                        >
+                            {isShieldsUp ? 'RESISTANCE DETECTED' : 'NO RESISTANCE'}
                         </Typography>
 
-                        <Typography variant="body1" sx={{ color: theme.text, mb: 2, maxWidth: '800px', lineHeight: 1.6 }}>
+                        <Typography variant="body1" sx={{ color: 'text.primary', mb: 2, maxWidth: '800px', lineHeight: 1.6 }}>
                             {summary}
                         </Typography>
 
-                        {/* Action Directive */}
-                        <Box sx={{
-                            p: 2,
-                            bgcolor: 'rgba(0,0,0,0.4)',
-                            borderLeft: `4px solid ${theme.accent}`,
-                            display: 'flex',
-                            gap: 2,
-                            alignItems: 'center'
-                        }}>
-                            <Typography variant="caption" sx={{ fontWeight: 800, color: theme.accent, letterSpacing: 1 }}>
+                        <Box
+                            sx={{
+                                p: 2,
+                                bgcolor: 'background.paper',
+                                borderLeft: 4,
+                                borderLeftColor: palette.border,
+                                display: 'flex',
+                                gap: 2,
+                                alignItems: 'center',
+                                flexWrap: 'wrap',
+                            }}
+                        >
+                            <Typography variant="caption" sx={{ fontWeight: 800, color: palette.main, letterSpacing: 1 }}>
                                 MISSION DIRECTIVE:
                             </Typography>
-                            <Typography variant="body2" sx={{ color: '#fff', fontWeight: 700 }}>
+                            <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 600 }}>
                                 {action}
                             </Typography>
                         </Box>
 
-                        {/* Signal List (if any) */}
                         <Collapse in={expanded}>
                             {signals.length > 0 && (
                                 <Box sx={{ mt: 3 }}>
-                                    <Typography variant="caption" sx={{ color: theme.accent, fontWeight: 800, letterSpacing: 1, mb: 1, display: 'block' }}>
+                                    <Typography
+                                        variant="caption"
+                                        sx={{ color: palette.main, fontWeight: 800, letterSpacing: 1, mb: 1, display: 'block' }}
+                                    >
                                         DETECTED THREATS
                                     </Typography>
                                     <Grid container spacing={1}>
                                         {signals.map((s, i) => (
                                             <Grid item xs={12} md={6} key={i}>
-                                                <Box sx={{
-                                                    p: 1.5,
-                                                    bgcolor: 'rgba(255,255,255,0.05)',
-                                                    border: `1px solid ${theme.border}`,
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: 2
-                                                }}>
-                                                    <Shield size={16} color={theme.iconColor} />
+                                                <Box
+                                                    sx={{
+                                                        p: 1.5,
+                                                        bgcolor: alpha(theme.palette.grey[500], 0.06),
+                                                        border: 1,
+                                                        borderColor: 'divider',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 2,
+                                                    }}
+                                                >
+                                                    <Shield size={16} color={palette.icon} />
                                                     <Box>
-                                                        <Typography variant="subtitle2" sx={{ color: '#fff', fontWeight: 700, lineHeight: 1 }}>
+                                                        <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 700, lineHeight: 1 }}>
                                                             {(s.signal_type || 'Unknown').replace(/_/g, ' ')}
                                                         </Typography>
-                                                        <Typography variant="caption" sx={{ color: theme.text }}>
+                                                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                                                             {s.rationale}
                                                         </Typography>
                                                     </Box>

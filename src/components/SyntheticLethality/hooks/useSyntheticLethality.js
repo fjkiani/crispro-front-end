@@ -121,34 +121,39 @@ export function useSyntheticLethality({
       // Step 4: Process essentiality results
       setStepProgress(4);
       
-      // Enhance essentiality report with pathway impacts
-      const enhancedEssentiality = (data.essentiality_report || []).map(ess => ({
+      // Use real backend essentiality scores
+      const enhancedEssentiality = (data.essentiality_scores || []).map(ess => ({
         gene: ess.gene,
-        score: ess.result?.essentiality_score || 0,
-        flags: ess.result?.flags || {},
-        rationale: ess.result?.rationale || '',
-        confidence: ess.result?.confidence || 0.5,
-        pathwayImpact: getPathwayImpact(ess.gene, ess.result?.flags)
+        score: ess.score || 0,
+        flags: ess.flags || {},
+        rationale: ess.rationale || '',
+        confidence: ess.confidence || 0.5,
+        pathwayImpact: ess.pathwayImpact || ''
       }));
 
-      // Step 5: Generate recommendations
+      // Step 5: Finalize response
       setStepProgress(5);
-
-      // Analyze pathway dependencies
-      const pathwayAnalysis = analyzePathways(mutations, enhancedEssentiality);
-
-      // Generate ranked therapy recommendations
-      const recommendedTherapies = generateTherapyRecommendations(
-        data.suggested_therapy,
-        pathwayAnalysis,
-        enhancedEssentiality
-      );
 
       const fullResults = {
         ...data,
         essentiality: enhancedEssentiality,
-        pathway_analysis: pathwayAnalysis,
-        recommended_therapies: recommendedTherapies,
+        // Map backend schema to what the UI expects
+        pathway_analysis: {
+          broken_pathways: data.broken_pathways || [],
+          essential_pathways: data.essential_pathways || [],
+          double_hit_detected: data.synthetic_lethality_detected || false,
+          synthetic_lethality_score: data.synthetic_lethality_score !== undefined ? data.synthetic_lethality_score : (data.synthetic_lethality_detected ? 0.9 : 0.0)
+        },
+        // Normalize drug objects to the UI schema
+        recommended_therapies: (data.recommended_drugs || []).map((d) => ({
+          drug: d.drug_name || d.name || "Therapy",
+          target: d.target || "SL Target",
+          confidence: d.confidence || 0.8,
+          mechanism: d.mechanism || "Synthetic lethality derived mechanism.",
+          evidence_tier: d.tier?.replace(/[^IV]/g, '') || "II", // Strip down "IIA" -> "II" or keep "II" if backend matches
+          fda_approved: d.fda_approved || false,
+          sensitivity: d.sensitivity || "HIGH"
+        })),
         disease_context: { disease, subtype, stage },
         analysis_timestamp: new Date().toISOString()
       };
@@ -186,187 +191,6 @@ export function useSyntheticLethality({
 
 // Helper: Sleep for UI feedback
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-// Helper: Determine pathway impact based on gene and flags
-function getPathwayImpact(gene, flags = {}) {
-  const geneUpper = (gene || '').toUpperCase();
-  
-  // DNA Repair genes
-  if (['BRCA1', 'BRCA2', 'PALB2', 'RAD51', 'RAD51C', 'RAD51D'].includes(geneUpper)) {
-    return 'HR pathway deficient';
-  }
-  if (['MBD4', 'MUTYH', 'OGG1', 'NTHL1'].includes(geneUpper)) {
-    return 'BER pathway non-functional';
-  }
-  if (['MLH1', 'MSH2', 'MSH6', 'PMS2'].includes(geneUpper)) {
-    return 'MMR pathway deficient';
-  }
-  if (['ATM', 'ATR', 'CHEK1', 'CHEK2'].includes(geneUpper)) {
-    return 'DDR checkpoint impaired';
-  }
-  
-  // Tumor suppressors
-  if (geneUpper === 'TP53') {
-    return 'Checkpoint pathway bypassed';
-  }
-  if (geneUpper === 'RB1') {
-    return 'Cell cycle control lost';
-  }
-  if (geneUpper === 'PTEN') {
-    return 'PI3K pathway dysregulated';
-  }
-
-  // Frameshift/truncation = likely loss-of-function
-  if (flags.frameshift || flags.truncation) {
-    return 'Gene function lost (LoF)';
-  }
-
-  return 'Function altered';
-}
-
-// Helper: Analyze pathway dependencies
-function analyzePathways(mutations, essentialityResults) {
-  const brokenPathways = [];
-  const essentialPathways = [];
-  const doubleHitDetected = mutations.length >= 2;
-
-  // Check which pathways are broken
-  for (const ess of essentialityResults) {
-    const gene = (ess.gene || '').toUpperCase();
-    const score = ess.score || 0;
-    
-    if (score >= 0.7) {
-      // High essentiality = pathway is broken, backups become essential
-      if (['MBD4', 'MUTYH', 'OGG1'].includes(gene)) {
-        brokenPathways.push('BER');
-        essentialPathways.push('HR');
-        essentialPathways.push('NER');
-      }
-      if (['BRCA1', 'BRCA2', 'PALB2', 'RAD51'].includes(gene)) {
-        brokenPathways.push('HR');
-        essentialPathways.push('NHEJ');
-      }
-      if (gene === 'TP53') {
-        brokenPathways.push('G1/S Checkpoint');
-        essentialPathways.push('ATR/CHK1');
-        essentialPathways.push('G2/M Checkpoint');
-      }
-    }
-  }
-
-  return {
-    broken_pathways: [...new Set(brokenPathways)],
-    essential_pathways: [...new Set(essentialPathways)],
-    double_hit_detected: doubleHitDetected && brokenPathways.length >= 2,
-    synthetic_lethality_score: calculateSyntheticLethalityScore(essentialityResults)
-  };
-}
-
-// Helper: Calculate combined synthetic lethality score
-function calculateSyntheticLethalityScore(essentialityResults) {
-  if (!essentialityResults || essentialityResults.length === 0) return 0;
-  
-  // Average of high essentiality scores, boosted for multiple hits
-  const highScores = essentialityResults.filter(e => e.score >= 0.7);
-  if (highScores.length === 0) return 0;
-  
-  const avgScore = highScores.reduce((sum, e) => sum + e.score, 0) / highScores.length;
-  const multiHitBoost = Math.min(0.15, (highScores.length - 1) * 0.05);
-  
-  return Math.min(1.0, avgScore + multiHitBoost);
-}
-
-// Helper: Generate therapy recommendations
-function generateTherapyRecommendations(suggestedTherapy, pathwayAnalysis, essentialityResults) {
-  const recommendations = [];
-  const { broken_pathways, essential_pathways, double_hit_detected } = pathwayAnalysis;
-
-  // PARP inhibitors for DNA repair deficiency
-  if (broken_pathways.includes('BER') || broken_pathways.includes('HR')) {
-    recommendations.push({
-      drug: 'Olaparib',
-      target: 'PARP1/2',
-      confidence: double_hit_detected ? 0.89 : 0.82,
-      mechanism: 'Blocks backup single-strand break repair',
-      evidence_tier: 'I',
-      fda_approved: true,
-      sensitivity: 'VERY_HIGH'
-    });
-    recommendations.push({
-      drug: 'Niraparib',
-      target: 'PARP1/2',
-      confidence: double_hit_detected ? 0.87 : 0.80,
-      mechanism: 'PARP trapping causes replication fork collapse',
-      evidence_tier: 'I',
-      fda_approved: true,
-      sensitivity: 'VERY_HIGH'
-    });
-    recommendations.push({
-      drug: 'Rucaparib',
-      target: 'PARP1/2',
-      confidence: double_hit_detected ? 0.85 : 0.78,
-      mechanism: 'PARP inhibition exploits HR deficiency',
-      evidence_tier: 'I',
-      fda_approved: true,
-      sensitivity: 'HIGH'
-    });
-  }
-
-  // ATR inhibitors for checkpoint deficiency
-  if (broken_pathways.includes('G1/S Checkpoint') || essential_pathways.includes('ATR/CHK1')) {
-    recommendations.push({
-      drug: 'Ceralasertib',
-      target: 'ATR',
-      confidence: 0.72,
-      mechanism: 'Blocks ATR checkpoint - only remaining checkpoint after TP53 loss',
-      evidence_tier: 'II',
-      fda_approved: false,
-      sensitivity: 'HIGH'
-    });
-    recommendations.push({
-      drug: 'Berzosertib',
-      target: 'ATR',
-      confidence: 0.68,
-      mechanism: 'ATR kinase inhibition induces replication catastrophe',
-      evidence_tier: 'II',
-      fda_approved: false,
-      sensitivity: 'HIGH'
-    });
-  }
-
-  // WEE1 inhibitors for G2/M checkpoint dependency
-  if (essential_pathways.includes('G2/M Checkpoint')) {
-    recommendations.push({
-      drug: 'Adavosertib',
-      target: 'WEE1',
-      confidence: 0.65,
-      mechanism: 'Blocks G2/M checkpoint - forces damaged cells into mitosis',
-      evidence_tier: 'II',
-      fda_approved: false,
-      sensitivity: 'HIGH'
-    });
-  }
-
-  // Platinum for general DNA repair deficiency
-  if (suggestedTherapy === 'platinum' || broken_pathways.length > 0) {
-    // Check if platinum is already in list or should be added
-    const hasPlatinum = recommendations.some(r => r.target === 'DNA');
-    if (!hasPlatinum) {
-      recommendations.push({
-        drug: 'Carboplatin',
-        target: 'DNA',
-        confidence: 0.75,
-        mechanism: 'DNA crosslinks require HR for repair',
-        evidence_tier: 'I',
-        fda_approved: true,
-        sensitivity: 'HIGH'
-      });
-    }
-  }
-
-  // Sort by confidence
-  return recommendations.sort((a, b) => b.confidence - a.confidence);
-}
 
 export default useSyntheticLethality;
 

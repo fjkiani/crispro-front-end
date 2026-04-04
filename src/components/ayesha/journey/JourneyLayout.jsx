@@ -18,7 +18,7 @@ import NextStepsRail from './NextStepsRail';
 import { useLocation } from 'react-router-dom';
 import { getPhaseFromRoute } from '../../../constants/journeyPhases';
 
-const JourneyLayout = ({ children, completeness, hideRail = false }) => {
+const JourneyLayout = ({ children, completeness, hideRail = false, hideDefaultRuo = false }) => {
     const location = useLocation();
     const currentPhase = getPhaseFromRoute(location.pathname);
 
@@ -51,14 +51,16 @@ const JourneyLayout = ({ children, completeness, hideRail = false }) => {
                 </Box>
             )}
 
-            {/* RUO disclaimer */}
-            <Container maxWidth="xl" sx={{ mt: 2 }}>
-                <Alert severity="info" sx={{ py: 0.5 }}>
-                    <Typography variant="caption">
-                        <strong>Research Use Only (RUO).</strong> Not medical advice. We show only what your data supports. Missing information is clearly marked.
-                    </Typography>
-                </Alert>
-            </Container>
+            {/* RUO disclaimer — pages can omit when they provide a fuller banner */}
+            {!hideDefaultRuo && (
+                <Container maxWidth="xl" sx={{ mt: 2 }}>
+                    <Alert severity="info" sx={{ py: 0.5 }}>
+                        <Typography variant="caption">
+                            <strong>Research Use Only (RUO).</strong> Not medical advice. We show only what your data supports. Missing information is clearly marked.
+                        </Typography>
+                    </Alert>
+                </Container>
+            )}
 
             {/* Main content + right rail */}
             <Container maxWidth="xl" sx={{ py: 3 }}>

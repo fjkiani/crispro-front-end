@@ -5,8 +5,10 @@ import { CheckCircle, Warning, Info } from '@mui/icons-material';
 const TruthTable = ({ levelData, level }) => {
     if (!levelData) return null;
 
-    const { inputs_used, completeness, is_preview, effective_assembly } = levelData;
-    const { mutations, tumor_context } = inputs_used;
+    const { completeness, is_preview, effective_assembly } = levelData;
+    const inputs_used = levelData.inputs_used || {};
+    const mutations = inputs_used.mutations || [];
+    const tumor_context = inputs_used.tumor_context || {};
     const missingFields = completeness?.missing || [];
 
     // Helper to render values with provenance color
