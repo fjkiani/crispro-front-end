@@ -91,6 +91,37 @@ _AXIS_META: Dict[CandidateAxis, Dict] = {
 }
 
 
+def _validate_full_pharmacology_inputs(
+    query: MultiModalQueryInput,
+    mutant_ids: Optional[List[str]],
+    wt_ids: Optional[List[str]],
+    prism_df: Optional[pd.DataFrame],
+    prism_meta: Optional[pd.DataFrame],
+    gdsc_df: Optional[pd.DataFrame],
+    sample_info: Optional[pd.DataFrame],
+) -> None:
+    """Fail loudly when live pharmacology is requested without full inputs."""
+    if not query.include_pharmacologic_stratification:
+        return
+
+    if not mutant_ids or not wt_ids:
+        raise RuntimeError(
+            "Pharmacologic stratification enabled, but mutant/wt line sets are missing."
+        )
+    if prism_df is None or prism_meta is None:
+        raise RuntimeError(
+            "Pharmacologic stratification enabled, but PRISM viability/meta inputs are missing."
+        )
+    if gdsc_df is None:
+        raise RuntimeError(
+            "Pharmacologic stratification enabled, but GDSC inputs are missing."
+        )
+    if query.stratify_by_msi and sample_info is None:
+        raise RuntimeError(
+            "Pharmacologic stratification enabled with MSI confound checks, but sample_info is missing."
+        )
+
+
 def build_evidence_matrix(
     query: MultiModalQueryInput,
     sl_partners: Optional[List] = None,   # List[SLPartner] from sl_engine
@@ -172,8 +203,18 @@ def build_evidence_matrix(
         warnings.append("CRISPR analysis not provided; CRISPR cells are all MISSING.")
 
     # ── Step 3: Fill pharmacologic cells ─────────────────────────────────────
+    _validate_full_pharmacology_inputs(
+        query=query,
+        mutant_ids=mutant_ids,
+        wt_ids=wt_ids,
+        prism_df=prism_df,
+        prism_meta=prism_meta,
+        gdsc_df=gdsc_df,
+        sample_info=sample_info,
+    )
+
     pharma_results = []
-    if query.include_pharmacologic_stratification and mutant_ids and wt_ids:
+    if query.include_pharmacologic_stratification:
         target_axes_str = [row.axis.value for row in rows]
         try:
             pharma_results = analyze_drug_screen(
@@ -188,31 +229,38 @@ def build_evidence_matrix(
                 stratify_by_msi=query.stratify_by_msi,
             )
         except Exception as e:
-            logger.warning("Pharmacologic analysis failed: %s", e)
-            warnings.append(f"Pharmacologic analysis error: {e}")
+            raise RuntimeError(f"Pharmacologic analysis failed: {e}") from e
 
-    prism_by_axis = aggregate_by_axis(pharma_results, stratifier="MBD4_LOF_vs_WT")
-    gdsc_by_axis: Dict[str, ModalityEvidence] = {}  # separate GDSC pass if needed
+    prism_results = [r for r in pharma_results if "PRISM" in str(r.dataset).upper()]
+    gdsc_results = [r for r in pharma_results if "GDSC" in str(r.dataset).upper()]
+    prism_by_axis = aggregate_by_axis(prism_results, stratifier="MBD4_LOF_vs_WT")
+    gdsc_by_axis = aggregate_by_axis(gdsc_results, stratifier="MBD4_LOF_vs_WT")
 
     for row in rows:
         axis_key = row.axis.value
         if axis_key in prism_by_axis:
             row.prism = prism_by_axis[axis_key]
-        elif prism_df is None:
-            row.prism = ModalityEvidence(
-                modality=Modality.PRISM_PHARMACOLOGIC,
-                status=ModalityStatus.MISSING,
-                summary="PRISM data not loaded (data not available in this deployment).",
-            )
-        else:
+        elif query.include_pharmacologic_stratification:
             row.prism = ModalityEvidence(
                 modality=Modality.PRISM_PHARMACOLOGIC,
                 status=ModalityStatus.NEGATIVE,
                 summary=f"No significant PRISM signal for {row.axis_label} in MBD4-LOF vs WT.",
             )
+        else:
+            row.prism = ModalityEvidence(
+                modality=Modality.PRISM_PHARMACOLOGIC,
+                status=ModalityStatus.MISSING,
+                summary="PRISM data not loaded (data not available in this deployment).",
+            )
 
         if axis_key in gdsc_by_axis:
             row.gdsc = gdsc_by_axis[axis_key]
+        elif query.include_pharmacologic_stratification:
+            row.gdsc = ModalityEvidence(
+                modality=Modality.GDSC_PHARMACOLOGIC,
+                status=ModalityStatus.NEGATIVE,
+                summary=f"No significant GDSC signal for {row.axis_label} in MBD4-LOF vs WT.",
+            )
         else:
             row.gdsc = ModalityEvidence(
                 modality=Modality.GDSC_PHARMACOLOGIC,

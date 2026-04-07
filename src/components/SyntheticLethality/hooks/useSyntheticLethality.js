@@ -10,6 +10,7 @@
 
 import { useState, useCallback } from 'react';
 import { API_ROOT as API_BASE_URL } from '../../../lib/apiConfig';
+import { getSyntheticLethalityUrl } from '../../../utils/ayeshaApi';
 
 
 /**
@@ -91,7 +92,7 @@ export function useSyntheticLethality({
       // Step 3: Call main synthetic lethality endpoint
       setStepProgress(3);
       
-      const response = await fetch(`${API_BASE_URL}/api/guidance/synthetic_lethality`, {
+      const response = await fetch(getSyntheticLethalityUrl(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -117,6 +118,12 @@ export function useSyntheticLethality({
       }
 
       const data = await response.json();
+      const evidenceMatrix = data.evidence_matrix || data.provenance?.evidence_matrix || null;
+      const matrixRowsByAxis = new Map(
+        (evidenceMatrix?.rows || [])
+          .filter((row) => row?.axis)
+          .map((row) => [String(row.axis), row])
+      );
 
       // Step 4: Process essentiality results
       setStepProgress(4);
@@ -142,18 +149,41 @@ export function useSyntheticLethality({
           broken_pathways: data.broken_pathways || [],
           essential_pathways: data.essential_pathways || [],
           double_hit_detected: data.synthetic_lethality_detected || false,
-          synthetic_lethality_score: data.synthetic_lethality_score !== undefined ? data.synthetic_lethality_score : (data.synthetic_lethality_detected ? 0.9 : 0.0)
+          synthetic_lethality_score:
+            typeof data.synthetic_lethality_score === 'number' && !Number.isNaN(data.synthetic_lethality_score)
+              ? data.synthetic_lethality_score
+              : undefined
         },
-        // Normalize drug objects to the UI schema
-        recommended_therapies: (data.recommended_drugs || []).map((d) => ({
-          drug: d.drug_name || d.name || "Therapy",
-          target: d.target || "SL Target",
-          confidence: d.confidence || 0.8,
-          mechanism: d.mechanism || "Synthetic lethality derived mechanism.",
-          evidence_tier: d.tier?.replace(/[^IV]/g, '') || "II", // Strip down "IIA" -> "II" or keep "II" if backend matches
-          fda_approved: d.fda_approved || false,
-          sensitivity: d.sensitivity || "HIGH"
-        })),
+        evidence_matrix: evidenceMatrix,
+        // Normalize drug objects to the UI schema while preserving backend tier semantics.
+        recommended_therapies: (data.recommended_drugs || []).map((d) => {
+          const matrixAxis = d.matrix_axis != null ? String(d.matrix_axis).trim() : '';
+          const matrixRow = matrixAxis ? matrixRowsByAxis.get(matrixAxis) : null;
+          const evidenceTierRaw =
+            d.evidence_tier != null && String(d.evidence_tier).trim() !== ''
+              ? String(d.evidence_tier).trim()
+              : d.tier != null && String(d.tier).trim() !== ''
+                ? String(d.tier).trim()
+                : undefined;
+
+          return {
+            drug: d.drug_name || d.name || undefined,
+            target: d.target_pathway || d.target || undefined,
+            confidence: typeof d.confidence === 'number' && !Number.isNaN(d.confidence) ? d.confidence : undefined,
+            mechanism: d.mechanism != null && String(d.mechanism).trim() !== '' ? d.mechanism : undefined,
+            evidence_tier: evidenceTierRaw,
+            sl_recommendation_tier:
+              matrixRow?.recommendation_tier != null && String(matrixRow.recommendation_tier).trim() !== ''
+                ? String(matrixRow.recommendation_tier).trim()
+                : undefined,
+            fda_approved: typeof d.fda_approved === 'boolean' ? d.fda_approved : undefined,
+            sensitivity: d.sensitivity,
+            approval_status: d.approval_status,
+            clinical_context: d.clinical_context,
+            matrix_axis: matrixAxis || undefined,
+            override_reason: d.override_reason
+          };
+        }),
         disease_context: { disease, subtype, stage },
         analysis_timestamp: new Date().toISOString()
       };

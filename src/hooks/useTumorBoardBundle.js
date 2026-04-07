@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { API_ROOT } from '../lib/apiConfig';
+import { buildAyeshaTherapyFitBundleUrl } from '../utils/ayeshaApi';
 
 /** Keep bundle warm across route changes / full remounts (same tab). */
 const TB_BUNDLE_STORAGE_PREFIX = 'tumor_board_bundle_v1:';
@@ -96,14 +96,6 @@ async function fetchTumorBoardBundle({
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const params = new URLSearchParams();
-  params.set('level', String(level || 'l1'));
-  if (scenarioId) params.set('scenario_id', String(scenarioId));
-  if (l3ScenarioId) params.set('l3_scenario_id', String(l3ScenarioId));
-  params.set('include_synthetic_lethality', includeSyntheticLethality ? 'true' : 'false');
-  if (ctdnaStatusOverride) params.set('ctdna_status_override', String(ctdnaStatusOverride));
-  if (efficacyMode) params.set('efficacy_mode', String(efficacyMode));
-
   // Read locally-stored patient data and attach to request body.
   // Backend expects these in tumor_context_additions or directly in the body.
   // Fields are optional — only attach when present to avoid polluting baseline.
@@ -130,7 +122,14 @@ async function fetchTumorBoardBundle({
     body.rss_inputs = rssInputs;
   }
 
-  const res = await fetch(`${API_ROOT}/api/ayesha/therapy-fit/bundle?${params.toString()}`, {
+  const res = await fetch(buildAyeshaTherapyFitBundleUrl({
+    level,
+    scenarioId,
+    l3ScenarioId,
+    includeSyntheticLethality,
+    ctdnaStatusOverride,
+    efficacyMode,
+  }), {
     method: 'POST',
     headers,
     body: JSON.stringify(body),

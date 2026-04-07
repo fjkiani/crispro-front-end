@@ -128,9 +128,9 @@ const MutationInputForm = ({
         consequence: 'missense_variant',
         germline_status: 'somatic',
         chrom: '17',
-        pos: 7577120,
-        ref: 'G',
-        alt: 'A'
+        pos: 7675088,
+        ref: 'C',
+        alt: 'T'
       }
     ]);
   };
@@ -316,7 +316,7 @@ const MutationInputForm = ({
               fullWidth
               size="small"
               label="Position"
-              placeholder="7577120"
+              placeholder="7675088"
               value={newMutation.pos}
               onChange={(e) => handleFieldChange('pos', e.target.value)}
             />
@@ -326,7 +326,7 @@ const MutationInputForm = ({
               fullWidth
               size="small"
               label="Ref"
-              placeholder="G"
+              placeholder="C"
               value={newMutation.ref}
               onChange={(e) => handleFieldChange('ref', e.target.value)}
             />
@@ -336,7 +336,7 @@ const MutationInputForm = ({
               fullWidth
               size="small"
               label="Alt"
-              placeholder="A"
+              placeholder="T"
               value={newMutation.alt}
               onChange={(e) => handleFieldChange('alt', e.target.value)}
             />

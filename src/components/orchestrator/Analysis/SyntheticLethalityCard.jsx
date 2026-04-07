@@ -29,6 +29,7 @@ import {
     Warning,
     Science,
 } from '@mui/icons-material';
+import { formatPercent01, isFinite01 } from '../../SyntheticLethality/utils/displayFormat';
 
 export const SyntheticLethalityCard = ({ slResult, loading = false }) => {
     const [expandedSection, setExpandedSection] = useState(null);
@@ -84,18 +85,18 @@ export const SyntheticLethalityCard = ({ slResult, loading = false }) => {
                 )}
 
                 {/* Suggested Therapy */}
-                {suggestedTherapy && (
+                {typeof suggestedTherapy === 'string' && suggestedTherapy.trim() ? (
                     <Box sx={{ mb: 2 }}>
                         <Typography variant="subtitle2" gutterBottom>
                             Suggested Therapy
                         </Typography>
                         <Chip
-                            label={suggestedTherapy}
+                            label={suggestedTherapy.trim()}
                             color="primary"
                             size="medium"
                         />
                     </Box>
-                )}
+                ) : null}
 
                 {/* Essentiality Scores */}
                 {essentialityScores.length > 0 && (
@@ -117,20 +118,35 @@ export const SyntheticLethalityCard = ({ slResult, loading = false }) => {
                                             primary={
                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                     <Typography variant="body1" fontWeight="medium">
-                                                        {score.gene}
+                                                        {score.gene?.trim() ? score.gene : '—'}
                                                     </Typography>
                                                     <Chip
-                                                        label={score.essentiality_level}
+                                                        label={score.essentiality_level ?? '—'}
                                                         size="small"
-                                                        color={score.essentiality_score >= 0.7 ? 'error' : score.essentiality_score >= 0.5 ? 'warning' : 'default'}
+                                                        color={
+                                                            !isFinite01(score.essentiality_score)
+                                                                ? 'default'
+                                                                : score.essentiality_score >= 0.7
+                                                                  ? 'error'
+                                                                  : score.essentiality_score >= 0.5
+                                                                    ? 'warning'
+                                                                    : 'default'
+                                                        }
                                                     />
-                                                    <LinearProgress
-                                                        variant="determinate"
-                                                        value={score.essentiality_score * 100}
-                                                        sx={{ width: 100, height: 8, borderRadius: 1 }}
-                                                    />
+                                                    {isFinite01(score.essentiality_score) ? (
+                                                        <LinearProgress
+                                                            variant="determinate"
+                                                            value={Math.min(100, Math.max(0, score.essentiality_score * 100))}
+                                                            sx={{ width: 100, height: 8, borderRadius: 1 }}
+                                                        />
+                                                    ) : (
+                                                        <LinearProgress
+                                                            variant="indeterminate"
+                                                            sx={{ width: 100, height: 8, borderRadius: 1, opacity: 0.35 }}
+                                                        />
+                                                    )}
                                                     <Typography variant="caption">
-                                                        {(score.essentiality_score * 100).toFixed(0)}%
+                                                        {formatPercent01(score.essentiality_score)}
                                                     </Typography>
                                                 </Box>
                                             }
@@ -244,19 +260,25 @@ export const SyntheticLethalityCard = ({ slResult, loading = false }) => {
                                         primary={
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <Typography variant="body1" fontWeight="medium">
-                                                    {drug.drug_name}
+                                                    {drug.drug_name?.trim() ? drug.drug_name : 'Not specified'}
                                                 </Typography>
-                                                <Chip label={drug.drug_class} size="small" variant="outlined" />
+                                                {drug.drug_class?.trim() ? (
+                                                    <Chip label={drug.drug_class} size="small" variant="outlined" />
+                                                ) : null}
                                                 {drug.fda_approved && (
                                                     <Chip label="FDA Approved" size="small" color="success" />
                                                 )}
-                                                {drug.confidence && (
-                                                    <Chip
-                                                        label={`${(drug.confidence * 100).toFixed(0)}% confidence`}
-                                                        size="small"
-                                                        color={drug.confidence > 0.7 ? 'success' : 'default'}
-                                                    />
-                                                )}
+                                                <Chip
+                                                    label={
+                                                        isFinite01(drug.confidence)
+                                                            ? `${formatPercent01(drug.confidence)} confidence`
+                                                            : 'Confidence not reported'
+                                                    }
+                                                    size="small"
+                                                    color={
+                                                        isFinite01(drug.confidence) && drug.confidence > 0.7 ? 'success' : 'default'
+                                                    }
+                                                />
                                             </Box>
                                         }
                                         secondary={

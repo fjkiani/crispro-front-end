@@ -423,6 +423,18 @@ def test_build_evidence_matrix_parp_clinical_missing(mbd4_query):
     assert row.clinical.status == ModalityStatus.MISSING
 
 
+def test_build_evidence_matrix_hard_fails_when_live_pharmacology_inputs_missing():
+    query = MultiModalQueryInput(
+        gene="MBD4",
+        mutation_type="loss_of_function",
+        cancer_type="Ovarian Cancer",
+        include_pharmacologic_stratification=True,
+        include_literature_receipts=True,
+    )
+    with pytest.raises(RuntimeError, match="PRISM|GDSC|mutant/wt"):
+        build_evidence_matrix(query)
+
+
 def test_build_evidence_matrix_all_rows_have_tiers(mbd4_query):
     matrix = build_evidence_matrix(mbd4_query)
     for row in matrix.rows:

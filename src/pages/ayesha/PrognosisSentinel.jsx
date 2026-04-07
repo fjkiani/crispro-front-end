@@ -5,6 +5,11 @@ import ScenarioSelector from '../../components/ayesha/context_center/ScenarioSel
 import TruthTable from '../../components/ayesha/context_center/TruthTable';
 import ActionDeck from '../../components/ayesha/context_center/ActionDeck';
 import ContextGuide from '../../components/ayesha/context_center/ContextGuide';
+import {
+    AYESHA_DEFAULT_CONTRACT_VERSION,
+    buildAyeshaTherapyFitBundleUrl,
+    getAyeshaTherapyFitScenariosUrl,
+} from '../../utils/ayeshaApi';
 
 const PrognosisSentinel = () => {
     const [bundle, setBundle] = useState(null);
@@ -20,7 +25,7 @@ const PrognosisSentinel = () => {
         const init = async () => {
             try {
                 // Fetch Scenarios Catalog
-                const resSc = await fetch('/api/ayesha/therapy-fit/scenarios');
+                const resSc = await fetch(getAyeshaTherapyFitScenariosUrl());
                 const dataSc = await resSc.json();
                 setScenarios(dataSc);
 
@@ -37,12 +42,11 @@ const PrognosisSentinel = () => {
     const fetchBundle = async (level, scenarioId) => {
         setLoading(true);
         try {
-            // STRICT CONTRACT: Use /analyze instead of legacy bundle endpoint
-            const url = new URL(`/api/ayesha/therapy-fit/analyze`);
-            if (level) url.searchParams.append('level', level);
-            if (scenarioId) url.searchParams.append('scenario_id', scenarioId);
-
-            const res = await fetch(url.toString(), {
+            const res = await fetch(buildAyeshaTherapyFitBundleUrl({
+                level: level || 'l1',
+                scenarioId,
+                includeSyntheticLethality: true,
+            }), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({}) // Empty body for GET-like behavior with POST
@@ -116,7 +120,7 @@ const PrognosisSentinel = () => {
                         <span style={{ color: '#4fd1c5' }}>AYESHA</span> CONTEXT CENTER
                     </Typography>
                     <Typography variant="caption" sx={{ color: '#718096' }}>
-                        CONTRACT: {bundle?.contract_version || "V2.0"} | PATIENT: {bundle?.patient_id}
+                        CONTRACT: {bundle?.contract_version || AYESHA_DEFAULT_CONTRACT_VERSION} | PATIENT: {bundle?.patient_id}
                     </Typography>
                 </Box>
             </Box>

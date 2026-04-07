@@ -130,6 +130,66 @@ def _get_msi_ids(sample_info: pd.DataFrame) -> Tuple[List[str], List[str]]:
     return [], []
 
 
+def _normalize_string_ids(values: pd.Series) -> pd.Series:
+    return values.dropna().astype(str).str.strip()
+
+
+def _normalize_numeric_ids(values: pd.Series) -> pd.Series:
+    return pd.to_numeric(values, errors="coerce").dropna().astype(int).astype(str)
+
+
+def _resolve_gdsc_model_matches(
+    mutant_ids: List[str],
+    wt_ids: List[str],
+    gdsc_df: pd.DataFrame,
+    sample_info: Optional[pd.DataFrame],
+) -> Tuple[Optional[str], List[str], List[str]]:
+    """
+    Map DepMap ModelID groups onto the identifier system actually present in GDSC.
+    Prefer the mapping with the largest overlap so live GDSC evidence hydrates with
+    real counts/statistics instead of falling back to placeholder rows.
+    """
+    candidate_specs: List[Tuple[str, Optional[str], callable]] = []
+    gdsc_cols = {c.lower(): c for c in gdsc_df.columns}
+
+    if "sanger_model_id" in gdsc_cols:
+        candidate_specs.append((gdsc_cols["sanger_model_id"], "SangerModelID", _normalize_string_ids))
+    if "cosmic_id" in gdsc_cols:
+        candidate_specs.append((gdsc_cols["cosmic_id"], "COSMICID", _normalize_numeric_ids))
+    if "cell_line_name" in gdsc_cols:
+        candidate_specs.extend(
+            [
+                (gdsc_cols["cell_line_name"], "CellLineName", _normalize_string_ids),
+                (gdsc_cols["cell_line_name"], "StrippedCellLineName", _normalize_string_ids),
+                (gdsc_cols["cell_line_name"], "CCLEName", _normalize_string_ids),
+            ]
+        )
+    if "ccle_name" in gdsc_cols:
+        candidate_specs.append((gdsc_cols["ccle_name"], "CCLEName", _normalize_string_ids))
+
+    best: Tuple[Optional[str], List[str], List[str], int] = (None, [], [], -1)
+
+    for gdsc_col, sample_col, normalizer in candidate_specs:
+        if sample_info is None:
+            gdsc_ids = set(normalizer(gdsc_df[gdsc_col]).tolist())
+            mut_hits = [m for m in mutant_ids if m in gdsc_ids]
+            wt_hits = [w for w in wt_ids if w in gdsc_ids]
+        else:
+            if sample_col not in sample_info.columns:
+                continue
+            mut_map = sample_info.reindex(mutant_ids)[sample_col]
+            wt_map = sample_info.reindex(wt_ids)[sample_col]
+            gdsc_ids = set(normalizer(gdsc_df[gdsc_col]).tolist())
+            mut_hits = [m for m in normalizer(mut_map).tolist() if m in gdsc_ids]
+            wt_hits = [w for w in normalizer(wt_map).tolist() if w in gdsc_ids]
+
+        overlap = len(mut_hits) + len(wt_hits)
+        if overlap > best[3]:
+            best = (gdsc_col, mut_hits, wt_hits, overlap)
+
+    return best[0], best[1], best[2]
+
+
 def analyze_drug_screen(
     gene: str,
     mutant_ids: List[str],
@@ -315,21 +375,24 @@ def _analyze_gdsc(
     drug_name_col = next(
         (c for c in gdsc_df.columns if c.lower() in ("drug_name", "compound", "drug")), None
     )
-    cell_id_col = next(
-        (c for c in gdsc_df.columns if c.lower() in ("cell_line_name", "model_id", "ccle_name")), None
-    )
     response_col = next(
         (c for c in gdsc_df.columns if c.lower() in ("ln_ic50", "auc", "z_score")), None
+    )
+    cell_id_col, mut_in_gdsc, wt_in_gdsc = _resolve_gdsc_model_matches(
+        mutant_ids=mutant_ids,
+        wt_ids=wt_ids,
+        gdsc_df=gdsc_df,
+        sample_info=sample_info,
     )
     if not all([drug_name_col, cell_id_col, response_col]):
         logger.warning("GDSC DataFrame missing required columns; skipping GDSC analysis")
         return results
 
-    all_gdsc_ids = set(gdsc_df[cell_id_col].dropna().tolist())
-    mut_in_gdsc = [m for m in mutant_ids if m in all_gdsc_ids]
-    wt_in_gdsc  = [w for w in wt_ids      if w in all_gdsc_ids]
-
     if len(mut_in_gdsc) < MIN_N_PER_GROUP or len(wt_in_gdsc) < MIN_N_PER_GROUP:
+        logger.info(
+            "GDSC: insufficient mapped lines for gene=%s via %s (mut=%d, wt=%d)",
+            gene, cell_id_col, len(mut_in_gdsc), len(wt_in_gdsc),
+        )
         return results
 
     for drug_name, group in gdsc_df.groupby(drug_name_col):
@@ -339,7 +402,7 @@ def _analyze_gdsc(
         if target_axes and axis not in target_axes:
             continue
 
-        sub = group.set_index(cell_id_col)[response_col].dropna()
+        sub = group.groupby(cell_id_col)[response_col].mean().dropna()
         mut_vals = sub.reindex(mut_in_gdsc).dropna().values
         wt_vals  = sub.reindex(wt_in_gdsc).dropna().values
 

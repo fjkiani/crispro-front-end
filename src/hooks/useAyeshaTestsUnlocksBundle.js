@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { API_ROOT } from '../lib/apiConfig';
+import { buildAyeshaTherapyFitBundleUrl } from '../utils/ayeshaApi';
 
 
 const getAuthToken = () => {
@@ -23,7 +23,10 @@ async function fetchAyeshaTestsUnlocksBundle() {
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const res = await fetch(`${API_ROOT}/api/ayesha/therapy-fit/bundle?level=l1`, {
+  const res = await fetch(buildAyeshaTherapyFitBundleUrl({
+    level: 'l1',
+    includeSyntheticLethality: true,
+  }), {
     method: 'POST',
     headers,
     body: JSON.stringify({}),
@@ -39,7 +42,7 @@ async function fetchAyeshaTestsUnlocksBundle() {
 
 export function useAyeshaTestsUnlocksBundle(options = {}) {
   return useQuery({
-    queryKey: ['ayesha-tests-unlocks-bundle', { level: 'l1' }],
+    queryKey: ['ayesha-tests-unlocks-bundle', { level: 'l1', include_synthetic_lethality: true }],
     queryFn: fetchAyeshaTestsUnlocksBundle,
     staleTime: 30 * 1000,
     refetchOnWindowFocus: false,

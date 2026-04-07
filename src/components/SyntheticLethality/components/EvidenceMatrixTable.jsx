@@ -47,6 +47,9 @@ export function EvidenceMatrixTable({ matrix }) {
             <Box component="th" sx={{ p: 1, textAlign: 'left', borderBottom: '2px solid #e2e8f0', bgcolor: '#f8fafc' }}>
               <Typography variant="caption" sx={{ fontWeight: 900, color: 'text.secondary' }}>Axis</Typography>
             </Box>
+            <Box component="th" sx={{ p: 1, textAlign: 'left', borderBottom: '2px solid #e2e8f0', bgcolor: '#f8fafc', minWidth: 88 }}>
+              <Typography variant="caption" sx={{ fontWeight: 900, color: 'text.secondary' }}>Tier</Typography>
+            </Box>
             {modalities.map((m) => (
               <Box key={m.key} component="th" sx={{ p: 1, textAlign: 'center', borderBottom: '2px solid #e2e8f0', bgcolor: '#f8fafc' }}>
                 <Typography variant="caption" sx={{ fontWeight: 900, color: 'text.secondary' }}>{m.label}</Typography>
@@ -63,6 +66,13 @@ export function EvidenceMatrixTable({ matrix }) {
                     {row.axis_label.split(' (')[0]}
                   </Typography>
                 </Tooltip>
+              </Box>
+              <Box component="td" sx={{ p: 1, verticalAlign: 'middle' }}>
+                <Typography variant="caption" sx={{ color: row.recommendation_tier ? 'text.primary' : 'text.disabled', fontWeight: row.recommendation_tier ? 700 : 400 }}>
+                  {row.recommendation_tier != null && String(row.recommendation_tier).trim() !== ''
+                    ? String(row.recommendation_tier)
+                    : '—'}
+                </Typography>
               </Box>
               {modalities.map((m) => {
                 const cell = row[m.key];

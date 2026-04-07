@@ -7,6 +7,7 @@
 
 import { useState, useCallback } from 'react';
 import { API_ROOT as API_BASE_URL } from '../../../lib/apiConfig';
+import { formatPercent01 } from '../utils/displayFormat';
 
 
 /**
@@ -138,7 +139,7 @@ function buildExplanationPrompt(results, audienceType) {
 
 ### Essentiality Scores:
 ${essentiality.length > 0 
-  ? essentiality.map(e => `- ${e.gene}: ${(e.score * 100).toFixed(0)}% (${e.pathwayImpact || 'Unknown impact'})`).join('\n')
+  ? essentiality.map(e => `- ${e.gene ?? 'Gene'}: ${formatPercent01(e.score)} (${e.pathwayImpact || 'Unknown impact'})`).join('\n')
   : 'None available'}
 
 ### Pathway Analysis:
@@ -149,7 +150,7 @@ ${essentiality.length > 0
 ### Top Therapies:
 ${recommended_therapies.length > 0
   ? recommended_therapies.slice(0, 3).map((t, i) => 
-      `${i + 1}. ${t.drug} (${t.target}) - ${(t.confidence * 100).toFixed(0)}% confidence${t.fda_approved ? ' [FDA Approved]' : ''}`
+      `${i + 1}. ${t.drug ?? 'Not specified'} (${t.target ?? '—'}) — ${formatPercent01(t.confidence)}${t.fda_approved ? ' [FDA Approved]' : ''}`
     ).join('\n')
   : 'None available'}
 `;

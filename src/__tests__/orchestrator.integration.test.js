@@ -225,7 +225,7 @@ describe('MOAT Orchestrator Integration Tests', () => {
               gene: 'TP53',
               hgvs_p: 'p.R175H',
               chrom: '17',
-              pos: 7577120
+              pos: 7675088
             }
           ]
         },

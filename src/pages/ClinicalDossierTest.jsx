@@ -40,9 +40,9 @@ const ClinicalDossierTest = () => {
       gene: 'TP53',
       hgvs_p: 'p.Arg175His',
       chrom: '17',
-      pos: 7577120,
-      ref: 'G',
-      alt: 'A',
+      pos: 7578406,
+      ref: 'C',
+      alt: 'T',
       build: 'GRCh37'
     }
   ]);

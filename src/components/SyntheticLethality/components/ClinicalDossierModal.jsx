@@ -37,6 +37,7 @@ import {
   AutoAwesome
 } from '@mui/icons-material';
 import { useLLMExplanation } from '../hooks/useLLMExplanation';
+import { formatPercent01, isFinite01 } from '../utils/displayFormat';
 
 /**
  * @param {Object} props
@@ -110,7 +111,7 @@ ${mutations.map(m => `- **${m.gene}** ${m.hgvs_p || ''} (${formatConsequence(m.c
 
 ${essentiality.map(e => `
 ### ${e.gene}
-- **Score:** ${(e.score * 100).toFixed(0)}% (${e.score >= 0.7 ? 'HIGH' : e.score >= 0.5 ? 'MODERATE' : 'LOW'})
+- **Score:** ${formatPercent01(e.score)} (${isFinite01(e.score) ? (e.score >= 0.7 ? 'HIGH' : e.score >= 0.5 ? 'MODERATE' : 'LOW') : 'N/A'})
 - **Pathway Impact:** ${e.pathwayImpact || 'Unknown'}
 - **Flags:** ${Object.entries(e.flags || {}).filter(([k, v]) => v).map(([k]) => k).join(', ') || 'None'}
 `).join('\n')}
@@ -129,7 +130,7 @@ ${pathways.essential_pathways?.length > 0 ? pathways.essential_pathways.map(p =>
 ${pathways.double_hit_detected ? '✅ **DETECTED** - Multiple pathway deficiencies create amplified synthetic lethality' : '❌ Not detected'}
 
 ### Synthetic Lethality Score
-**${((pathways.synthetic_lethality_score || 0) * 100).toFixed(0)}%**
+**${formatPercent01(pathways.synthetic_lethality_score)}**
 
 ---
 
@@ -137,11 +138,11 @@ ${pathways.double_hit_detected ? '✅ **DETECTED** - Multiple pathway deficienci
 
 | Rank | Drug | Target | Confidence | Evidence | FDA |
 |------|------|--------|------------|----------|-----|
-${therapies.map((t, i) => `| ${i + 1} | **${t.drug}** | ${t.target} | ${(t.confidence * 100).toFixed(0)}% | ${t.evidence_tier} | ${t.fda_approved ? '✅' : '❌'} |`).join('\n')}
+${therapies.map((t, i) => `| ${i + 1} | **${t.drug ?? '—'}** | ${t.target ?? '—'} | ${formatPercent01(t.confidence)} | ${t.evidence_tier ?? '—'} | ${t.fda_approved ? '✅' : '❌'} |`).join('\n')}
 
-### Top Recommendation: ${therapies[0]?.drug || 'None'}
+### Top Recommendation: ${therapies[0]?.drug ?? 'None'}
 
-**Mechanism:** ${therapies[0]?.mechanism || 'N/A'}
+**Mechanism:** ${therapies[0]?.mechanism ?? 'N/A'}
 
 **Sensitivity:** ${therapies[0]?.sensitivity || 'Unknown'}
 
@@ -356,12 +357,20 @@ ${generateInterpretation(results, mutations)}
                 <Typography variant="subtitle1" fontWeight="bold">{e.gene}</Typography>
                 <Typography
                   variant="h4"
-                  color={e.score >= 0.7 ? 'error.main' : e.score >= 0.5 ? 'warning.main' : 'success.main'}
+                  color={
+                    !isFinite01(e.score)
+                      ? 'text.secondary'
+                      : e.score >= 0.7
+                        ? 'error.main'
+                        : e.score >= 0.5
+                          ? 'warning.main'
+                          : 'success.main'
+                  }
                 >
-                  {(e.score * 100).toFixed(0)}%
+                  {formatPercent01(e.score)}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  {e.pathwayImpact}
+                  {e.pathwayImpact ?? '—'}
                 </Typography>
               </Paper>
             ))}
@@ -385,14 +394,14 @@ ${generateInterpretation(results, mutations)}
               <Typography variant="h6" gutterBottom>Top Recommendation</Typography>
               <Paper sx={{ p: 2, backgroundColor: 'success.lighter', border: '2px solid', borderColor: 'success.main' }}>
                 <Typography variant="h5" color="success.dark" fontWeight="bold">
-                  {therapies[0].drug}
+                  {therapies[0].drug ?? 'Not specified'}
                 </Typography>
                 <Typography variant="body2" color="success.dark">
-                  Target: {therapies[0].target} | Confidence: {(therapies[0].confidence * 100).toFixed(0)}% | 
+                  Target: {therapies[0].target ?? '—'} | Confidence: {formatPercent01(therapies[0].confidence)} |
                   {therapies[0].fda_approved ? ' FDA Approved ✓' : ' Clinical Trials'}
                 </Typography>
                 <Typography variant="body2" sx={{ mt: 1 }}>
-                  {therapies[0].mechanism}
+                  {therapies[0].mechanism || 'Mechanism not provided.'}
                 </Typography>
               </Paper>
             </>
@@ -460,7 +469,11 @@ function generateInterpretation(results, mutations) {
   // Therapy interpretation
   if (therapies.length > 0) {
     const topTherapy = therapies[0];
-    parts.push(`**Therapeutic Opportunity:** ${topTherapy.drug} targeting ${topTherapy.target} is recommended with ${(topTherapy.confidence * 100).toFixed(0)}% confidence based on synthetic lethality with the identified pathway deficiencies.`);
+    const conf = formatPercent01(topTherapy.confidence);
+    const confClause = conf !== 'Not reported' ? ` with ${conf} confidence` : '';
+    parts.push(
+      `**Therapeutic Opportunity:** ${topTherapy.drug ?? 'A therapy candidate'} targeting ${topTherapy.target ?? 'an unspecified target'} is noted${confClause} based on synthetic lethality with the identified pathway deficiencies.`
+    );
   }
 
   return parts.join('\n\n');

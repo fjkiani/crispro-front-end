@@ -14,7 +14,7 @@ from __future__ import annotations
 import logging
 import time
 from functools import lru_cache
-from typing import Optional
+from typing import List, Optional, Tuple
 
 import pandas as pd
 
@@ -23,6 +23,7 @@ from ..data.depmap_loader import (
     load_cna,
     load_crispr_gene_effect,
     load_expression,
+    load_gdsc_viability,
     load_mutations,
     load_prism_meta,
     load_prism_viability,
@@ -42,6 +43,61 @@ logger = logging.getLogger(__name__)
 cfg = get_settings()
 
 
+def get_mutant_wt_lines_for_query(
+    query: SLQueryInput,
+    mutations: Optional[pd.DataFrame],
+    sample_info: pd.DataFrame,
+    cna: Optional[pd.DataFrame],
+    min_group_size: int = 5,
+) -> Tuple[List[str], List[str]]:
+    """
+    Mutant vs WT DepMap model IDs for ``query``, matching ``run_sl_analysis``:
+    cancer-specific stratification, then pan-cancer fallback if the cohort is too
+    small overall or either arm is too underpowered for downstream testing.
+    """
+    if mutations is None and query.mutation_type.value not in (
+        "homozygous_deletion",
+        "amplification",
+    ):
+        raise RuntimeError("Mutation table not available — cannot stratify cell lines.")
+
+    mutant_ids, wt_ids = get_mutant_wt_lines(
+        gene=query.gene,
+        mutation_df=mutations if mutations is not None else pd.DataFrame(),
+        sample_info=sample_info,
+        cancer_type=query.cancer_type,
+        mutation_type=query.mutation_type.value,
+        cna_df=cna,
+    )
+
+    min_lines = cfg.min_cell_lines_cancer_specific
+    cancer_specific_total = len(mutant_ids) + len(wt_ids)
+    insufficient_total = cancer_specific_total < min_lines
+    insufficient_groups = len(mutant_ids) < min_group_size or len(wt_ids) < min_group_size
+    if query.cancer_type and (insufficient_total or insufficient_groups):
+        logger.warning(
+            "Cancer-specific cohort underpowered for %s "
+            "(mut=%d, wt=%d, total=%d, min_group=%d, min_total=%d) "
+            "— fetching pan-cancer fallback lists",
+            query.cancer_type,
+            len(mutant_ids),
+            len(wt_ids),
+            cancer_specific_total,
+            min_group_size,
+            min_lines,
+        )
+        mutant_ids, wt_ids = get_mutant_wt_lines(
+            gene=query.gene,
+            mutation_df=mutations if mutations is not None else pd.DataFrame(),
+            sample_info=sample_info,
+            cancer_type=None,
+            mutation_type=query.mutation_type.value,
+            cna_df=cna,
+        )
+
+    return mutant_ids, wt_ids
+
+
 # ── Singleton data store (loaded once, reused per process) ────────────────────
 
 class DataStore:
@@ -54,9 +110,10 @@ class DataStore:
     _sample_info: Optional[pd.DataFrame] = None
     _prism: Optional[pd.DataFrame] = None
     _prism_meta: Optional[pd.DataFrame] = None
+    _gdsc: Optional[pd.DataFrame] = None
 
     @classmethod
-    def ensure_loaded(cls, require_prism: bool = True) -> None:
+    def ensure_loaded(cls, require_prism: bool = True, require_gdsc: bool = False) -> None:
         if cls._crispr is None:
             logger.info("Loading DepMap CRISPR matrix …")
             cls._crispr = load_crispr_gene_effect()
@@ -87,6 +144,12 @@ class DataStore:
                     cls._prism_meta = load_prism_meta()
                 except Exception as e:
                     logger.warning("PRISM meta load failed: %s", e)
+        if require_gdsc and cls._gdsc is None:
+            logger.info("Loading GDSC viability matrix …")
+            try:
+                cls._gdsc = load_gdsc_viability("GDSC2")
+            except Exception as e:
+                logger.warning("GDSC load failed: %s", e)
 
     @classmethod
     def crispr(cls) -> pd.DataFrame:
@@ -118,6 +181,11 @@ class DataStore:
         cls.ensure_loaded()
         return cls._prism_meta
 
+    @classmethod
+    def gdsc(cls) -> Optional[pd.DataFrame]:
+        cls.ensure_loaded(require_gdsc=True)
+        return cls._gdsc
+
 
 # ── Main orchestration function ───────────────────────────────────────────────
 
@@ -138,37 +206,10 @@ def run_sl_analysis(query: SLQueryInput) -> SLMapResult:
     prism = DataStore.prism()
     prism_meta = DataStore.prism_meta()
 
-    # 2. Stratify cell lines
-    if mutations is None and query.mutation_type.value not in (
-        "homozygous_deletion", "amplification"
-    ):
-        raise RuntimeError("Mutation table not available — cannot stratify cell lines.")
-
-    mutant_ids, wt_ids = get_mutant_wt_lines(
-        gene=query.gene,
-        mutation_df=mutations if mutations is not None else pd.DataFrame(),
-        sample_info=sample_info,
-        cancer_type=query.cancer_type,
-        mutation_type=query.mutation_type.value,
-        cna_df=cna,
+    # 2. Stratify cell lines (shared with multimodal / GDSC paths)
+    mutant_ids, wt_ids = get_mutant_wt_lines_for_query(
+        query, mutations, sample_info, cna
     )
-
-    # If cancer-specific has too few lines, get pan-cancer lists as fallback
-    MIN_LINES = cfg.min_cell_lines_cancer_specific
-    if len(mutant_ids) + len(wt_ids) < MIN_LINES and query.cancer_type:
-        logger.warning(
-            "Only %d lines found for %s — fetching pan-cancer fallback lists",
-            len(mutant_ids) + len(wt_ids),
-            query.cancer_type,
-        )
-        mutant_ids, wt_ids = get_mutant_wt_lines(
-            gene=query.gene,
-            mutation_df=mutations if mutations is not None else pd.DataFrame(),
-            sample_info=sample_info,
-            cancer_type=None,   # pan-cancer
-            mutation_type=query.mutation_type.value,
-            cna_df=cna,
-        )
 
     # 3. SL engine
     engine = SLEngine(

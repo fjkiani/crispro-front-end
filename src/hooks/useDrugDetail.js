@@ -1,5 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { API_ROOT } from '../lib/apiConfig';
+import {
+    buildAyeshaTherapyFitBundleUrl,
+    buildAyeshaTherapyFitDrugUrl,
+} from '../utils/ayeshaApi';
 
 /**
  * Helper — get auth token from storage.
@@ -43,8 +46,8 @@ const fetchDrugDetail = async (slug) => {
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
     const [drugRes, bundleRes] = await Promise.all([
-        fetch(`${API_ROOT}/api/ayesha/therapy-fit/drug/${encodeURIComponent(drugName)}?level=l1`, { headers }),
-        fetch(`${API_ROOT}/api/ayesha/therapy-fit/bundle?level=l1`, {
+        fetch(buildAyeshaTherapyFitDrugUrl(drugName, { level: 'l1' }), { headers }),
+        fetch(buildAyeshaTherapyFitBundleUrl({ level: 'l1', includeSyntheticLethality: false }), {
             method: 'POST',
             headers,
             body: JSON.stringify({}),
@@ -94,7 +97,11 @@ const fetchSyntheticLethality = async () => {
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
     const bundleRes = await fetch(
-        `${API_ROOT}/api/ayesha/therapy-fit/bundle?level=l1&include_synthetic_lethality=true&efficacy_mode=comprehensive`,
+        buildAyeshaTherapyFitBundleUrl({
+            level: 'l1',
+            includeSyntheticLethality: true,
+            efficacyMode: 'comprehensive',
+        }),
         {
             method: 'POST',
             headers,

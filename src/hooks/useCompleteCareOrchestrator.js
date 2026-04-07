@@ -13,6 +13,7 @@
 
 import { useState, useCallback } from 'react';
 import { API_ROOT } from '../lib/apiConfig';
+import { getSyntheticLethalityUrl } from '../utils/ayeshaApi';
 
 
 // ----------------------------
@@ -45,6 +46,33 @@ const essentialityCache = new TTLCache(30); // 30 min
 const vusCache = new TTLCache(60); // 60 min
 const slCache = new TTLCache(30); // 30 min
 const carePlanCache = new TTLCache(5); // 5 min – stale-while-revalidate for page loads
+
+/** True if parallel /api/guidance/synthetic_lethality returned real fields (not `{}` / provenance-only shell). */
+function isUsableParallelSlPayload(sl) {
+  if (sl == null || typeof sl !== 'object' || Array.isArray(sl)) return false;
+  if (Object.keys(sl).length === 0) return false;
+  const skipKeys = new Set(['provenance', 'metadata', 'client_cache_hit']);
+  for (const k of Object.keys(sl)) {
+    if (skipKeys.has(k)) continue;
+    const v = sl[k];
+    if (v == null) continue;
+    if (Array.isArray(v)) {
+      if (v.length > 0) return true;
+      continue;
+    }
+    if (typeof v === 'string') {
+      if (v.trim()) return true;
+      continue;
+    }
+    if (typeof v === 'boolean') return true;
+    if (typeof v === 'number') {
+      if (Number.isFinite(v)) return true;
+      continue;
+    }
+    if (typeof v === 'object' && Object.keys(v).length > 0) return true;
+  }
+  return false;
+}
 
 const _inflight = {
   essentiality: new Map(),
@@ -208,7 +236,7 @@ const fetchSyntheticLethality = async (patientProfile) => {
       return { ...cached, provenance: { ...(cached.provenance || {}), client_cache_hit: true } };
     }
 
-    const slResponse = await fetch(`${API_ROOT}/api/guidance/synthetic_lethality`, {
+    const slResponse = await fetch(getSyntheticLethalityUrl(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -505,35 +533,34 @@ export const useCompleteCareOrchestrator = () => {
         has_food: !!data.food_validation
       });
 
-      // Extract SL results from WIWFM provenance (preferred) or use parallel result
+      // Prefer parallel guidance SL (full payload); else pass through WIWFM provenance without inventing drugs/scores
       let syntheticLethalityResult = null;
-      if (data.wiwfm?.provenance?.synthetic_lethality) {
-        // Use SL results from WIWFM (most accurate context)
-        syntheticLethalityResult = {
-          synthetic_lethality_detected: data.wiwfm.provenance.synthetic_lethality.detected || false,
-          double_hit_description: data.wiwfm.provenance.synthetic_lethality.double_hit || '',
-          essential_pathways: (data.wiwfm.provenance.synthetic_lethality.essential_pathways || []).map(p => ({
-            pathway_id: p,
-            pathway_name: p,
-            status: 'essential'
-          })),
-          broken_pathways: [], // Not in provenance, will be inferred
-          recommended_drugs: (data.wiwfm.provenance.synthetic_lethality.recommended_drugs || []).map(d => ({
-            drug_name: d,
-            drug_class: 'PARP inhibitor', // Infer from drug name
-            confidence: 0.7,
-            mechanism: 'Synthetic lethality with HR-deficient cells'
-          })),
-          essentiality_scores: data.wiwfm?.drugs?.filter(d => d.badges?.includes('SL-Detected')).map(d => ({
-            gene: d.name, // Will be extracted from mutations
-            essentiality_score: d.confidence || 0.7
-          })) || []
-        };
-        console.log('[useCompleteCareOrchestrator] ✅ Using SL results from WIWFM provenance');
-      } else {
-        // Fallback: Use the parallel result we already fetched
+      if (isUsableParallelSlPayload(slFallbackResult)) {
         syntheticLethalityResult = slFallbackResult;
-        console.log('[useCompleteCareOrchestrator] ⚠️  SL not in WIWFM, used parallel fallback result');
+        console.log('[useCompleteCareOrchestrator] Using parallel /api/guidance/synthetic_lethality result');
+      } else if (data.wiwfm?.provenance?.synthetic_lethality) {
+        const p = data.wiwfm.provenance.synthetic_lethality;
+        const ep = p.essential_pathways;
+        syntheticLethalityResult = {
+          synthetic_lethality_detected: p.detected ?? false,
+          double_hit_description: p.double_hit ?? '',
+          essential_pathways: Array.isArray(ep)
+            ? ep.map((item) =>
+                typeof item === 'string'
+                  ? { pathway_id: item, pathway_name: item, status: 'essential' }
+                  : item
+              )
+            : [],
+          broken_pathways: Array.isArray(p.broken_pathways) ? p.broken_pathways : [],
+          recommended_drugs: Array.isArray(p.recommended_drugs)
+            ? p.recommended_drugs.map((d) => (typeof d === 'string' ? { drug_name: d } : { ...d }))
+            : [],
+          essentiality_scores: Array.isArray(p.essentiality_scores) ? p.essentiality_scores : [],
+          provenance: { source: 'wiwfm_provenance' }
+        };
+        console.log('[useCompleteCareOrchestrator] Using WIWFM provenance SL (no reconstructed drug metadata)');
+      } else {
+        console.log('[useCompleteCareOrchestrator] No SL from parallel call or WIWFM provenance');
       }
 
       // Transform and combine all results

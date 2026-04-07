@@ -8,7 +8,7 @@ const presets = [
   { gene: 'KRAS', hgvs_p: 'p.Gly12Asp', variant_info: 'chr12:25245350 C>T', build: 'hg38' },
   { gene: 'NRAS', hgvs_p: 'p.Gln61Lys', variant_info: 'chr1:115258747 A>C', build: 'hg38' },
   { gene: 'BRAF', hgvs_p: 'p.Val600Glu', variant_info: 'chr7:140753336 A>T', build: 'hg38' },
-  { gene: 'TP53', hgvs_p: 'p.Arg248Gln', variant_info: 'chr17:7673802 G>A', build: 'hg38' },
+  { gene: 'TP53', hgvs_p: 'p.Arg248Gln', variant_info: 'chr17:7674220 C>T', build: 'hg38' },
 ];
 
 const validateVariant = (v) => {

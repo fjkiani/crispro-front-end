@@ -33,6 +33,11 @@ import {
   EmojiEvents,
   TrendingUp
 } from '@mui/icons-material';
+import {
+  formatPercent01,
+  isFinite01,
+  syntheticLethalityTierChipProps
+} from '../utils/displayFormat';
 
 /**
  * @typedef {Object} TherapyRecommendation
@@ -40,7 +45,8 @@ import {
  * @property {string} target - Molecular target
  * @property {number} confidence - Confidence score [0,1]
  * @property {string} mechanism - How it works
- * @property {string} evidence_tier - "I", "II", "III"
+ * @property {string} evidence_tier - Backend evidence tier (e.g. "I", "II", "III", "Research")
+ * @property {string} sl_recommendation_tier - Matrix-derived SL posture label
  * @property {boolean} fda_approved - FDA approval status
  * @property {string} sensitivity - "VERY_HIGH", "HIGH", "MODERATE"
  */
@@ -70,6 +76,8 @@ const TherapyRecommendationList = ({
       case 'I': return { label: 'Tier I', color: 'success', tooltip: 'FDA approved, Phase 3 RCTs' };
       case 'II': return { label: 'Tier II', color: 'warning', tooltip: 'Phase 2 trials, strong preclinical' };
       case 'III': return { label: 'Tier III', color: 'default', tooltip: 'Early clinical or preclinical' };
+      case 'Research': return { label: 'Research', color: 'default', tooltip: 'Research-only evidence posture from backend.' };
+      case 'Computational': return { label: 'Computational', color: 'info', tooltip: 'Computational evidence posture from backend.' };
       default: return { label: 'Unknown', color: 'default', tooltip: 'Evidence not classified' };
     }
   };
@@ -100,10 +108,11 @@ const TherapyRecommendationList = ({
         <List disablePadding>
           {recommendations.map((rec, index) => {
             const evidenceTier = getEvidenceTier(rec.evidence_tier);
+            const slTier = syntheticLethalityTierChipProps(rec.sl_recommendation_tier);
             const isTopPick = index === 0;
 
             return (
-              <React.Fragment key={`${rec.drug}-${index}`}>
+              <React.Fragment key={`therapy-${index}-${rec.drug ?? 'unknown'}`}>
                 <ListItem
                   sx={{
                     py: 2,
@@ -131,14 +140,13 @@ const TherapyRecommendationList = ({
                     primary={
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                         <Typography variant="subtitle1" fontWeight="bold">
-                          {rec.drug}
+                          {rec.drug?.trim() ? rec.drug : 'Not specified'}
                         </Typography>
-                        <Chip
-                          label={rec.target}
-                          size="small"
-                          color="primary"
-                          variant="outlined"
-                        />
+                        {rec.target?.trim() ? (
+                          <Chip label={rec.target} size="small" color="primary" variant="outlined" />
+                        ) : (
+                          <Chip label="Target not reported" size="small" color="default" variant="outlined" />
+                        )}
                         {rec.fda_approved && (
                           <Tooltip title="FDA Approved">
                             <Chip
@@ -157,6 +165,14 @@ const TherapyRecommendationList = ({
                             variant="outlined"
                           />
                         </Tooltip>
+                        <Tooltip title={slTier.tooltip}>
+                          <Chip
+                            label={slTier.label}
+                            size="small"
+                            color={slTier.color}
+                            variant="filled"
+                          />
+                        </Tooltip>
                       </Box>
                     }
                     secondary={
@@ -166,31 +182,54 @@ const TherapyRecommendationList = ({
                           <Typography variant="caption" color="text.secondary" sx={{ minWidth: 80 }}>
                             Confidence
                           </Typography>
-                          <LinearProgress
-                            variant="determinate"
-                            value={rec.confidence * 100}
-                            color={rec.confidence >= 0.8 ? 'success' : rec.confidence >= 0.6 ? 'warning' : 'error'}
-                            sx={{ flex: 1, height: 8, borderRadius: 4 }}
-                          />
-                          <Typography variant="body2" fontWeight="bold" sx={{ minWidth: 45 }}>
-                            {(rec.confidence * 100).toFixed(0)}%
+                          {isFinite01(rec.confidence) ? (
+                            <LinearProgress
+                              variant="determinate"
+                              value={Math.min(100, Math.max(0, rec.confidence * 100))}
+                              color={
+                                rec.confidence >= 0.8 ? 'success' : rec.confidence >= 0.6 ? 'warning' : 'error'
+                              }
+                              sx={{ flex: 1, height: 8, borderRadius: 4 }}
+                            />
+                          ) : (
+                            <LinearProgress
+                              variant="indeterminate"
+                              sx={{ flex: 1, height: 8, borderRadius: 4, opacity: 0.35 }}
+                            />
+                          )}
+                          <Typography variant="body2" fontWeight="bold" sx={{ minWidth: 56 }}>
+                            {formatPercent01(rec.confidence)}
                           </Typography>
                         </Box>
 
                         {/* Mechanism */}
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                           <Science fontSize="small" sx={{ verticalAlign: 'middle', mr: 0.5 }} />
-                          {rec.mechanism}
+                          {rec.mechanism?.trim() ? rec.mechanism : 'Mechanism not provided.'}
                         </Typography>
 
+                        {rec.clinical_context?.trim() ? (
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                            {rec.clinical_context}
+                          </Typography>
+                        ) : null}
+
+                        {rec.override_reason?.trim() ? (
+                          <Typography variant="caption" color="warning.dark" sx={{ display: 'block', mb: 1 }}>
+                            Override reason: {rec.override_reason}
+                          </Typography>
+                        ) : null}
+
                         {/* Sensitivity Badge */}
-                        <Chip
-                          icon={<TrendingUp />}
-                          label={`Sensitivity: ${rec.sensitivity}`}
-                          size="small"
-                          color={getSensitivityColor(rec.sensitivity)}
-                          variant="filled"
-                        />
+                        {rec.sensitivity ? (
+                          <Chip
+                            icon={<TrendingUp />}
+                            label={`Sensitivity: ${rec.sensitivity}`}
+                            size="small"
+                            color={getSensitivityColor(rec.sensitivity)}
+                            variant="filled"
+                          />
+                        ) : null}
                       </Box>
                     }
                   />

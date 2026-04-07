@@ -1,6 +1,10 @@
 
 import { useQuery } from '@tanstack/react-query';
-import { API_ROOT } from '../lib/apiConfig';
+import {
+  AYESHA_DEFAULT_CONTRACT_VERSION,
+  buildAyeshaTherapyFitBundleUrl,
+  getAyeshaTherapyFitScenariosUrl,
+} from '../utils/ayeshaApi';
 
 
 // Helper to get auth token directly from storage
@@ -37,15 +41,22 @@ const fetchStrictBundle = async ({ level = 'all', scenario_id = null, l3_scenari
   if (scenario_id) params.append('scenario_id', scenario_id);
   if (l3_scenario_id) params.append('l3_scenario_id', l3_scenario_id);
   if (efficacy_mode) params.append('efficacy_mode', efficacy_mode);
+  params.append('include_synthetic_lethality', 'true');
 
   // Execute parallel calls — /bundle returns drugs correctly
   const [bundleRes, scenariosRes] = await Promise.all([
-    fetch(`${API_ROOT}/api/ayesha/therapy-fit/bundle?${params.toString()}`, {
+    fetch(buildAyeshaTherapyFitBundleUrl({
+      level,
+      scenarioId: scenario_id,
+      l3ScenarioId: l3_scenario_id,
+      includeSyntheticLethality: true,
+      efficacyMode: efficacy_mode,
+    }), {
       method: 'POST',
       headers,
       body: JSON.stringify({})
     }),
-    fetch(`${API_ROOT}/api/ayesha/therapy-fit/scenarios`, { headers })
+    fetch(getAyeshaTherapyFitScenariosUrl(), { headers })
   ]);
 
   if (!bundleRes.ok) throw new Error(`Bundle failed: ${bundleRes.statusText}`);
@@ -71,7 +82,7 @@ const fetchStrictBundle = async ({ level = 'all', scenario_id = null, l3_scenari
     l2_scenarios: scenariosData.l2_scenarios,
     l3_scenarios: scenariosData.l3_scenarios,
     preview_cache: scenariosData.preview_cache,
-    contract_version: bundleData.contract_version || "v2.0",
+    contract_version: bundleData.contract_version || AYESHA_DEFAULT_CONTRACT_VERSION,
     io_harm_prevention: l1Data?.io_harm_prevention || null,
     tests_needed: bundleData.tests_needed || [],
     synthetic_lethality: bundleData.synthetic_lethality || l1Data?.synthetic_lethality || null,
@@ -80,7 +91,7 @@ const fetchStrictBundle = async ({ level = 'all', scenario_id = null, l3_scenari
 
 export function useAyeshaTherapyFitBundle({ level = 'all', scenario_id = null, l3_scenario_id = null, efficacy_mode = 'comprehensive' } = {}, options = {}) {
   return useQuery({
-    queryKey: ['ayesha-therapy-fit-strict', { level, scenario_id, l3_scenario_id, efficacy_mode }],
+    queryKey: ['ayesha-therapy-fit-strict', { level, scenario_id, l3_scenario_id, efficacy_mode, include_synthetic_lethality: true }],
     queryFn: () => fetchStrictBundle({ level, scenario_id, l3_scenario_id, efficacy_mode }),
     staleTime: 5 * 60 * 1000,   // 5 minutes — bundle endpoint is ~10s; cache aggressively
     refetchOnWindowFocus: false,
@@ -103,7 +114,7 @@ export function useAyeshaScenarios(options = {}) {
       const headers = {};
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const res = await fetch(`${API_ROOT}/api/ayesha/therapy-fit/scenarios`, { headers });
+      const res = await fetch(getAyeshaTherapyFitScenariosUrl(), { headers });
       if (!res.ok) throw new Error('Failed');
       return res.json();
     },

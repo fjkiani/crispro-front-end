@@ -8,7 +8,7 @@ import { RefreshCw, Play, Shield, AlertTriangle, Clock, ArrowRight, ArrowUp, Arr
 // Zeta Components
 import DefenseAnalysisBanner from '../../components/ayesha/DefenseAnalysisBanner';
 import PrimaryWeaponCard from '../../components/ayesha/PrimaryWeaponCard';
-import VisualMechanismCard from '../../components/ayesha/VisualMechanismCard';
+import { SyntheticLethalityCard } from '../../components/ayesha/SyntheticLethalityCard';
 import WarGamesGrid from '../../components/ayesha/WarGamesGrid';
 import StrictDrugSearch from '../../components/ayesha/StrictDrugSearch';
 
@@ -648,6 +648,8 @@ const AyeshaWeaponCompatibility = () => {
 
     const resistanceGateData = activeLevelData?.resistance_gate;
 
+    const slPayload = synthetic_lethality || activeLevelData?.synthetic_lethality || null;
+
     // ZETA PROTOCOL: War Games Oversight — Fix 1: Shape-Tolerant Sim Switch
     // Supports both /bundle shape (efficacy.drugs) and /analyze shape (drugs at root).
     // When simulation is active, bypass Doctrine and show backend efficacy data.
@@ -782,14 +784,9 @@ const AyeshaWeaponCompatibility = () => {
                     isSimulation={!!activeScenario}
                 />
 
-                {/* 3. Target Lock (Mechanism) */}
+                {/* 3. Synthetic lethality (bundle payload: suggested_therapy, recommended_drugs, evidence matrix) */}
                 <Box sx={{ mb: 8, maxWidth: '1200px', mx: 'auto' }}>
-                    <Suspense fallback={<LoadingFallback />}>
-                        <VisualMechanismCard
-                            data={synthetic_lethality || activeLevelData?.synthetic_lethality}
-                            evidence={topDrug?.molecular_rationale}
-                        />
-                    </Suspense>
+                    <SyntheticLethalityCard slData={slPayload} levelKey={activeLevelKey} />
                 </Box>
 
                 {/* 4. War Games (Simulations) */}

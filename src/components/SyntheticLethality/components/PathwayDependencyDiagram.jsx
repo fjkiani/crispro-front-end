@@ -28,6 +28,7 @@ import {
   Psychology
 } from '@mui/icons-material';
 import { keyframes } from '@mui/system';
+import { syntheticLethalityScoreChipProps } from '../utils/displayFormat';
 
 // Animation for connection lines
 const shimmerAnimation = keyframes`
@@ -40,14 +41,15 @@ const shimmerAnimation = keyframes`
  * @param {Array<string>} props.brokenPathways - List of broken pathways
  * @param {Array<string>} props.essentialPathways - List of essential backup pathways
  * @param {boolean} props.doubleHitDetected - Whether multiple hits detected
- * @param {number} props.syntheticLethalityScore - Combined SL score [0,1]
+ * @param {number|undefined} props.syntheticLethalityScore - Combined SL score [0,1]; omit/undefined if not provided by API
  */
 const PathwayDependencyDiagram = ({
   brokenPathways = [],
   essentialPathways = [],
   doubleHitDetected = false,
-  syntheticLethalityScore = 0
+  syntheticLethalityScore
 }) => {
+  const slChip = syntheticLethalityScoreChipProps(syntheticLethalityScore);
   const [selectedPathway, setSelectedPathway] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
   const [popoverContent, setPopoverContent] = useState(null);
@@ -303,8 +305,8 @@ const PathwayDependencyDiagram = ({
           Synthetic Lethality Score
         </Typography>
         <Chip
-          label={`${(syntheticLethalityScore * 100).toFixed(0)}%`}
-          color={syntheticLethalityScore >= 0.7 ? 'success' : syntheticLethalityScore >= 0.5 ? 'warning' : 'default'}
+          label={slChip.label}
+          color={slChip.color}
           sx={{ fontWeight: 'bold', fontSize: '1rem' }}
         />
       </Box>

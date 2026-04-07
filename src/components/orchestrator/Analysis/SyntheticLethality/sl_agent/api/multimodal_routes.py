@@ -15,7 +15,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from ..core.orchestrator import DataStore
+from ..core.orchestrator import DataStore, get_mutant_wt_lines_for_query
 from ..multimodal.matrix_builder import run_multimodal_analysis
 from ..multimodal.models import MultiModalQueryInput, MultiModalResult, CandidateAxis
 from ..multimodal.literature_receipts import (
@@ -32,7 +32,11 @@ _executor = ThreadPoolExecutor(max_workers=4)
 
 async def verify_data_loaded():
     try:
-        DataStore.ensure_loaded(require_prism=True)
+        DataStore.ensure_loaded(require_prism=True, require_gdsc=True)
+        if DataStore.prism() is None or DataStore.prism_meta() is None:
+            raise RuntimeError("PRISM viability/meta caches are not loaded.")
+        if DataStore.gdsc() is None:
+            raise RuntimeError("GDSC cache is not loaded.")
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -73,9 +77,6 @@ async def analyze_multimodal(
 
     # Run SL engine on the same gene to get CRISPR partner stats
     from ..core.models import SLQueryInput, MutationType
-    from ..core.orchestrator import run_sl_analysis
-    from ..data.depmap_loader import get_mutant_wt_lines
-
     loop = asyncio.get_event_loop()
 
     # We need CRISPR partners + raw cell line stratification
@@ -87,6 +88,7 @@ async def analyze_multimodal(
         cna = DataStore.cna()
         prism = DataStore.prism()
         prism_meta = DataStore.prism_meta()
+        gdsc = DataStore.gdsc()
 
         if mutations is None:
             mutations_df = __import__("pandas").DataFrame()
@@ -98,13 +100,19 @@ async def analyze_multimodal(
         except ValueError:
             mut_type = MutationType.ANY
 
-        mutant_ids, wt_ids = get_mutant_wt_lines(
+        sl_q = SLQueryInput(
             gene=query.gene,
-            mutation_df=mutations_df,
-            sample_info=sample_info,
+            mutation_type=mut_type,
             cancer_type=query.cancer_type,
-            mutation_type=mut_type.value,
-            cna_df=cna,
+            top_n_partners=50,
+            fdr_cutoff=0.25,
+            delta_dep_cutoff=0.05,  # looser cutoff for matrix — we report all signals
+        )
+        mutant_ids, wt_ids = get_mutant_wt_lines_for_query(
+            sl_q,
+            mutations_df,
+            sample_info,
+            cna,
         )
 
         # Step B: get CRISPR SL partners (full engine run for CRISPR modality)
@@ -119,14 +127,6 @@ async def analyze_multimodal(
                 mutation_df=mutations_df,
                 cna_df=cna,
                 depmap_release=cfg.depmap_release,
-            )
-            sl_q = SLQueryInput(
-                gene=query.gene,
-                mutation_type=mut_type,
-                cancer_type=query.cancer_type,
-                top_n_partners=50,
-                fdr_cutoff=0.25,
-                delta_dep_cutoff=0.05,  # looser cutoff for matrix — we report all signals
             )
             _, partners, _ = engine.compute_sl_partners(
                 query=sl_q,
@@ -148,7 +148,7 @@ async def analyze_multimodal(
             wt_ids=wt_ids,
             prism_df=prism,
             prism_meta=prism_meta,
-            gdsc_df=None,  # GDSC optional — wire if loaded
+            gdsc_df=gdsc,
             sample_info=sample_info,
             depmap_release=cfg.depmap_release,
         )
