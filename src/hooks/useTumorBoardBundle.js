@@ -1,6 +1,52 @@
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { API_ROOT } from '../lib/apiConfig';
 
+/** Keep bundle warm across route changes / full remounts (same tab). */
+const TB_BUNDLE_STORAGE_PREFIX = 'tumor_board_bundle_v1:';
+const TB_BUNDLE_MAX_AGE_MS = 10 * 60 * 1000; // 10 min — aligns with QueryClient cacheTime
+
+function fingerprintLocalInputs() {
+  try {
+    const ca = localStorage.getItem('ayesha_ca125_history_v1') || '';
+    const hrd = localStorage.getItem('ayesha_hrd_v1') || '';
+    const rss = localStorage.getItem('ayesha_rss_inputs_v1') || '';
+    const blob = `${ca}\n${hrd}\n${rss}`;
+    let h = 5381;
+    for (let i = 0; i < blob.length; i += 1) {
+      h = ((h << 5) + h) ^ blob.charCodeAt(i);
+    }
+    return `${blob.length}:${h >>> 0}`;
+  } catch {
+    return '0';
+  }
+}
+
+function storageKeyForBundle(queryKeyPayload) {
+  const fp = fingerprintLocalInputs();
+  return `${TB_BUNDLE_STORAGE_PREFIX}${fp}:${JSON.stringify(queryKeyPayload)}`;
+}
+
+function readPersistedBundle(key) {
+  try {
+    const raw = sessionStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    const t = typeof parsed.t === 'number' ? parsed.t : 0;
+    if (!parsed.data || Date.now() - t > TB_BUNDLE_MAX_AGE_MS) return null;
+    return { data: parsed.data, updatedAt: t };
+  } catch {
+    return null;
+  }
+}
+
+function writePersistedBundle(key, data) {
+  try {
+    sessionStorage.setItem(key, JSON.stringify({ t: Date.now(), data }));
+  } catch {
+    // quota / private mode
+  }
+}
 
 const getAuthToken = () => {
   try {
@@ -95,7 +141,8 @@ async function fetchTumorBoardBundle({
     throw new Error(`Failed to load tumor board bundle: ${res.status} ${res.statusText}${txt ? ` — ${txt}` : ''}`);
   }
 
-  return res.json();
+  const json = await res.json();
+  return json;
 }
 
 export function useTumorBoardBundle(
@@ -109,21 +156,50 @@ export function useTumorBoardBundle(
   } = {},
   options = {}
 ) {
+  const queryKeyPayload = {
+    level,
+    scenarioId,
+    l3ScenarioId,
+    includeSyntheticLethality,
+    ctdnaStatusOverride,
+    efficacyMode,
+  };
+
+  const persistKey = useMemo(
+    () => storageKeyForBundle(queryKeyPayload),
+    [
+      level,
+      scenarioId,
+      l3ScenarioId,
+      includeSyntheticLethality,
+      ctdnaStatusOverride,
+      efficacyMode,
+    ]
+  );
+
+  const persisted = useMemo(() => readPersistedBundle(persistKey), [persistKey]);
+
   return useQuery({
-    queryKey: [
-      'tumor-board-bundle',
-      { level, scenarioId, l3ScenarioId, includeSyntheticLethality, ctdnaStatusOverride, efficacyMode },
-    ],
-    queryFn: () =>
-      fetchTumorBoardBundle({
+    queryKey: ['tumor-board-bundle', queryKeyPayload],
+    queryFn: async () => {
+      const data = await fetchTumorBoardBundle({
         level,
         scenarioId,
         l3ScenarioId,
         includeSyntheticLethality,
         ctdnaStatusOverride,
         efficacyMode,
-      }),
-    staleTime: 30 * 1000,
+      });
+      writePersistedBundle(persistKey, data);
+      return data;
+    },
+    // Instant paint when returning to Tumor Board / Therapy Fit in the same session
+    initialData: persisted?.data,
+    initialDataUpdatedAt: persisted?.updatedAt,
+    // Prefer long warm cache: app default is 5m stale / 10m cache; tumor board is heavy
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 15 * 60 * 1000,
+    keepPreviousData: true,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     retry: 1,
