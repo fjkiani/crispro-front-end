@@ -51,8 +51,43 @@ export const AuthProvider = ({ children }) => {
         setProfile(data.data || data);
         console.log('✅ User profile loaded:', data.data || data);
       } else if (response.status === 404) {
-        // Backend auth endpoint doesn't exist - use mock profile
-        console.log('ℹ️ Backend auth endpoint not found - using mock profile');
+        // FIX-5c: Mock profile fallback is now gated behind VITE_ENABLE_MOCK_AUTH.
+        if (import.meta.env.VITE_ENABLE_MOCK_AUTH === 'true') {
+          console.log('ℹ️ Backend auth endpoint not found - using mock profile (VITE_ENABLE_MOCK_AUTH=true)');
+          const mockProfile = {
+            user_id: `mock-user-${email?.replace('@', '-at-')}`,
+            email: email || 'ak@ak.com',
+            tier: 'free',
+            role: 'patient',
+            full_name: email?.split('@')[0] || 'Test User',
+            is_mock: true
+          };
+          setProfile(mockProfile);
+        } else {
+          console.warn('⚠️ Profile endpoint returned 404. User profile unavailable.');
+          setProfile(null);
+        }
+      } else {
+        console.warn('⚠️ Could not fetch profile (may need backend auth endpoint):', response.status);
+        // FIX-5c: Mock profile fallback is now gated behind VITE_ENABLE_MOCK_AUTH.
+        if (import.meta.env.VITE_ENABLE_MOCK_AUTH === 'true') {
+          const mockProfile = {
+            user_id: `mock-user-${email?.replace('@', '-at-')}`,
+            email: email || 'ak@ak.com',
+            tier: 'free',
+            role: 'patient',
+            full_name: email?.split('@')[0] || 'Test User',
+            is_mock: true
+          };
+          setProfile(mockProfile);
+        } else {
+          setProfile(null);
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ Profile fetch failed (backend may require auth):', error.message);
+      // FIX-5c: Mock profile fallback is now gated behind VITE_ENABLE_MOCK_AUTH.
+      if (import.meta.env.VITE_ENABLE_MOCK_AUTH === 'true') {
         const mockProfile = {
           user_id: `mock-user-${email?.replace('@', '-at-')}`,
           email: email || 'ak@ak.com',
@@ -63,30 +98,8 @@ export const AuthProvider = ({ children }) => {
         };
         setProfile(mockProfile);
       } else {
-        console.warn('⚠️ Could not fetch profile (may need backend auth endpoint):', response.status);
-        // Use mock profile as fallback
-        const mockProfile = {
-          user_id: `mock-user-${email?.replace('@', '-at-')}`,
-          email: email || 'ak@ak.com',
-          tier: 'free',
-          role: 'patient',
-          full_name: email?.split('@')[0] || 'Test User',
-          is_mock: true
-        };
-        setProfile(mockProfile);
+        setProfile(null);
       }
-    } catch (error) {
-      console.warn('⚠️ Profile fetch failed (backend may require auth):', error.message);
-      // Use mock profile as fallback
-      const mockProfile = {
-        user_id: `mock-user-${email?.replace('@', '-at-')}`,
-        email: email || 'ak@ak.com',
-        tier: 'free',
-        role: 'patient',
-        full_name: email?.split('@')[0] || 'Test User',
-        is_mock: true
-      };
-      setProfile(mockProfile);
     } finally {
       setProfileLoading(false);
     }
@@ -129,32 +142,39 @@ export const AuthProvider = ({ children }) => {
           console.log('⚠️ Session expired, clearing...');
           removeFromStorage(SESSION_KEYS.AUTH_SESSION);
         } else {
-          console.log('ℹ️ No stored session found. ⚠️ MARS MODE: Auto-regenerating session for AK.');
+          // FIX-5a: MARS MODE is now gated behind VITE_ENABLE_MOCK_AUTH.
+          // In production (VITE_ENABLE_MOCK_AUTH unset or "false"), no session is auto-created.
+          // Users are redirected to /login by ProtectedRoute as expected.
+          if (import.meta.env.VITE_ENABLE_MOCK_AUTH === 'true') {
+            console.log('ℹ️ No stored session found. MARS MODE active (VITE_ENABLE_MOCK_AUTH=true): Auto-regenerating session for AK.');
 
-          // MARS MODE: Auto-login as Ayesha if no session exists (Development resilience)
-          const mockUser = {
-            id: 'mock_user_001',
-            email: 'ak@ak.com',
-            user_metadata: { email: 'ak@ak.com', role: 'patient' },
-            created_at: new Date().toISOString(),
-            is_mock: true
-          };
+            const mockUser = {
+              id: 'mock_user_001',
+              email: 'ak@ak.com',
+              user_metadata: { email: 'ak@ak.com', role: 'patient' },
+              created_at: new Date().toISOString(),
+              is_mock: true
+            };
 
-          const mockSession = {
-            access_token: `mock-token-${Date.now()}-auto`,
-            refresh_token: `mock-refresh-${Date.now()}`,
-            expires_in: 7 * 24 * 60 * 60,
-            expires_at: Date.now() + (7 * 24 * 60 * 60 * 1000),
-            token_type: 'bearer',
-            user: mockUser,
-          };
+            const mockSession = {
+              access_token: `mock-token-${Date.now()}-auto`,
+              refresh_token: `mock-refresh-${Date.now()}`,
+              expires_in: 7 * 24 * 60 * 60,
+              expires_at: Date.now() + (7 * 24 * 60 * 60 * 1000),
+              token_type: 'bearer',
+              user: mockUser,
+            };
 
-          saveToStorage(SESSION_KEYS.AUTH_SESSION, mockSession);
-          setSession(mockSession);
-          setUser(mockUser);
+            saveToStorage(SESSION_KEYS.AUTH_SESSION, mockSession);
+            setSession(mockSession);
+            setUser(mockUser);
 
-          // Background fetch profile
-          fetchUserProfile('ak@ak.com', mockSession.access_token).catch(console.warn);
+            // Background fetch profile
+            fetchUserProfile('ak@ak.com', mockSession.access_token).catch(console.warn);
+          } else {
+            console.log('ℹ️ No stored session found. Redirecting to login.');
+            // Leave user/session null — ProtectedRoute will redirect to /login.
+          }
         }
       } catch (error) {
         console.error('❌ Error checking mock session:', error);
@@ -222,12 +242,15 @@ export const AuthProvider = ({ children }) => {
           const errorData = await response.json().catch(() => ({ detail: 'Login failed' }));
           console.warn('⚠️ Backend login failed:', errorData);
 
-          // IF the error is explicitly a failure (wrong password), DO NOT fallback to mock
-          // UNLESS the user is a known test user (ak@ak.com)
+          // FIX-5b: AK hardcoded bypass is now gated behind VITE_ENABLE_MOCK_AUTH.
+          // In production, any failed login returns an error — no mock fallback for specific emails.
+          if (import.meta.env.VITE_ENABLE_MOCK_AUTH !== 'true') {
+            return { data: null, error: new Error(errorData.detail || 'Login failed') };
+          }
           if (email !== 'ak@ak.com' && email !== 'ak@aol.com') {
             return { data: null, error: new Error(errorData.detail || 'Login failed') };
           }
-          throw new Error('Fallback to mock for test user');
+          throw new Error('Fallback to mock for test user (VITE_ENABLE_MOCK_AUTH=true)');
         }
       } catch (backendError) {
         console.warn('⚠️ Backend unavailable/failed, using mock authentication:', backendError.message);

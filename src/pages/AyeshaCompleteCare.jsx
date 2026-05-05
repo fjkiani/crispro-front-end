@@ -206,11 +206,20 @@ export default function AyeshaCompleteCare() {
           });
         }
         // Add TP53 from somatic (IHC evidence)
+        // FIX-4a: Include canonical hotspot proxy fields so the backend can score the double-hit.
+        // Without hgvs_p/consequence the SL engine cannot flag the TP53 arm → synthetic_lethality_detected: false.
         const tp53Mutation = patientProfile.tumor_context?.somatic_mutations?.find(m => m.gene === "TP53");
         if (tp53Mutation) {
           slMutations.push({
-            gene: tp53Mutation.gene
-            // No hgvs_p for IHC-only evidence
+            gene: tp53Mutation.gene,
+            hgvs_p: tp53Mutation.hgvs_p || tp53Mutation.protein_change || null,
+            hgvs_c: tp53Mutation.hgvs_c || null,
+            consequence: tp53Mutation.consequence || tp53Mutation.variant_type || 'missense_variant',
+            chrom: tp53Mutation.chrom || tp53Mutation.chromosome || null,
+            pos: tp53Mutation.pos || tp53Mutation.position || null,
+            ref: tp53Mutation.ref || null,
+            alt: tp53Mutation.alt || null,
+            build: tp53Mutation.build || 'GRCh38',
           });
         }
 
