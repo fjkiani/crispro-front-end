@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Typography, Paper, Chip } from '@mui/material';
-import { useSpring, animated } from 'react-spring';
+import { useSpring, animated } from '@react-spring/web';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
 import ScienceIcon from '@mui/icons-material/Science';
 

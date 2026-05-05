@@ -5,7 +5,7 @@ import {
 import { 
   BarChart, DynamicFeed
 } from '@mui/icons-material';
-import { useSpring, animated } from 'react-spring';
+import { useSpring, animated } from '@react-spring/web';
 import OracleValidationDisplay from '../canisters/OracleValidationDisplay';
 import ForgeTherapeuticsDisplay from '../canisters/ForgeTherapeuticsDisplay';
 import ScoreGauge from '../canisters/ScoreGauge';

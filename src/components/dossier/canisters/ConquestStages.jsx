@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Typography, Paper, Grid, Button, Dialog, DialogTitle, DialogContent, DialogActions, Card, CardContent, Divider, Alert, LinearProgress } from '@mui/material';
-import { useSpring, animated } from 'react-spring';
+import { useSpring, animated } from '@react-spring/web';
 import ShieldIcon from '@mui/icons-material/Shield';
 import TokenIcon from '@mui/icons-material/Token';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';

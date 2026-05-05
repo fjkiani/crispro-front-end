@@ -4,7 +4,7 @@ import {
   ListItemText, Chip, LinearProgress, Divider, IconButton, Collapse,
   Avatar, Button, Tooltip
 } from '@mui/material';
-import { useSpring, animated } from 'react-spring';
+import { useSpring, animated } from '@react-spring/web';
 import { styled, keyframes } from '@mui/material/styles';
 
 // Icons

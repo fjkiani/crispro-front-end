@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Typography, Stepper, Step, StepLabel, StepContent, Button, Paper, Chip, Divider } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { useSpring, animated } from 'react-spring';
+import { useSpring, animated } from '@react-spring/web';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';

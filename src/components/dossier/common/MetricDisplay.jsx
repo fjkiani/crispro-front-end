@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Typography, Paper, CircularProgress } from '@mui/material';
-import { useSpring, animated } from 'react-spring';
+import { useSpring, animated } from '@react-spring/web';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 const MetricDisplay = ({ title, value, status, color, isLoading, isCompleted }) => {

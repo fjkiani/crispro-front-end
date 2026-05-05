@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Grid, Card, CardContent, Typography, CircularProgress, Chip, Alert } from '@mui/material';
-import { useSpring, animated, useChain, useSpringRef } from 'react-spring';
+import { useSpring, animated, useChain, useSpringRef } from '@react-spring/web';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import SecurityIcon from '@mui/icons-material/Security';
 import BioTechIcon from '@mui/icons-material/Biotech';

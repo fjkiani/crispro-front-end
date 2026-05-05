@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Typography, Paper, Grid, Container, Fab, Tooltip, IconButton, Slide } from '@mui/material';
 import { Help, Info, Assignment, ChevronLeft, ChevronRight, Assessment } from '@mui/icons-material';
-import { useSpring, animated } from 'react-spring';
+import { useSpring, animated } from '@react-spring/web';
 
 // Import the existing premium components
 import AICopilotPanel from './panels/AICopilotPanel';
