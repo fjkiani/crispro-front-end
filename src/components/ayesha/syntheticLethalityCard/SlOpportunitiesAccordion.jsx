@@ -9,6 +9,7 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { SlCheckpointOpportunityCard } from './SlCheckpointOpportunityCard';
 import { SlParpOpportunityCard } from './SlParpOpportunityCard';
+import { SlPi3kOpportunityCard } from './SlPi3kOpportunityCard';
 
 export function SlOpportunitiesAccordion({
   missingPayload,
@@ -17,6 +18,7 @@ export function SlOpportunitiesAccordion({
   depmapLines,
   parpRequires,
   parpDrugs,
+  pi3kDrugs,
   levelKey,
   onShowTrials,
 }) {
@@ -42,6 +44,11 @@ export function SlOpportunitiesAccordion({
             parpDepMap={opportunity.parpDepMap}
             parpRequires={parpRequires}
             parpDrugs={parpDrugs}
+          />
+          <SlPi3kOpportunityCard
+            missingPayload={missingPayload}
+            pi3kPathway={opportunity.pi3kPathway}
+            pi3kDrugs={pi3kDrugs}
           />
         </Stack>
       </AccordionDetails>

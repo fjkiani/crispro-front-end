@@ -26,7 +26,6 @@ import { useKillChainSignals } from '../../../hooks/ayesha/useKillChainSignals';
 import { useProfileEditor } from '../../../hooks/ayesha/useProfileEditor';
 import { useAyeshaCareData } from '../../../hooks/ayesha/useAyeshaCareData';
 import { useAyeshaTherapyFitBundle } from '../../../hooks/useAyeshaTherapyFitBundle';
-import { useSyntheticLethality } from '../../../hooks/useSyntheticLethality';
 import { useDDRStatus } from '../../../hooks/useDDRStatus';
 import { usePatientStatus } from '../../../hooks/usePatientStatus';
 
@@ -50,7 +49,8 @@ import IntelligenceSection from '../../../components/ayesha/profile/Intelligence
 import {
     computeArsenalCounts, computeMissingFields, formatBiomarkerChips,
     buildSignalDots, buildSignalRows, splitActions, buildJourneyCards,
-    computeSignalCounts, getPrimaryDirective,
+    computeSignalCounts,     getPrimaryDirective,
+    normalizeTherapyBundleSyntheticLethality,
 } from '../../../components/ayesha/profile/profileUtils';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -69,15 +69,16 @@ export default function Phase1Profile() {
         include_trials: true, max_trials: 10, include_sl: true,
         include_ca125: true, include_resistance: true,
         include_soc: true, include_io_selection: true,
+        skip_synthetic_lethality_parallel: true,
     });
     const { data: therapyBundle, isLoading: tbLoading, error: tbError } = useAyeshaTherapyFitBundle({ level: 'l1' });
-    const { slResult, analyzeSL } = useSyntheticLethality();
+    const slResult = useMemo(
+        () => normalizeTherapyBundleSyntheticLethality(therapyBundle),
+        [therapyBundle]
+    );
     const { missingTests } = usePatientStatus(profile);
     const { ddrStatus, loading: ddrLoading, calculateDDRStatus } = useDDRStatus();
     const ddrCalculationInitiated = React.useRef(false);
-
-    // Fire SL analysis
-    useEffect(() => { if (profile) analyzeSL(profile); }, [profile, analyzeSL]);
 
     // Fire DDR calculation (once)
     useEffect(() => {
@@ -88,7 +89,10 @@ export default function Phase1Profile() {
             calculateDDRStatus({
                 patient_id: patient?.patient_id || 'AK',
                 disease_site: 'ovary', tumor_subtype: 'HGSOC', mutations,
-            }).catch(() => { ddrCalculationInitiated.current = false; });
+            }).catch(() => {
+                // Do not clear ddrCalculationInitiated: that re-enters the effect and spams
+                // POST /api/resistance/ddr-status on every failure (see Janitor HAR ×23 post-mortem).
+            });
         }
     }, [getDDRMutations, patient, calculateDDRStatus, ddrStatus, ddrLoading]);
 

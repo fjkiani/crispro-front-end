@@ -459,8 +459,10 @@ export const useCompleteCareOrchestrator = () => {
       return;
     }
 
-    // Stale-while-revalidate: serve cached result instantly (lite vs full — different payloads)
-    const cacheTier = options?.skip_auxiliary_parallel_requests ? 'lite' : 'full';
+    // Stale-while-revalidate: lite (no VUS/ess/SL), no_sl (main plan + VUS/ess, no parallel SL), full
+    let cacheTier = 'full';
+    if (options?.skip_auxiliary_parallel_requests) cacheTier = 'lite';
+    else if (options?.skip_synthetic_lethality_parallel) cacheTier = 'no_sl';
     const cacheKey = `care:${patientProfile?.patient?.id || 'ayesha'}:${cacheTier}`;
     const cached = carePlanCache.get(cacheKey);
     if (cached) {
@@ -479,7 +481,12 @@ export const useCompleteCareOrchestrator = () => {
       // Merge with options (allows overriding max_trials, etc.)
       const merged = { ...baseRequest, ...options };
       const skipAuxiliary = !!merged.skip_auxiliary_parallel_requests;
-      const { skip_auxiliary_parallel_requests: _skipAux, ...requestBody } = merged;
+      const skipSlParallel = !!merged.skip_synthetic_lethality_parallel;
+      const {
+        skip_auxiliary_parallel_requests: _skipAux,
+        skip_synthetic_lethality_parallel: _skipSl,
+        ...requestBody
+      } = merged;
 
       console.log('[useCompleteCareOrchestrator] Request body built from profile:', {
         stage: requestBody.stage,
@@ -495,9 +502,10 @@ export const useCompleteCareOrchestrator = () => {
       const essentialityPromise = skipAuxiliary
         ? Promise.resolve([])
         : fetchEssentialityScores(patientProfile);
-      const slPromise = skipAuxiliary
-        ? Promise.resolve(null)
-        : fetchSyntheticLethality(patientProfile);
+      const slPromise =
+        skipAuxiliary || skipSlParallel
+          ? Promise.resolve(null)
+          : fetchSyntheticLethality(patientProfile);
 
       // 4. Main Care Plan API call
       const mainPlanPromise = fetch(`${API_ROOT}/api/ayesha/complete_care_v2`, {

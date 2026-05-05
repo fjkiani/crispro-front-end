@@ -124,8 +124,7 @@ export function useHolisticValidation() {
                   current_line: 'L3',
                   prior_therapies: []
                 },
-                patient_medications: [],
-                use_evo2: false
+                patient_medications: []
               };
 
               const response = await fetch(`${API_ROOT}/api/hypothesis/validate_food_dynamic`, {
@@ -191,8 +190,7 @@ export function useHolisticValidation() {
                 current_line: 'L3',
                 prior_therapies: []
               },
-              patient_medications: [],
-              use_evo2: false
+              patient_medications: []
             };
 
             const response = await fetch(`${API_ROOT}/api/hypothesis/validate_food_dynamic`, {

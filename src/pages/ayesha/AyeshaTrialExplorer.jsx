@@ -48,11 +48,14 @@ import { ErrorState } from '../../components/orchestrator/Common/index';
 import { useAyeshaTherapyFitBundle } from '../../hooks/useAyeshaTherapyFitBundle';
 import WeeklyStrategyLoop from '../../components/ayesha/WeeklyStrategyLoop';
 import PatientJourneyEnhanced from '../../components/patient/PatientJourneyEnhanced';
+import { getSyntheticLethalityDirective, getSyntheticLethalitySignal } from '../../utils/ayesha/syntheticLethalitySignals';
 
 // ----------------------------------------------------------------------
 // LOGIC HELPER: PRIMARY DIRECTIVE
 // ----------------------------------------------------------------------
 const getPrimaryDirective = (slResult, resistanceAlert, trialCount, socRecommendation, profile) => {
+  const slDirective = getSyntheticLethalityDirective(slResult);
+
   // 1. HIGHEST PRIORITY: Synthetic Lethality (The "Silver Bullet")
   if (slResult?.synthetic_lethality_detected) {
     const drug = slResult.recommended_drugs?.[0];
@@ -75,6 +78,11 @@ const getPrimaryDirective = (slResult, resistanceAlert, trialCount, socRecommend
       actionRoute: '/ayesha-digital-twin',
       color: 'secondary', // Mars Rules: Purple/Pink for SL
     };
+  }
+
+  // 1b. Mechanistic candidate only (consider-tier discovery signal)
+  if (slDirective) {
+    return slDirective;
   }
 
   // 2. HIGH PRIORITY: Critical Resistance (The "Shield Breaker")
@@ -156,6 +164,7 @@ const AyeshaTrialExplorer = () => {
   // Synthetic Lethality (Parallel Load)
   const { slResult, analyzeSL } = useSyntheticLethality();
   useEffect(() => { analyzeSL(profile); }, [profile, analyzeSL]);
+  const slSignal = useMemo(() => getSyntheticLethalitySignal(slResult), [slResult]);
 
   // TherapyFit bundle for WeeklyStrategyLoop
   const { data: therapyBundle, isLoading: tbLoading, error: tbError } = useAyeshaTherapyFitBundle({ level: 'l1' });
@@ -195,12 +204,10 @@ const AyeshaTrialExplorer = () => {
             <ZetaSignalCard
               title="Synthetic Lethality"
               icon={<SLIcon fontSize="small" />}
-              status={slResult?.synthetic_lethality_detected ? "LOCKED" : "SCANNING"}
-              color={slResult?.synthetic_lethality_detected ? "secondary" : "default"}
-              evidenceLevel={slResult?.synthetic_lethality_detected ? "L3" : "L1"}
-              evidenceText={slResult?.synthetic_lethality_detected
-                ? `${slResult.double_hit_description?.split('→')[0]} Detected`
-                : "No Mechanistic Vulnerability"}
+              status={slSignal.status}
+              color={slSignal.color}
+              evidenceLevel={slSignal.evidenceLevel}
+              evidenceText={slSignal.text}
               inputsUsed="NGS • Pathway Map"
               actionLabel="Digital Twin"
               onAction={() => navigate('/ayesha-digital-twin')}

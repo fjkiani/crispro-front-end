@@ -259,29 +259,23 @@ export default function HolisticResultsDisplay({ results }) {
                       />
                     )}
 
-                    {/* S/P/E Breakdown */}
-                    {result.spe_breakdown && (
+                    {/* P/E Breakdown (legacy: spe_breakdown) */}
+                    {(result.pe_breakdown || result.spe_breakdown) && (
                       <Paper sx={{ p: 2, bgcolor: alpha('#667eea', 0.05), borderRadius: 2 }}>
                         <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
-                          S/P/E Breakdown:
+                          P/E Breakdown:
                         </Typography>
                         <Stack direction="row" spacing={3}>
                           <Box>
-                            <Typography variant="caption" color="text.secondary">Sequence (S)</Typography>
-                            <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                              {(result.spe_breakdown.sequence * 100).toFixed(0)}%
-                            </Typography>
-                          </Box>
-                          <Box>
                             <Typography variant="caption" color="text.secondary">Pathway (P)</Typography>
                             <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                              {(result.spe_breakdown.pathway * 100).toFixed(0)}%
+                              {(((result.pe_breakdown || result.spe_breakdown)?.pathway ?? 0) * 100).toFixed(0)}%
                             </Typography>
                           </Box>
                           <Box>
                             <Typography variant="caption" color="text.secondary">Evidence (E)</Typography>
                             <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                              {(result.spe_breakdown.evidence * 100).toFixed(0)}%
+                              {(((result.pe_breakdown || result.spe_breakdown)?.evidence ?? 0) * 100).toFixed(0)}%
                             </Typography>
                           </Box>
                         </Stack>

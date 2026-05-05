@@ -5,6 +5,7 @@
  * All functions are pure (no hooks, no side effects).
  */
 import { SIGNAL_DEFINITIONS } from '../../../constants/kill-chain/signalDefinitions';
+import { getSyntheticLethalityDirective, getSyntheticLethalitySignal } from '../../../utils/ayesha/syntheticLethalitySignals';
 
 // ── Signal → test slug mapping ──────────────────────────────────────────────
 export const SIGNAL_TEST_SLUG = {
@@ -201,6 +202,37 @@ export function formatTimestamp(ts) {
     } catch { return ''; }
 }
 
+// ── Synthetic lethality from merged therapy-fit bundle (single SL signal) ───
+/** Maps bundle.synthetic_lethality / levels.L1.synthetic_lethality → ThreatRadar + getPrimaryDirective shape. */
+export function normalizeTherapyBundleSyntheticLethality(bundle) {
+    if (!bundle || typeof bundle !== 'object') return null;
+    const sl =
+        bundle.synthetic_lethality ||
+        bundle.levels?.L1?.synthetic_lethality ||
+        bundle.levels?.l1?.synthetic_lethality ||
+        null;
+    if (!sl || typeof sl !== 'object') return null;
+    const detected =
+        sl.synthetic_lethality_detected === true ||
+        sl.synthetic_lethality_detected === 'true' ||
+        sl.detected === true;
+    const desc =
+        sl.double_hit_description ||
+        sl.description ||
+        sl.summary ||
+        (Array.isArray(sl.rationale) ? sl.rationale[0] : sl.rationale) ||
+        undefined;
+    return {
+        synthetic_lethality_detected: !!detected,
+        ...(desc ? { double_hit_description: desc } : {}),
+        signal_state: getSyntheticLethalitySignal(sl).state,
+        provenance: sl.provenance,
+        essential_pathways: Array.isArray(sl.essential_pathways) ? sl.essential_pathways : [],
+        recommended_drugs: Array.isArray(sl.recommended_drugs) ? sl.recommended_drugs : [],
+        display_recommendations: Array.isArray(sl.display_recommendations) ? sl.display_recommendations : [],
+    };
+}
+
 // ── Primary Directive Logic ─────────────────────────────────────────────────
 export function getPrimaryDirective(slResult, resistanceAlert, trialCount, socRecommendation, profile) {
     // 1. Resistance detected → highest priority
@@ -243,6 +275,11 @@ export function getPrimaryDirective(slResult, resistanceAlert, trialCount, socRe
             actionRoute: '/ayesha-digital-twin',
             color: 'secondary',
         };
+    }
+
+    const slDirective = getSyntheticLethalityDirective(slResult);
+    if (slDirective) {
+        return slDirective;
     }
 
     // 3. SOC available

@@ -32,7 +32,10 @@ export default function StrictDrugSearch() {
         setResult(null);
 
         try {
-            const url = new URL(`${API_ROOT}/api/ayesha/therapy-fit/drug/${encodeURIComponent(query)}`);
+            const href = `${API_ROOT}/api/ayesha/therapy-fit/drug/${encodeURIComponent(query)}`;
+            const url = href.startsWith('http')
+                ? new URL(href)
+                : new URL(href, window.location.origin);
             url.searchParams.append('level', 'all');
 
             const res = await fetch(url.toString());

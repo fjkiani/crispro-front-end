@@ -8,7 +8,7 @@
  * "Why we can't say more yet" section for missing fields.
  * Export: PDF/print/share link.
  */
-import React, { useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
     Box, Typography, Paper, Grid, Alert, Button,
     CircularProgress, Chip, LinearProgress, Tabs, Tab
@@ -23,7 +23,7 @@ import AnalysisLoadingCard from '../../../components/ayesha/journey/AnalysisLoad
 import CapabilitiesHeroStrip from '../../../components/ayesha/tumor-board/CapabilitiesHeroStrip';
 import DrugRankingPanel from '../../../components/ayesha/DrugRankingPanel';
 import { useAyeshaProfile } from '../../../hooks/ayesha/useAyeshaProfile';
-import { useAyeshaTherapyFitBundle, useAyeshaScenarios } from '../../../hooks/useAyeshaTherapyFitBundle';
+import { useTumorBoardBundle } from '../../../hooks/useTumorBoardBundle';
 import { useAyeshaTrials } from '../../../hooks/useAyeshaTrials';
 import OpportunityPanel from '../../../components/ayesha/tumor-board/OpportunityPanel';
 import EvidenceVault from '../../../components/ayesha/tumor-board/EvidenceVault';
@@ -122,40 +122,85 @@ const FeasibilityBadge = ({ status }) => {
 
 const Phase6Board = () => {
     const { labs } = useAyeshaProfile();
-    const { data: bundle, isLoading, error, refetch } = useAyeshaTherapyFitBundle({ level: 'l1' });
     const printRef = useRef();
-
-    const levelData = bundle?.levels?.L1 || {};
-    const drugs = levelData?.efficacy?.drugs || [];
-    const completeness = levelData?.completeness || {};
-    const missing = completeness?.missing || [];
-    // Fall back to top-level if the levels.$L1 mapping shifted
-    const slPayload = levelData?.synthetic_lethality || bundle?.synthetic_lethality || null;
-    const resistanceGate = levelData?.resistance_gate;
-    const testsNeeded = bundle?.tests_needed || [];
-
     const [activeTab, setActiveTab] = useState(0);
     const [level, setLevel] = useState('l1');
     const [scenarioId, setScenarioId] = useState(null);
     const [l3ScenarioId, setL3ScenarioId] = useState(null);
-    const activeKey = String(level || 'l1').toUpperCase();
+    const [shareCopied, setShareCopied] = useState(false);
 
-    const { data: scenariosData } = useAyeshaScenarios();
-    const l2Scenarios = safeArray(scenariosData?.l2_scenarios);
-    const l3Scenarios = safeArray(scenariosData?.l3_scenarios);
+    const { data: bundle, isLoading, error, refetch } = useTumorBoardBundle({
+        level,
+        scenarioId,
+        l3ScenarioId,
+    });
+
+    const activeKey = String(level || 'l1').toUpperCase();
+    const levelData = bundle?.levels?.[activeKey] || {};
+    const drugs = levelData?.efficacy?.drugs || [];
+    const completeness = levelData?.completeness || {};
+    const missing = completeness?.missing || [];
+    const slPayload = levelData?.synthetic_lethality || bundle?.synthetic_lethality || null;
+    const resistanceGate = levelData?.resistance_gate;
+    const testsNeeded = bundle?.tests_needed || [];
+
+    const l2Scenarios = safeArray(bundle?.l2_scenarios);
+    const l3Scenarios = safeArray(bundle?.l3_scenarios);
 
     const handleRunL2 = (sid) => { setLevel('l2'); setScenarioId(sid); setL3ScenarioId(null); };
     const handleRunL3 = (l2BaseId, l3Id) => { setLevel('l3'); setScenarioId(l2BaseId); setL3ScenarioId(l3Id); };
 
-    // Clinical trial matches for the board packet
+    const drugRankingContext = useMemo(() => {
+        let scenarioLabel = 'Baseline';
+        if (activeKey === 'L2' && scenarioId) {
+            const s = l2Scenarios.find((x) => x.id === scenarioId);
+            scenarioLabel = s?.meta?.description || s?.name || scenarioId;
+        } else if (activeKey === 'L3' && l3ScenarioId) {
+            const s = l3Scenarios.find((x) => x.id === l3ScenarioId);
+            scenarioLabel = s?.meta?.description || s?.name || l3ScenarioId;
+        }
+        return {
+            level: activeKey,
+            scenario: scenarioLabel,
+            inputs: { mutations: levelData?.inputs_used?.mutations || [] },
+        };
+    }, [activeKey, scenarioId, l3ScenarioId, l2Scenarios, l3Scenarios, levelData?.inputs_used?.mutations]);
+
     const { trials, isLoading: trialsLoading } = useAyeshaTrials({
-        bundle, autoFetch: true, maxResults: 5,
+        bundle,
+        levelKey: activeKey,
+        autoFetch: true,
+        maxResults: 5,
     });
 
     const handlePrint = () => {
         window.print();
     };
 
+    const handleShare = async () => {
+        const lines = [
+            'Tumor Board Packet (RUO)',
+            `URL: ${window.location.href}`,
+            `Level: ${activeKey}`,
+            `Scenario: ${drugRankingContext.scenario}`,
+            `Drugs ranked: ${drugs.length}`,
+            `Tests needed: ${testsNeeded.length}`,
+            `Generated (UTC): ${new Date().toISOString()}`,
+        ];
+        const text = lines.join('\n');
+        try {
+            if (typeof navigator !== 'undefined' && navigator.share) {
+                await navigator.share({ title: 'Tumor Board Packet (RUO)', text });
+            } else if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(text);
+                setShareCopied(true);
+                window.setTimeout(() => setShareCopied(false), 2500);
+            }
+        } catch (e) {
+            if (e?.name === 'AbortError') return;
+            console.warn('Share failed:', e);
+        }
+    };
 
     return (
         <JourneyLayout hideRail>
@@ -185,9 +230,10 @@ const Phase6Board = () => {
                             variant="contained"
                             color="primary"
                             startIcon={<Share />}
+                            onClick={handleShare}
                             sx={{ fontWeight: 700, textTransform: 'none' }}
                         >
-                            Share
+                            {shareCopied ? 'Copied summary' : 'Share'}
                         </Button>
                     </Box>
                 </Box>
@@ -251,11 +297,7 @@ const Phase6Board = () => {
                         <DrugRankingPanel
                             drugs={drugs}
                             navigateOnCardClick={false}
-                            context={{
-                                level: 'L1',
-                                scenario: 'Baseline',
-                                inputs: { mutations: levelData?.inputs_used?.mutations || [] },
-                            }}
+                            context={drugRankingContext}
                         />
                     )}
                     {!isLoading && missing.length > 0 && (

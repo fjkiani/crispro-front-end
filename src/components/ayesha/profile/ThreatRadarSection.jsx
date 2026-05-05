@@ -7,8 +7,11 @@ import React from 'react';
 import { Box, Typography, Grid, CircularProgress } from '@mui/material';
 import { Biotech as SLIcon, ShowChart as VelocityIcon, LocalFireDepartment as IOIcon, Shield as ResistanceIcon } from '@mui/icons-material';
 import { ZetaSignalCard } from '../../../pages/ayesha/ZetaDashboardComponents';
+import { getSyntheticLethalitySignal } from '../../../utils/ayesha/syntheticLethalitySignals';
 
 export default function ThreatRadarSection({ careLoading, slResult, ca125, io, resistance, profile, navigate }) {
+    const slSignal = getSyntheticLethalitySignal(slResult);
+
     return (
         <Box sx={{ mt: 3, mb: 3 }}>
             <Typography
@@ -32,12 +35,10 @@ export default function ThreatRadarSection({ careLoading, slResult, ca125, io, r
                         <ZetaSignalCard
                             title="Synthetic Lethality"
                             icon={<SLIcon fontSize="small" />}
-                            status={slResult?.synthetic_lethality_detected ? 'LOCKED' : 'SCANNING'}
-                            color={slResult?.synthetic_lethality_detected ? 'secondary' : 'default'}
-                            evidenceLevel={slResult?.synthetic_lethality_detected ? 'L3' : 'L1'}
-                            evidenceText={slResult?.synthetic_lethality_detected
-                                ? `${slResult.double_hit_description?.split('→')[0]} Detected`
-                                : 'No Mechanistic Vulnerability'}
+                            status={slSignal.status}
+                            color={slSignal.color}
+                            evidenceLevel={slSignal.evidenceLevel}
+                            evidenceText={slSignal.text}
                             inputsUsed="NGS • Pathway Map"
                             actionLabel="Digital Twin"
                             onAction={() => navigate('/ayesha-digital-twin')}

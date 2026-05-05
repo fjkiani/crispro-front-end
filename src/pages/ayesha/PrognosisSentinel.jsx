@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Grid, CircularProgress, Typography, Paper } from '@mui/material';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Box, Grid, CircularProgress, Typography } from '@mui/material';
 import SentinelDashboard from '../../components/ayesha/sentinel/SentinelDashboard';
 import ScenarioSelector from '../../components/ayesha/context_center/ScenarioSelector';
 import TruthTable from '../../components/ayesha/context_center/TruthTable';
@@ -9,94 +9,98 @@ import {
     AYESHA_DEFAULT_CONTRACT_VERSION,
     buildAyeshaTherapyFitBundleUrl,
     getAyeshaTherapyFitScenariosUrl,
+    mergeTherapyFitBundleWithScenarios,
 } from '../../utils/ayeshaApi';
 
 const PrognosisSentinel = () => {
     const [bundle, setBundle] = useState(null);
     const [scenarios, setScenarios] = useState({ l2_scenarios: [], l3_scenarios: [] });
     const [loading, setLoading] = useState(true);
+    const lastL2IdRef = useRef(null);
 
-    // UI State
     const [activeLevel, setActiveLevel] = useState('L1');
     const [activeScenarioId, setActiveScenarioId] = useState(null);
 
-    // 1. Initial Load: Scenarios & Default Bundle
-    useEffect(() => {
-        const init = async () => {
-            try {
-                // Fetch Scenarios Catalog
-                const resSc = await fetch(getAyeshaTherapyFitScenariosUrl());
-                const dataSc = await resSc.json();
-                setScenarios(dataSc);
-
-                // Fetch Initial Bundle (clean L1 baseline)
-                await fetchBundle(null, null);
-            } catch (err) {
-                console.error("Initialization Failed:", err);
-            }
-        };
-        init();
-    }, []);
-
-    // 2. Fetch Bundle on Scenario Change
-    const fetchBundle = async (level, scenarioId) => {
+    const fetchBundle = useCallback(async ({ apiLevel = 'l1', scenarioId = null, l3ScenarioId = null }) => {
         setLoading(true);
         try {
-            const res = await fetch(buildAyeshaTherapyFitBundleUrl({
-                level: level || 'l1',
-                scenarioId,
-                includeSyntheticLethality: true,
-            }), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({}) // Empty body for GET-like behavior with POST
-            });
+            const [bundleRes, scRes] = await Promise.all([
+                fetch(buildAyeshaTherapyFitBundleUrl({
+                    level: apiLevel,
+                    scenarioId,
+                    l3ScenarioId,
+                    includeSyntheticLethality: true,
+                }), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({}),
+                }),
+                fetch(getAyeshaTherapyFitScenariosUrl()),
+            ]);
 
-            if (!res.ok) throw new Error(`Sentinel check failed: ${res.statusText}`);
+            if (!bundleRes.ok) throw new Error(`Sentinel check failed: ${bundleRes.statusText}`);
 
-            const analyzeData = await res.json();
-
-            // Adapter: PrognosisSentinel expects simple level objects
-            setBundle(analyzeData);
+            const bundleJson = await bundleRes.json();
+            let scJson = { l2_scenarios: [], l3_scenarios: [] };
+            try {
+                if (scRes.ok) scJson = await scRes.json();
+            } catch {
+                // keep defaults
+            }
+            setScenarios(scJson);
+            setBundle(mergeTherapyFitBundleWithScenarios(bundleJson, scJson));
         } catch (err) {
-            console.error("Bundle Fetch Failed:", err);
-            setBundle(null); // Clear bundle on error
+            console.error('Bundle Fetch Failed:', err);
+            setBundle(null);
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    // 3. Handler for Selector
-    const handleContextSelect = (level, id) => {
-        setActiveLevel(level);
-        setActiveScenarioId(id);
+    useEffect(() => {
+        fetchBundle({ apiLevel: 'l1', scenarioId: null, l3ScenarioId: null }).catch((err) => {
+            console.error('Initialization Failed:', err);
+        });
+    }, [fetchBundle]);
 
+    const handleContextSelect = (levelNorm, id) => {
+        setActiveLevel(levelNorm);
+        setActiveScenarioId(id || null);
 
-        if (level === 'L2' && id) {
-            l2Id = id;
-        } else if (level === 'L3' && id) {
-            // If L3 selected, assume default L2 or look up parent? 
-            // For now, sticking to simplified model: L3 implies a base L2.
-            // Backend handles defaults if not specified.
-            l3Id = id;
+        if (levelNorm === 'L1') {
+            lastL2IdRef.current = null;
+            fetchBundle({ apiLevel: 'l1', scenarioId: null, l3ScenarioId: null });
+            return;
         }
-
-        fetchBundle(l2Id, l3Id);
+        if (levelNorm === 'L2' && id) {
+            lastL2IdRef.current = id;
+            fetchBundle({ apiLevel: 'l2', scenarioId: id, l3ScenarioId: null });
+            return;
+        }
+        if (levelNorm === 'L3' && id) {
+            const baseL2 =
+                lastL2IdRef.current ||
+                scenarios.l2_scenarios?.[0]?.id ||
+                bundle?.l2_scenarios?.[0]?.id ||
+                null;
+            fetchBundle({ apiLevel: 'l3', scenarioId: baseL2, l3ScenarioId: id });
+            return;
+        }
+        fetchBundle({ apiLevel: 'l1', scenarioId: null, l3ScenarioId: null });
     };
 
-    // 4. Adapt Bundle to Legacy Dashboard Prop (Bridge)
     const getDashboardProps = () => {
-        if (!bundle || !bundle.levels[activeLevel]) return null;
-        const lvlData = bundle.levels[activeLevel];
+        const lvlData = bundle?.levels?.[activeLevel];
+        if (!bundle || !lvlData) return null;
 
         return {
             prediction: {
-                confidence_cap: lvlData.completeness.confidence_cap,
-                baseline_penalty_applied: false, // Not in V2 bundle yet
-                prognosis: { status: 'ACTIVE' }, // Placeholder 
+                confidence_cap: lvlData.completeness?.confidence_cap,
+                baseline_penalty_applied: false,
+                prognosis: { status: 'ACTIVE' },
             },
             recommended_tests: bundle.tests_needed,
-            logic_steps: [] // Provenance log placeholder
+            logic_steps: [],
         };
     };
 
@@ -108,7 +112,7 @@ const PrognosisSentinel = () => {
         );
     }
 
-    const currentLevelData = bundle ? bundle.levels[activeLevel] : null;
+    const currentLevelData = bundle?.levels?.[activeLevel] ?? null;
 
     return (
         <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#0a0e14', overflow: 'hidden' }}>

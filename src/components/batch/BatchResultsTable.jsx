@@ -265,21 +265,20 @@ export default function BatchResultsTable({ results }) {
                           />
                         )}
 
-                        {/* S/P/E Breakdown */}
-                        {result.spe_breakdown && (
+                        {/* P/E Breakdown (legacy responses may still send spe_breakdown) */}
+                        {(result.pe_breakdown || result.spe_breakdown) && (
                           <Box>
                             <Typography variant="subtitle2" gutterBottom>
-                              S/P/E Breakdown:
+                              P/E Breakdown:
                             </Typography>
                             <Box sx={{ display: 'flex', gap: 2 }}>
                               <Typography variant="body2">
-                                <strong>S:</strong> {(result.spe_breakdown.sequence * 100).toFixed(0)}%
+                                <strong>P:</strong>{' '}
+                                {(((result.pe_breakdown || result.spe_breakdown)?.pathway ?? 0) * 100).toFixed(0)}%
                               </Typography>
                               <Typography variant="body2">
-                                <strong>P:</strong> {(result.spe_breakdown.pathway * 100).toFixed(0)}%
-                              </Typography>
-                              <Typography variant="body2">
-                                <strong>E:</strong> {(result.spe_breakdown.evidence * 100).toFixed(0)}%
+                                <strong>E:</strong>{' '}
+                                {(((result.pe_breakdown || result.spe_breakdown)?.evidence ?? 0) * 100).toFixed(0)}%
                               </Typography>
                             </Box>
                           </Box>

@@ -7,19 +7,27 @@ import { SL_DEBUG } from './slUtils';
 
 export function SlSignalBar({
   detected,
+  signalState = 'none',
   receiptsOk,
   status,
   hasPayload,
   onOpenReceipts,
   onOpenFullJson,
 }) {
+  const label =
+    signalState === 'consider'
+      ? 'SL signal: Consider-tier candidate'
+      : `SL signal: ${detected ? 'Detected' : 'Not detected'}`;
+  const color = signalState === 'consider' ? 'warning' : (detected ? 'success' : 'default');
+  const variant = signalState === 'consider' || detected ? 'filled' : 'outlined';
+
   return (
     <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', mb: 2 }}>
       <Chip
-        icon={detected ? <CheckCircleIcon /> : <CancelIcon />}
-        label={`SL signal: ${detected ? 'Detected' : 'Not detected'}`}
-        color={detected ? 'success' : 'default'}
-        variant={detected ? 'filled' : 'outlined'}
+        icon={detected || signalState === 'consider' ? <CheckCircleIcon /> : <CancelIcon />}
+        label={label}
+        color={color}
+        variant={variant}
       />
       <Chip
         icon={<ReceiptLongIcon />}

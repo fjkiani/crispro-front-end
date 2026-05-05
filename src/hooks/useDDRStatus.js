@@ -67,6 +67,7 @@ export const useDDRStatus = () => {
         queryKey: key,
         queryFn: () => fetchDDRStatusRequest(requestData),
         staleTime: 5 * 60 * 1000,
+        retry: false,
       });
       setDdrStatus(data);
       return data;

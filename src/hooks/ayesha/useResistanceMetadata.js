@@ -29,9 +29,9 @@
  */
 
 import { useState, useEffect } from 'react';
+import { API_ROOT } from '@/lib/apiConfig';
 
 const CACHE_KEY = 'resistance_metadata';
-const API_ROOT = import.meta.env.VITE_API_ROOT || 'http://localhost:8000';
 
 export function useResistanceMetadata() {
     const [data, setData] = useState(null);

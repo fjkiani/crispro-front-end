@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Box, Card, CardContent, Chip, Typography } from '@mui/material';
+import { Alert, Box, Card, CardContent, Chip, Typography } from '@mui/material';
 import ScienceIcon from '@mui/icons-material/Science';
 import { BiologicalRationaleAccordion } from './BiologicalRationaleAccordion';
 import { BrokenPathwaysAccordion } from './BrokenPathwaysAccordion';
@@ -14,6 +14,7 @@ import { SlReceiptsDrawer } from './SlReceiptsDrawer';
 import { SlSignalBar } from './SlSignalBar';
 import { SuggestedTherapyBanner } from './SuggestedTherapyBanner';
 import { SL_DEBUG, safeArray, safeObj } from './slUtils';
+import { getSyntheticLethalitySignal, getSyntheticLethalityWarnings } from '../../../utils/ayesha/syntheticLethalitySignals';
 
 const TIER_ORDER = {
   'Validated SL therapeutic lever': 0,
@@ -88,7 +89,6 @@ function buildCanonicalRecommendations(payload, evidenceMatrix) {
 
 export function SyntheticLethalityCard({ slData, data, onShowTrials, levelKey: levelKeyProp }) {
   const payload = slData || data;
-  const detected = payload?.synthetic_lethality_detected === true;
   const levelKey = String(levelKeyProp || 'L1').toUpperCase();
 
   const prov = safeObj(payload?.provenance);
@@ -105,6 +105,9 @@ export function SyntheticLethalityCard({ slData, data, onShowTrials, levelKey: l
     () => buildCanonicalRecommendations(payload, evidenceMatrix),
     [payload, evidenceMatrix]
   );
+  const slSignal = useMemo(() => getSyntheticLethalitySignal(payload), [payload]);
+  const warnings = useMemo(() => getSyntheticLethalityWarnings(payload), [payload]);
+  const detected = slSignal.state === 'locked';
   const hasCanonicalRecommendations = canonical.recommendations.length > 0;
 
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -114,6 +117,11 @@ export function SyntheticLethalityCard({ slData, data, onShowTrials, levelKey: l
     const ids = new Set(essential.map((p) => String(p?.pathway_id || '')).filter(Boolean));
     const checkpointAxis = ids.has('ATR') || ids.has('WEE1');
     const parpAxis = ids.has('HR') || ids.has('PARP');
+    const pi3kPathway =
+      essential.find((p) => String(p?.pathway_name || '').toUpperCase() === 'PI3K_AKT_MTOR') ||
+      essential.find((p) => String(p?.pathway_id || '').toUpperCase() === 'PI3K_AKT_MTOR') ||
+      null;
+    const pi3kAxis = !!pi3kPathway;
 
     const checkpointMeta =
       essential.find((p) => p?.pathway_id === 'ATR' || p?.pathway_id === 'WEE1')?.essentiality_metadata || {};
@@ -123,9 +131,11 @@ export function SyntheticLethalityCard({ slData, data, onShowTrials, levelKey: l
     return {
       checkpointAxis,
       parpAxis,
+      pi3kAxis,
       essentialIds: ids,
       checkpointDepMap: safeArray(checkpointMeta.depmap_lines),
       parpDepMap: safeArray(parpMeta.depmap_lines),
+      pi3kPathway,
     };
   }, [essential]);
 
@@ -138,6 +148,19 @@ export function SyntheticLethalityCard({ slData, data, onShowTrials, levelKey: l
     const allow = new Set(['HR', 'PARP']);
     return recs.filter((d) => allow.has(String(d?.target_pathway || '')));
   }, [recs]);
+
+  const pi3kDrugs = useMemo(() => {
+    const allow = new Set(['PI3K', 'AKT', 'MTOR', 'PI3K_AKT_MTOR']);
+    const matched = recs.filter((d) => allow.has(String(d?.target_pathway || '').toUpperCase()));
+    if (matched.length) return matched;
+
+    if (!opportunity.pi3kAxis) return [];
+    return [
+      { drug_name: 'Everolimus', drug_class: 'mTOR inhibitor', evidence_tier: 'mechanistic' },
+      { drug_name: 'Alpelisib', drug_class: 'PI3K inhibitor', evidence_tier: 'mechanistic' },
+      { drug_name: 'Capivasertib', drug_class: 'AKT inhibitor', evidence_tier: 'mechanistic' },
+    ];
+  }, [recs, opportunity.pi3kAxis]);
 
   const depmapLines = useMemo(() => {
     const lines = [];
@@ -168,7 +191,9 @@ export function SyntheticLethalityCard({ slData, data, onShowTrials, levelKey: l
     ? 'SL payload is missing from this bundle.'
     : detected
       ? 'SL signal detected (bundle-derived).'
-      : 'No strong SL signal detected (bundle-derived).';
+      : slSignal.state === 'consider'
+        ? 'Mechanistic candidate present (bundle-derived).'
+        : 'No strong SL signal detected (bundle-derived).';
 
   return (
     <Card sx={{ borderRadius: 3, border: '1px solid #e2e8f0' }}>
@@ -183,6 +208,7 @@ export function SyntheticLethalityCard({ slData, data, onShowTrials, levelKey: l
 
         <SlSignalBar
           detected={detected}
+          signalState={slSignal.state}
           receiptsOk={receiptsOk}
           status={status}
           hasPayload={!!payload}
@@ -193,6 +219,12 @@ export function SyntheticLethalityCard({ slData, data, onShowTrials, levelKey: l
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           {headerMsg}
         </Typography>
+
+        {warnings.map((warning) => (
+          <Alert key={warning.key} severity={warning.severity} sx={{ mb: 2 }}>
+            <strong>{warning.title}:</strong> {warning.message}
+          </Alert>
+        ))}
 
         <SlMutationContextCard
           detected={detected}
@@ -238,6 +270,7 @@ export function SyntheticLethalityCard({ slData, data, onShowTrials, levelKey: l
           depmapLines={depmapLines}
           parpRequires={parpRequires}
           parpDrugs={parpDrugs}
+          pi3kDrugs={pi3kDrugs}
           levelKey={levelKey}
           onShowTrials={onShowTrials}
         />

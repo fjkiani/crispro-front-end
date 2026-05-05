@@ -148,7 +148,7 @@ const AyeshaPatientDashboard = () => {
         mutations,
       }).catch((err) => {
         console.error('[DDR] Failed to compute:', err);
-        ddrCalculationInitiated.current = false;
+        // Keep ddrCalculationInitiated true — resetting caused unbounded POST retries on failure.
       });
     }
   }, [getDDRMutations, patient, calculateDDRStatus, ddrStatus, ddrLoading]);

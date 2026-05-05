@@ -1,10 +1,17 @@
-
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-  AYESHA_DEFAULT_CONTRACT_VERSION,
   buildAyeshaTherapyFitBundleUrl,
   getAyeshaTherapyFitScenariosUrl,
+  mergeTherapyFitBundleWithScenarios,
 } from '../utils/ayeshaApi';
+import {
+  storageKeyForBundle,
+  readPersistedBundle,
+  writePersistedBundle,
+} from '../utils/ayeshaBundleSessionPersistence';
+
+const THERAPY_FIT_BUNDLE_STORAGE_PREFIX = 'therapy_fit_bundle_v1:';
 
 
 // Helper to get auth token directly from storage
@@ -64,36 +71,44 @@ const fetchStrictBundle = async ({ level = 'all', scenario_id = null, l3_scenari
 
   const bundleData = await bundleRes.json();
   const scenariosData = await scenariosRes.json();
-
-  // Adapter: /bundle returns { levels: { L1: { efficacy: { drugs } } } }
-  // Phase3Treatment reads bundle.levels.L1.efficacy.drugs — keep shape as-is
-  const levelsObj = bundleData.levels || {};
-
-  // Extract patient context from L1
-  const l1Data = levelsObj.L1 || levelsObj.l1 || {};
-  const patientContext = l1Data?.inputs_used?.tumor_context || {};
-  if (l1Data?.completeness) {
-    patientContext.completeness_score = l1Data.completeness.completeness_score;
-  }
-
-  return {
-    patient_context: patientContext,
-    levels: levelsObj,
-    l2_scenarios: scenariosData.l2_scenarios,
-    l3_scenarios: scenariosData.l3_scenarios,
-    preview_cache: scenariosData.preview_cache,
-    contract_version: bundleData.contract_version || AYESHA_DEFAULT_CONTRACT_VERSION,
-    io_harm_prevention: l1Data?.io_harm_prevention || null,
-    tests_needed: bundleData.tests_needed || [],
-    synthetic_lethality: bundleData.synthetic_lethality || l1Data?.synthetic_lethality || null,
-  };
+  return mergeTherapyFitBundleWithScenarios(bundleData, scenariosData);
 };
 
 export function useAyeshaTherapyFitBundle({ level = 'all', scenario_id = null, l3_scenario_id = null, efficacy_mode = 'comprehensive' } = {}, options = {}) {
+  const queryKeyPayload = useMemo(
+    () => ({
+      level,
+      scenario_id,
+      l3_scenario_id,
+      efficacy_mode,
+      include_synthetic_lethality: true,
+    }),
+    [level, scenario_id, l3_scenario_id, efficacy_mode]
+  );
+
+  const persistKey = useMemo(
+    () => storageKeyForBundle(THERAPY_FIT_BUNDLE_STORAGE_PREFIX, queryKeyPayload),
+    [queryKeyPayload]
+  );
+
+  const persisted = useMemo(() => readPersistedBundle(persistKey), [persistKey]);
+
   return useQuery({
-    queryKey: ['ayesha-therapy-fit-strict', { level, scenario_id, l3_scenario_id, efficacy_mode, include_synthetic_lethality: true }],
-    queryFn: () => fetchStrictBundle({ level, scenario_id, l3_scenario_id, efficacy_mode }),
+    queryKey: ['ayesha-therapy-fit-strict', queryKeyPayload],
+    queryFn: async () => {
+      const data = await fetchStrictBundle({
+        level,
+        scenario_id,
+        l3_scenario_id,
+        efficacy_mode,
+      });
+      writePersistedBundle(persistKey, data);
+      return data;
+    },
+    initialData: persisted?.data,
+    initialDataUpdatedAt: persisted?.updatedAt,
     staleTime: 5 * 60 * 1000,   // 5 minutes — bundle endpoint is ~10s; cache aggressively
+    cacheTime: 15 * 60 * 1000,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     refetchInterval: (query) => {

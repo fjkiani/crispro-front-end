@@ -46,7 +46,6 @@ export default function DynamicFoodValidator() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [patientMedications, setPatientMedications] = useState('');
-  const [useEvo2, setUseEvo2] = useState(false);
 
   const handleValidate = async () => {
     if (!compound.trim()) {
@@ -72,8 +71,7 @@ export default function DynamicFoodValidator() {
         },
         patient_medications: patientMedications
           ? patientMedications.split(',').map(m => m.trim())
-          : [],
-        use_evo2: useEvo2
+          : []
       };
 
       const response = await fetch(`${API_ROOT}/api/hypothesis/validate_food_dynamic`, {
@@ -221,32 +219,28 @@ export default function DynamicFoodValidator() {
             </Box>
           )}
 
-          {/* S/P/E Breakdown (Legacy - Keep for reference) */}
+          {/* P/E Breakdown (pathway + evidence; variant-level sequence uses drug S/P/E stack) */}
+          {(result.pe_breakdown || result.spe_breakdown) && (
           <Card sx={{ p: 3, mb: 3 }}>
             <Typography variant="h6" gutterBottom>
-              S/P/E Breakdown
+              P/E Breakdown
             </Typography>
             <Grid container spacing={2}>
-              <Grid item xs={12} md={4}>
-                <Box sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-                  <Typography variant="subtitle2" color="text.secondary">Sequence (S)</Typography>
-                  <Typography variant="h5">{(result.spe_breakdown?.sequence * 100).toFixed(0)}%</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {useEvo2 ? 'Evo2 plausibility' : 'Neutral (Phase 1)'}
-                  </Typography>
-                </Box>
-              </Grid>
-              <Grid item xs={12} md={4}>
+              <Grid item xs={12} md={6}>
                 <Box sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
                   <Typography variant="subtitle2" color="text.secondary">Pathway (P)</Typography>
-                  <Typography variant="h5">{(result.spe_breakdown?.pathway * 100).toFixed(0)}%</Typography>
+                  <Typography variant="h5">
+                    {(((result.pe_breakdown || result.spe_breakdown)?.pathway ?? 0) * 100).toFixed(0)}%
+                  </Typography>
                   <Typography variant="caption" color="text.secondary">Target-pathway alignment</Typography>
                 </Box>
               </Grid>
-              <Grid item xs={12} md={4}>
+              <Grid item xs={12} md={6}>
                 <Box sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
                   <Typography variant="subtitle2" color="text.secondary">Evidence (E)</Typography>
-                  <Typography variant="h5">{(result.spe_breakdown?.evidence * 100).toFixed(0)}%</Typography>
+                  <Typography variant="h5">
+                    {(((result.pe_breakdown || result.spe_breakdown)?.evidence ?? 0) * 100).toFixed(0)}%
+                  </Typography>
                   <Typography variant="caption" color="text.secondary">
                     {result.evidence?.evidence_grade || 'INSUFFICIENT'}
                   </Typography>
@@ -254,6 +248,7 @@ export default function DynamicFoodValidator() {
               </Grid>
             </Grid>
           </Card>
+          )}
 
           {/* PHASE 2: Evidence Quality Indicators */}
           {result.evidence && result.evidence.papers && result.evidence.papers.length > 0 && (

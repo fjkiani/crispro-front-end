@@ -1,52 +1,17 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { buildAyeshaTherapyFitBundleUrl } from '../utils/ayeshaApi';
+import {
+  buildAyeshaTherapyFitBundleUrl,
+  getAyeshaTherapyFitScenariosUrl,
+  mergeTherapyFitBundleWithScenarios,
+} from '../utils/ayeshaApi';
+import {
+  storageKeyForBundle,
+  readPersistedBundle,
+  writePersistedBundle,
+} from '../utils/ayeshaBundleSessionPersistence';
 
-/** Keep bundle warm across route changes / full remounts (same tab). */
 const TB_BUNDLE_STORAGE_PREFIX = 'tumor_board_bundle_v1:';
-const TB_BUNDLE_MAX_AGE_MS = 10 * 60 * 1000; // 10 min — aligns with QueryClient cacheTime
-
-function fingerprintLocalInputs() {
-  try {
-    const ca = localStorage.getItem('ayesha_ca125_history_v1') || '';
-    const hrd = localStorage.getItem('ayesha_hrd_v1') || '';
-    const rss = localStorage.getItem('ayesha_rss_inputs_v1') || '';
-    const blob = `${ca}\n${hrd}\n${rss}`;
-    let h = 5381;
-    for (let i = 0; i < blob.length; i += 1) {
-      h = ((h << 5) + h) ^ blob.charCodeAt(i);
-    }
-    return `${blob.length}:${h >>> 0}`;
-  } catch {
-    return '0';
-  }
-}
-
-function storageKeyForBundle(queryKeyPayload) {
-  const fp = fingerprintLocalInputs();
-  return `${TB_BUNDLE_STORAGE_PREFIX}${fp}:${JSON.stringify(queryKeyPayload)}`;
-}
-
-function readPersistedBundle(key) {
-  try {
-    const raw = sessionStorage.getItem(key);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    const t = typeof parsed.t === 'number' ? parsed.t : 0;
-    if (!parsed.data || Date.now() - t > TB_BUNDLE_MAX_AGE_MS) return null;
-    return { data: parsed.data, updatedAt: t };
-  } catch {
-    return null;
-  }
-}
-
-function writePersistedBundle(key, data) {
-  try {
-    sessionStorage.setItem(key, JSON.stringify({ t: Date.now(), data }));
-  } catch {
-    // quota / private mode
-  }
-}
 
 const getAuthToken = () => {
   try {
@@ -122,26 +87,34 @@ async function fetchTumorBoardBundle({
     body.rss_inputs = rssInputs;
   }
 
-  const res = await fetch(buildAyeshaTherapyFitBundleUrl({
-    level,
-    scenarioId,
-    l3ScenarioId,
-    includeSyntheticLethality,
-    ctdnaStatusOverride,
-    efficacyMode,
-  }), {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(body),
-  });
+  const [bundleRes, scenariosRes] = await Promise.all([
+    fetch(buildAyeshaTherapyFitBundleUrl({
+      level,
+      scenarioId,
+      l3ScenarioId,
+      includeSyntheticLethality,
+      ctdnaStatusOverride,
+      efficacyMode,
+    }), {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    }),
+    fetch(getAyeshaTherapyFitScenariosUrl(), { headers }),
+  ]);
 
-  if (!res.ok) {
-    const txt = await res.text().catch(() => '');
-    throw new Error(`Failed to load tumor board bundle: ${res.status} ${res.statusText}${txt ? ` — ${txt}` : ''}`);
+  if (!bundleRes.ok) {
+    const txt = await bundleRes.text().catch(() => '');
+    throw new Error(`Failed to load tumor board bundle: ${bundleRes.status} ${bundleRes.statusText}${txt ? ` — ${txt}` : ''}`);
+  }
+  if (!scenariosRes.ok) {
+    const txt = await scenariosRes.text().catch(() => '');
+    throw new Error(`Failed to load therapy-fit scenarios: ${scenariosRes.status} ${scenariosRes.statusText}${txt ? ` — ${txt}` : ''}`);
   }
 
-  const json = await res.json();
-  return json;
+  const bundleJson = await bundleRes.json();
+  const scenariosJson = await scenariosRes.json();
+  return mergeTherapyFitBundleWithScenarios(bundleJson, scenariosJson);
 }
 
 export function useTumorBoardBundle(
@@ -165,7 +138,7 @@ export function useTumorBoardBundle(
   };
 
   const persistKey = useMemo(
-    () => storageKeyForBundle(queryKeyPayload),
+    () => storageKeyForBundle(TB_BUNDLE_STORAGE_PREFIX, queryKeyPayload),
     [
       level,
       scenarioId,

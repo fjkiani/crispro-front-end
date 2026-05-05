@@ -21,7 +21,11 @@ import { useRef, useCallback } from 'react';
  * shared react-query cache.
  */
 export const useAyeshaCareData = (options = {}) => {
-  const { skip_auxiliary_parallel_requests, ...careOptions } = options;
+  const {
+    skip_auxiliary_parallel_requests,
+    skip_synthetic_lethality_parallel,
+    ...careOptions
+  } = options;
   const { profile, buildRequest } = useAyeshaProfile();
   const orchestrator = useCompleteCareOrchestrator();
   const orchestratorRef = useRef(orchestrator);
@@ -36,6 +40,7 @@ export const useAyeshaCareData = (options = {}) => {
     ...careOptions,
     patientKey,
     skip_auxiliary_parallel_requests: !!skip_auxiliary_parallel_requests,
+    skip_synthetic_lethality_parallel: !!skip_synthetic_lethality_parallel,
   });
 
   const fetchCareData = useCallback(async () => {
@@ -51,11 +56,20 @@ export const useAyeshaCareData = (options = {}) => {
       ...(skip_auxiliary_parallel_requests
         ? { skip_auxiliary_parallel_requests: true }
         : {}),
+      ...(skip_synthetic_lethality_parallel
+        ? { skip_synthetic_lethality_parallel: true }
+        : {}),
     });
     // After generatePlan resolves, the result is in orchestrator.result
     // but we can't read it synchronously. Return a resolved value instead.
     return orchestratorRef.current.result;
-  }, [profile, buildRequest, stableOptions, skip_auxiliary_parallel_requests]);
+  }, [
+    profile,
+    buildRequest,
+    stableOptions,
+    skip_auxiliary_parallel_requests,
+    skip_synthetic_lethality_parallel,
+  ]);
 
   const query = useQuery({
     queryKey: ['ayesha-care-data', stableOptions],
