@@ -16,8 +16,8 @@ const Login = () => {
     if (authenticated && !profileLoading) {
       const redirect = () => {
         const intendedPath = new URLSearchParams(window.location.search).get('redirect');
-        // Check profile role, or default based on email (ak@ak.com = patient)
-        const isPatient = profile?.role === 'patient' || email?.toLowerCase().includes('ak@ak.com');
+        // FIX-5b: Route based on profile.role only — no hardcoded email routing.
+        const isPatient = profile?.role === 'patient';
         if (isPatient) {
           navigate('/ayesha-trials', { replace: true });
         } else if (intendedPath) {
@@ -47,9 +47,12 @@ const Login = () => {
 
     console.log('🔵 Login form submitted for:', email);
 
-    // EMERGENCY BYPASS FOR AK
-    if (email.toLowerCase() === 'ak@ak.com' || email.toLowerCase() === 'ak@aol.com') {
-      console.log('🚀 Activating MARS MODE Bypass for AK...');
+    // FIX-5b: EMERGENCY BYPASS FOR AK — gated behind VITE_ENABLE_MOCK_AUTH.
+    // In production (VITE_ENABLE_MOCK_AUTH unset or "false"), this block is never entered.
+    // ak@ak.com must authenticate through the real backend like any other user.
+    if (import.meta.env.VITE_ENABLE_MOCK_AUTH === 'true' &&
+        (email.toLowerCase() === 'ak@ak.com' || email.toLowerCase() === 'ak@aol.com')) {
+      console.log('🚀 MARS MODE Bypass for AK (VITE_ENABLE_MOCK_AUTH=true)...');
 
       const mockSession = {
         access_token: `mock-token-${Date.now()}-ak`,
@@ -76,7 +79,6 @@ const Login = () => {
         }));
 
         console.log('✅ Bypass session written. Forcing reload...');
-        // Force reload to ensure AuthContext picks up the new session from fresh state
         window.location.href = '/ayesha-trials';
         return;
       } catch (bypassErr) {
