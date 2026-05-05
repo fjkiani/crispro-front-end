@@ -14,12 +14,14 @@ dist-ssr
 *.local
 
 # Environment variables
+# .env.production is intentionally tracked — it contains only the public backend URL (no secrets).
+# Secrets (API keys, DB passwords) must NEVER go in .env.production.
 .env
 ./.env
 .env.local
 .env.development
-.env.production
 .env.staging
+# .env.production is NOT ignored — tracked so Render picks it up at build time
 
 # Editor directories and files
 .vscode/*
