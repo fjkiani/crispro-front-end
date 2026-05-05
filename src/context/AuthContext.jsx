@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { saveToStorage, loadFromStorage, removeFromStorage, isSessionValid, extendSession, SESSION_KEYS } from '../utils/sessionPersistence';
 import { API_ROOT } from '../lib/apiConfig';
-// Supabase disabled - using mock authentication that bypasses Supabase
+// Auth: Supabase-backed in production. Mock auth available in dev via VITE_ENABLE_MOCK_AUTH=true.
 
 const AuthContext = createContext({});
 
@@ -253,9 +253,16 @@ export const AuthProvider = ({ children }) => {
           throw new Error('Fallback to mock for test user (VITE_ENABLE_MOCK_AUTH=true)');
         }
       } catch (backendError) {
-        console.warn('⚠️ Backend unavailable/failed, using mock authentication:', backendError.message);
+        // Only fall back to mock when explicitly enabled (local dev only).
+        // In production (VITE_ENABLE_MOCK_AUTH != 'true'), propagate the real error.
+        if (import.meta.env.VITE_ENABLE_MOCK_AUTH !== 'true') {
+          console.error('❌ Backend authentication failed:', backendError.message);
+          return { data: null, error: new Error(backendError.message || 'Authentication failed. Please try again.') };
+        }
 
-        // Fallback to mock authentication
+        console.warn('⚠️ Backend unavailable/failed, using mock authentication (dev mode):', backendError.message);
+
+        // Fallback to mock authentication (dev only)
         const mockUser = {
           id: `mock-user-${email.replace('@', '-at-')}`,
           email: email,
@@ -311,14 +318,18 @@ export const AuthProvider = ({ children }) => {
         return await signIn(email, password);
       } else {
         const errorData = await response.json().catch(() => ({ detail: 'Signup failed' }));
-        console.warn('⚠️ Backend signup failed, using mock:', errorData);
-        // Fallback to mock signup
-        return await signIn(email, password);
+        if (import.meta.env.VITE_ENABLE_MOCK_AUTH === 'true') {
+          console.warn('⚠️ Backend signup failed, using mock (dev mode):', errorData);
+          return await signIn(email, password);
+        }
+        return { data: null, error: new Error(errorData.detail || 'Signup failed') };
       }
     } catch (error) {
-      console.warn('⚠️ Backend signup unavailable, using mock:', error.message);
-      // Fallback to mock signup
-      return await signIn(email, password);
+      if (import.meta.env.VITE_ENABLE_MOCK_AUTH === 'true') {
+        console.warn('⚠️ Backend signup unavailable, using mock (dev mode):', error.message);
+        return await signIn(email, password);
+      }
+      return { data: null, error: new Error('Signup service unavailable. Please try again.') };
     }
   };
 
@@ -339,6 +350,7 @@ export const AuthProvider = ({ children }) => {
         }
       }
 
+      removeFromStorage(SESSION_KEYS.AUTH_SESSION);
       localStorage.removeItem('mock_auth_session');
       setUser(null);
       setSession(null);

@@ -31,10 +31,10 @@ const Login = () => {
       if (profile) {
         redirect();
       } else {
-        // If no profile after 2 seconds, redirect anyway (profile might be loading or not available)
+        // If no profile after 3 seconds, redirect to home (profile may still be loading async)
         const timeout = setTimeout(() => {
           redirect();
-        }, 2000);
+        }, 3000);
         return () => clearTimeout(timeout);
       }
     }
@@ -106,11 +106,9 @@ const Login = () => {
       console.error('❌ Login exception:', err);
       setError(err.message || 'An unexpected error occurred');
     } finally {
-      // Only set loading false if we aren't redirecting (i.e. on error)
-      // If success, we want to keep loading state until redirect
-      if (!email.toLowerCase().includes('ak@')) {
-        setLoading(false);
-      }
+      // Always clear loading — redirect is handled by the useEffect watching `authenticated`.
+      // Keeping loading=true after a failed login would freeze the form.
+      setLoading(false);
     }
   };
 
@@ -171,6 +169,7 @@ const Login = () => {
       onSubmit={handleSubmit}
       onSignupClick={() => navigate('/signup')}
       onForgotPasswordClick={() => navigate('/forgot-password')}
+      subtitle="Sign in with your CrisPRO account"
     />
   );
 };
