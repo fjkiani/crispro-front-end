@@ -483,7 +483,7 @@ export const AuthProvider = ({ children }) => {
     loading,
     profileLoading,
     authenticated: !!user,
-    isSupabaseEnabled: false, // Supabase disabled
+    isSupabaseEnabled: true, // Supabase-backed in production
     signIn,
     signUp,
     signOut,
