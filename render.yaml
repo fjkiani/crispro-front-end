@@ -23,6 +23,6 @@ services:
         value: "false"
       - key: VITE_API_ROOT
         # Set this to your actual backend Render URL in the Render dashboard.
-        # Example: https://oncology-backend.onrender.com
-        value: "https://oncology-backend.onrender.com"
+        # This is the live backend URL — verified 2026-05-05
+        value: "https://crispro-backend-v2.onrender.com"
         sync: false
