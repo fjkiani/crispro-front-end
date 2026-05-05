@@ -2,7 +2,7 @@
  * useSyntheticLethality Hook
  * 
  * Orchestrates synthetic lethality analysis by calling:
- * 1. /api/guidance/synthetic_lethality - Main analysis endpoint
+ * 1. /api/agents/synthetic_lethality - Main analysis endpoint (canonical)
  * 2. Individual essentiality scores per gene
  * 
  * Returns structured results for clinical display

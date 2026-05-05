@@ -158,7 +158,7 @@ export const Q2C_INTENTS = {
       /(damage|deficiency).*dependency/i,
       /weakness.*cancer/i
     ],
-    endpoint: '/api/guidance/synthetic_lethality',
+    endpoint: '/api/agents/synthetic_lethality',
     description: 'Identify synthetic lethality vulnerabilities',
     confidence: 'medium'
   },

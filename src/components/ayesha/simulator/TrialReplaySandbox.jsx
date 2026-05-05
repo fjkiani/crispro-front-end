@@ -7,8 +7,7 @@ import {
 import ScienceIcon from '@mui/icons-material/Science';
 import FlagIcon from '@mui/icons-material/Flag';
 import RadarIcon from '@mui/icons-material/Radar';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+import { API_ROOT } from '../../../lib/apiConfig';
 
 const AXES = [
     { id: "ddr", label: "DDR", color: "#3b82f6" },
@@ -71,7 +70,7 @@ export default function TrialReplaySandbox() {
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch(`${API_BASE_URL}/api/trials/simulator`, {
+            const response = await fetch(`${API_ROOT}/api/trials/simulator`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

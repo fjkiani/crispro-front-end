@@ -47,7 +47,7 @@ const vusCache = new TTLCache(60); // 60 min
 const slCache = new TTLCache(30); // 30 min
 const carePlanCache = new TTLCache(5); // 5 min – stale-while-revalidate for page loads
 
-/** True if parallel /api/guidance/synthetic_lethality returned real fields (not `{}` / provenance-only shell). */
+/** True if parallel /api/agents/synthetic_lethality returned real fields (not `{}` / provenance-only shell). */
 function isUsableParallelSlPayload(sl) {
   if (sl == null || typeof sl !== 'object' || Array.isArray(sl)) return false;
   if (Object.keys(sl).length === 0) return false;
@@ -554,7 +554,7 @@ export const useCompleteCareOrchestrator = () => {
       let syntheticLethalityResult = null;
       if (isUsableParallelSlPayload(slFallbackResult)) {
         syntheticLethalityResult = slFallbackResult;
-        console.log('[useCompleteCareOrchestrator] Using parallel /api/guidance/synthetic_lethality result');
+        console.log('[useCompleteCareOrchestrator] Using parallel /api/agents/synthetic_lethality result');
       } else if (data.wiwfm?.provenance?.synthetic_lethality) {
         const p = data.wiwfm.provenance.synthetic_lethality;
         const ep = p.essential_pathways;

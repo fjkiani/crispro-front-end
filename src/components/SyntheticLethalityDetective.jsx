@@ -19,6 +19,7 @@ import {
   LinearProgress
 } from '@mui/material';
 import { API_ROOT } from '../lib/apiConfig';
+import { getSyntheticLethalityUrl } from '../utils/ayeshaApi';
 import {
   Science,
   Security,
@@ -94,7 +95,7 @@ const SyntheticLethalityDetective = () => {
       }
 
       // Call actual synthetic lethality endpoint
-      const response = await fetch(`${API_ROOT}/api/guidance/synthetic_lethality`, {
+      const response = await fetch(getSyntheticLethalityUrl(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

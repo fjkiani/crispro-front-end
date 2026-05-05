@@ -6,16 +6,21 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-script-structure.md
 node_modules
 ./node_modules
 
 dist
 dist-ssr
 *.local
+
+# Environment variables
 .env
 ./.env
-.env
+.env.local
+.env.development
+.env.production
+.env.staging
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -26,66 +31,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
-# Python virtual environment
-venv/
-env/
-ENV/
-
-# Python bytecode
-__pycache__/
-*.py[cod]
-*$py.class
-
-# Distribution / packaging
-dist/
-build/
-*.egg-info/
-
-# Compiled files
-*.so
-*.dylib
-*.dll
-
-# IDE files
-.idea/
-.vscode/
 *.swp
 *.swo
-
-# Environment variables
-.env
-.env.local
-.env.development
-.env.production
-.env.staging
-
-# PyTorch specific
-torch/
-onnxruntime/
-
-# Python cache files
-__pycache__/
-*.py[cod]
-*$py.class
-
-# Distribution / packaging
-dist/
-build/
-*.egg-info/
-
-# IDE specific files
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# Database & Large Data Files
-*.db
-*.sqlite3
-data/chroma_data/
-data/brca_tcga_clinical_data.json
-data/brca_tcga_clinical_data.tsv
 
 # OS generated files
 .DS_Store
@@ -100,28 +47,54 @@ Thumbs.db
 .cursor/rules/
 .cursorRules
 
-# External projects/downloads that shouldn't be deployed
+# ── Python — NEVER commit Python files into the frontend repo ──────────────────
+# Backend code belongs in oncology-backend or oncology-backend-minimal.
+*.py
+*.py[cod]
+*$py.class
+__pycache__/
+venv/
+env/
+ENV/
+*.egg-info/
+*.so
+*.dylib
+*.dll
+
+# ── Backup and temp files ──────────────────────────────────────────────────────
+*.bak
+*.bak[0-9]*
+*.backup
+*.new
+refactor-api-imports.mjs
+
+# ── Sprint/audit docs — keep docs/ at repo root, not inside src/ ──────────────
+# Committed markdown inside src/ pollutes the bundle and confuses reviewers.
+# Place architecture docs in /docs at repo root instead.
+src/**/*.md
+
+# ── Build artifacts ───────────────────────────────────────────────────────────
+build/
+
+# ── External projects/downloads ───────────────────────────────────────────────
 variant-analysis-evo2-main/
 CRISPResso2-master copy/
 CRISPResso2-master/
 
-# Backup and temp files
-*.bak
-*.bak[0-9]*
-*.new
-refactor-api-imports.mjs
-debug_*.py
-
-# ---- Supabase-Migrated Large Data (DO NOT RE-ADD) ----
-# Structured data is in Supabase Postgres (clinical_trials, trials, trials_fresh, cache_store)
+# ── Supabase-Migrated Large Data (DO NOT RE-ADD) ──────────────────────────────
 oncology-backend-minimal/data/clinical_trials.db
 oncology-backend-minimal/data/cache.db
-
-# Raw datasets are in Supabase Storage (external-datasets bucket)
 oncology-backend-minimal/data/britoc/
 oncology-backend-minimal/data/external/
-
-# ML models are too large for free-tier storage — download via HuggingFace Hub at runtime
-# Run: python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
 oncology-backend/embedding_models/
 
+# ── PyTorch / ML models ───────────────────────────────────────────────────────
+torch/
+onnxruntime/
+
+# ── Database & Large Data Files ───────────────────────────────────────────────
+*.db
+*.sqlite3
+data/chroma_data/
+data/brca_tcga_clinical_data.json
+data/brca_tcga_clinical_data.tsv

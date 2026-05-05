@@ -157,3 +157,33 @@ export const clearAllSessions = () => {
  * Export session keys for use in other modules
  */
 export { SESSION_KEYS };
+
+/**
+ * getAuthToken — Shared auth token reader for all API hooks.
+ *
+ * The app uses mock_auth_session (set by Login.jsx) as its primary auth store.
+ * Supabase is force-disabled (isSupabaseEnabled = false in supabaseClient.js),
+ * so this localStorage pattern is intentional and correct for the current auth model.
+ *
+ * Consumers: useAyeshaTherapyFitBundle, useAyeshaTestsUnlocksBundle,
+ *            useDrugDetail, useTumorBoardBundle, useTargetedTherapyBrief,
+ *            AgentContext, TherapyHeroSection
+ *
+ * @returns {string|null} Bearer token or null if unauthenticated
+ */
+export const getAuthToken = () => {
+  try {
+    const sessionStr = localStorage.getItem(SESSION_KEYS.AUTH_SESSION);
+    if (sessionStr) {
+      const session = JSON.parse(sessionStr);
+      const t = session?.access_token;
+      if (t && t !== 'null' && t !== 'undefined') return t;
+    }
+  } catch (e) {
+    console.warn('[getAuthToken] Failed to parse auth session', e);
+  }
+  // Fallback: raw token stored directly (legacy path)
+  const t2 = localStorage.getItem('supabase_auth_token');
+  if (t2 && t2 !== 'null' && t2 !== 'undefined') return t2;
+  return null;
+};

@@ -61,6 +61,17 @@ export function buildAyeshaTherapyFitDrugUrl(drugName, { level = 'l1' } = {}) {
   return `${API_ROOT}/api/ayesha/therapy-fit/drug/${encodeURIComponent(drugName)}?${params.toString()}`;
 }
 
+/**
+ * Canonical SL endpoint: /api/agents/synthetic_lethality
+ *
+ * This is the single source of truth for all frontend SL calls.
+ * - useCompleteCareOrchestrator.fetchSyntheticLethality() uses this via getSyntheticLethalityUrl()
+ * - src/hooks/useSyntheticLethality.js calls this endpoint directly
+ * - src/components/SyntheticLethality/hooks/useSyntheticLethality.js calls this via getSyntheticLethalityUrl()
+ *
+ * DO NOT use /api/guidance/synthetic_lethality — that endpoint is deprecated on the frontend.
+ * Backend may still serve both; the frontend is unified here.
+ */
 export function getSyntheticLethalityUrl() {
-  return `${API_ROOT}/api/guidance/synthetic_lethality`;
+  return `${API_ROOT}/api/agents/synthetic_lethality`;
 }

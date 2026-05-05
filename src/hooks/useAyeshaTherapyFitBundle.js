@@ -10,32 +10,16 @@ import {
   readPersistedBundle,
   writePersistedBundle,
 } from '../utils/ayeshaBundleSessionPersistence';
+import { getAuthToken } from '../utils/sessionPersistence';
 
 const THERAPY_FIT_BUNDLE_STORAGE_PREFIX = 'therapy_fit_bundle_v1:';
-
-
-// Helper to get auth token directly from storage
-const getAuthToken = () => {
-  try {
-    const sessionStr = localStorage.getItem('mock_auth_session');
-    if (sessionStr) {
-      const session = JSON.parse(sessionStr);
-      const t = session?.access_token;
-      if (t && t !== 'null' && t !== 'undefined') return t;
-    }
-  } catch (e) {
-    console.warn('Failed to parse auth session', e);
-  }
-  const t2 = localStorage.getItem('supabase_auth_token'); // Fallback
-  if (t2 && t2 !== 'null' && t2 !== 'undefined') return t2;
-  return null;
-};
 
 /**
  * Fetch from /bundle (returns full data including 10+ drugs)
  * and /scenarios in parallel.
- * 
+ *
  * Returns a composite object matching the UI's expectation.
+ * Auth token is read via shared getAuthToken() from sessionPersistence.
  */
 const fetchStrictBundle = async ({ level = 'all', scenario_id = null, l3_scenario_id = null, efficacy_mode = 'comprehensive' }) => {
   const token = getAuthToken();

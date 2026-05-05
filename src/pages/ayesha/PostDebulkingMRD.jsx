@@ -12,6 +12,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_ROOT } from '../../lib/apiConfig';
 import {
     Box, Typography, Paper, Chip, Divider, Grid,
     LinearProgress, Tooltip, Alert, AlertTitle, IconButton, Collapse,
@@ -171,7 +172,7 @@ const KillChainSignal = ({ name, active, description }) => (
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE = API_ROOT;
 
 // Fallback data if API is unavailable
 const FALLBACK_COHORT = {

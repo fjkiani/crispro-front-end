@@ -2,11 +2,16 @@ services:
   - type: web
     name: crispro-frontend
     env: static
-    # Root Directory in Render dashboard should be empty (repo root)
-    # Build navigates into oncology-coPilot where package.json lives
-    rootDir: oncology-coPilot
+    # Root Directory: leave EMPTY in the Render dashboard (repo root).
+    # The package.json and vite.config.js are at the repo root — no subdirectory needed.
+    # (The old rootDir: oncology-coPilot was stale — that directory does not exist.)
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
     envVars:
       - key: NODE_VERSION
         value: 18.x
+      - key: VITE_API_ROOT
+        # Set this to your backend URL in the Render dashboard, e.g.:
+        # https://crispro-backend.onrender.com
+        # Do NOT hardcode here — use Render's environment variable UI.
+        sync: false
