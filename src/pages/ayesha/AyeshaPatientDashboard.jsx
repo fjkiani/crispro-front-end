@@ -383,6 +383,33 @@ const AyeshaPatientDashboard = () => {
           </Grid>
         )}
 
+        {/* CA-125 Safety Alerts — from complete_care_v2 safety_alerts field */}
+        {careData?.safety_alerts?.length > 0 && (
+          <Grid item xs={12}>
+            {careData.safety_alerts.map((safetyAlert, idx) => (
+              <Alert
+                key={safetyAlert.alert_type || idx}
+                severity={safetyAlert.severity === 'warning' ? 'warning' : 'info'}
+                sx={{ mb: 1, borderRadius: '8px', fontSize: '0.85rem' }}
+              >
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  {safetyAlert.message}
+                </Typography>
+                {safetyAlert.detail && (
+                  <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'text.secondary' }}>
+                    {safetyAlert.detail}
+                  </Typography>
+                )}
+                {safetyAlert.ruo_disclaimer && (
+                  <Typography variant="caption" sx={{ display: 'block', mt: 0.25, fontStyle: 'italic', color: 'text.disabled' }}>
+                    {safetyAlert.ruo_disclaimer}
+                  </Typography>
+                )}
+              </Alert>
+            ))}
+          </Grid>
+        )}
+
         {/* Drug Recommendations (Personalized) */}
         {careData?.wiwfm?.drugs && (
           <Grid item xs={12} md={6}>

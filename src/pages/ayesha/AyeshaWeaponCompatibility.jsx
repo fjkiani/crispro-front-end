@@ -21,44 +21,14 @@ import StrictDrugSearch from '../../components/ayesha/StrictDrugSearch';
 
 import AyeshaDrugPanel from '../../components/ayesha/AyeshaDrugPanel';
 import { API_ROOT } from '../../lib/apiConfig';
+// FE-AK-003: Shared honesty badge (replaces inline HeuristicScoringBadge)
+import EfficacyHonestyBadge from '../../components/ayesha/EfficacyHonestyBadge';
 
 
 const LoadingFallback = () => <Skeleton variant="rectangular" height={300} sx={{ borderRadius: 1, mb: 4, bgcolor: 'grey.200' }} />;
 
-// ─── FE-AK-003: Heuristic Scoring Badge ─────────────────────────────────────
-/**
- * Renders a visible warning badge when the scoring engine used heuristic
- * sequencing rather than a fully evidence-backed model.
- * Reads: levels.L1.efficacy.honesty.heuristic_sequence_used (bool)
- *        levels.L1.efficacy.honesty.sequence_engine (string)
- *        levels.L1.efficacy.honesty.evidence_status (string)
- */
-const HeuristicScoringBadge = ({ honesty }) => {
-    if (!honesty?.heuristic_sequence_used) return null;
-    const engine = honesty.sequence_engine || 'heuristic';
-    const evidenceStatus = honesty.evidence_status || 'UNKNOWN';
-    return (
-        <Tooltip
-            title={`Scoring engine: ${engine} · Evidence status: ${evidenceStatus}. Drug rankings are based on heuristic sequencing, not a fully validated predictive model. Treat scores as directional estimates only.`}
-            arrow
-        >
-            <Chip
-                label="⚠ HEURISTIC SCORING"
-                size="small"
-                sx={{
-                    fontWeight: 800,
-                    fontSize: '0.72rem',
-                    letterSpacing: 0.5,
-                    bgcolor: '#fef3c7',
-                    color: '#92400e',
-                    border: '1px solid #fcd34d',
-                    cursor: 'help',
-                    height: 24,
-                }}
-            />
-        </Tooltip>
-    );
-};
+// FE-AK-003: Alias so all call sites remain unchanged
+const HeuristicScoringBadge = EfficacyHonestyBadge;
 
 // ─── Fix 3: Analysis Telemetry Panel ────────────────────────────────
 // Reads ONLY stable fields present in both /bundle and /analyze shapes.

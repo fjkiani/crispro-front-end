@@ -21,7 +21,7 @@
  */
 import React, { Suspense, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Container, Typography, Alert, CircularProgress, Skeleton, Chip, Tooltip } from '@mui/material';
+import { Box, Container, Typography, Alert, CircularProgress, Skeleton, Chip } from '@mui/material';
 import { useAyeshaTherapyFitBundle } from '../../hooks/useAyeshaTherapyFitBundle';
 import { useTargetedTherapyBrief } from '../../hooks/useTargetedTherapyBrief';
 import TherapyHeroSection from '../../components/ayesha/TherapyHeroSection';
@@ -31,6 +31,8 @@ import {
     ScenarioLibrarySection,
 } from '../../components/therapy-fit';
 import '../../components/therapy-fit/therapy-fit.css';
+// FE-AK-003: Shared honesty badge (replaces inline HeuristicScoringBadge)
+import EfficacyHonestyBadge from '../../components/ayesha/EfficacyHonestyBadge';
 
 // Lazy-loaded components
 const AyeshaDrugPanel = React.lazy(() => import('../../components/ayesha/AyeshaDrugPanel'));
@@ -43,42 +45,8 @@ const ResistanceGateBanner = React.lazy(() => import('../../components/ayesha/Re
 
 const LoadingFallback = () => <Skeleton variant="rectangular" height={300} sx={{ borderRadius: 4, mb: 4 }} />;
 
-// ─── FE-AK-003: Heuristic Scoring Badge ─────────────────────────────────────
-/**
- * Renders a visible warning badge when the scoring engine used heuristic
- * sequencing rather than a fully evidence-backed model.
- * Reads: levels.L1.efficacy.honesty.heuristic_sequence_used (bool)
- *        levels.L1.efficacy.honesty.sequence_engine (string)
- *        levels.L1.efficacy.honesty.evidence_status (string)
- */
-const HeuristicScoringBadge = ({ honesty }) => {
-    if (!honesty?.heuristic_sequence_used) return null;
-
-    const engine = honesty.sequence_engine || 'heuristic';
-    const evidenceStatus = honesty.evidence_status || 'UNKNOWN';
-
-    return (
-        <Tooltip
-            title={`Scoring engine: ${engine} · Evidence status: ${evidenceStatus}. Drug rankings are based on heuristic sequencing, not a fully validated predictive model. Treat scores as directional estimates only.`}
-            arrow
-        >
-            <Chip
-                label="⚠ HEURISTIC SCORING"
-                size="small"
-                sx={{
-                    fontWeight: 800,
-                    fontSize: '0.72rem',
-                    letterSpacing: 0.5,
-                    bgcolor: '#fef3c7',
-                    color: '#92400e',
-                    border: '1px solid #fcd34d',
-                    cursor: 'help',
-                    height: 24,
-                }}
-            />
-        </Tooltip>
-    );
-};
+// FE-AK-003: Alias so all call sites remain unchanged
+const HeuristicScoringBadge = EfficacyHonestyBadge;
 
 const AyeshaTherapyFit = () => {
     const navigate = useNavigate();
