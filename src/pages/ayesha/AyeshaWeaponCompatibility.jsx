@@ -1,6 +1,13 @@
+/**
+ * AyeshaWeaponCompatibility
+ *
+ * FE-AK-003 (2026-05-10): Reads levels.L1.efficacy.honesty; renders HEURISTIC SCORING
+ *   badge in the header bar and above the primary weapon card when
+ *   heuristic_sequence_used=true.
+ */
 import React, { Suspense, useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Container, Typography, Alert, CircularProgress, Skeleton, Button, Chip, Grid } from '@mui/material';
+import { Box, Container, Typography, Alert, CircularProgress, Skeleton, Button, Chip, Grid, Tooltip } from '@mui/material';
 import { useAyeshaTherapyFitBundle } from '../../hooks/useAyeshaTherapyFitBundle';
 import { useTargetedTherapyBrief } from '../../hooks/useTargetedTherapyBrief';
 import { RefreshCw, Play, Shield, AlertTriangle, Clock, ArrowRight, ArrowUp, ArrowDown, Minus, FlaskConical, FileText, BookOpen, Sparkles, Upload, TestTube, Dna, BarChart3 } from 'lucide-react';
@@ -17,6 +24,41 @@ import { API_ROOT } from '../../lib/apiConfig';
 
 
 const LoadingFallback = () => <Skeleton variant="rectangular" height={300} sx={{ borderRadius: 1, mb: 4, bgcolor: 'grey.200' }} />;
+
+// ─── FE-AK-003: Heuristic Scoring Badge ─────────────────────────────────────
+/**
+ * Renders a visible warning badge when the scoring engine used heuristic
+ * sequencing rather than a fully evidence-backed model.
+ * Reads: levels.L1.efficacy.honesty.heuristic_sequence_used (bool)
+ *        levels.L1.efficacy.honesty.sequence_engine (string)
+ *        levels.L1.efficacy.honesty.evidence_status (string)
+ */
+const HeuristicScoringBadge = ({ honesty }) => {
+    if (!honesty?.heuristic_sequence_used) return null;
+    const engine = honesty.sequence_engine || 'heuristic';
+    const evidenceStatus = honesty.evidence_status || 'UNKNOWN';
+    return (
+        <Tooltip
+            title={`Scoring engine: ${engine} · Evidence status: ${evidenceStatus}. Drug rankings are based on heuristic sequencing, not a fully validated predictive model. Treat scores as directional estimates only.`}
+            arrow
+        >
+            <Chip
+                label="⚠ HEURISTIC SCORING"
+                size="small"
+                sx={{
+                    fontWeight: 800,
+                    fontSize: '0.72rem',
+                    letterSpacing: 0.5,
+                    bgcolor: '#fef3c7',
+                    color: '#92400e',
+                    border: '1px solid #fcd34d',
+                    cursor: 'help',
+                    height: 24,
+                }}
+            />
+        </Tooltip>
+    );
+};
 
 // ─── Fix 3: Analysis Telemetry Panel ────────────────────────────────
 // Reads ONLY stable fields present in both /bundle and /analyze shapes.
@@ -601,15 +643,18 @@ const AyeshaWeaponCompatibility = () => {
         scenario_id: activeScenario
     });
 
-    // 2. Fetch Doctrine Logic (Use bundle context)
+    // 2. Fetch Doctrine Logic (legacy fallback only — FE-AK-001 equivalent)
+    // bundleDrugs is computed after bundle loads; we need it here for the enabled gate.
+    const _bundleDrugsForGate = bundle?.levels?.L1?.efficacy?.drugs ?? bundle?.levels?.l1?.efficacy?.drugs ?? [];
+    const needsLegacyFallback = !bundleLoading && !activeScenario && _bundleDrugsForGate.length === 0;
     const { data: doctrineBrief, isLoading: doctrineLoading } = useTargetedTherapyBrief({
         patientId: 'AYESHA_MAIN',
         context: bundle?.patient_context
     }, {
-        enabled: !!bundle?.patient_context
+        enabled: needsLegacyFallback && !!bundle?.patient_context
     });
 
-    if (bundleLoading) {
+    if (bundleLoading || (needsLegacyFallback && doctrineLoading)) {
         return (
             <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', bgcolor: 'grey.50' }}>
                 <CircularProgress />
@@ -648,13 +693,21 @@ const AyeshaWeaponCompatibility = () => {
 
     const resistanceGateData = activeLevelData?.resistance_gate;
 
+    // FE-AK-003: Read honesty field — always from L1 baseline (not simulation level)
+    const honesty = levels?.L1?.efficacy?.honesty ?? null;
+
     const slPayload = synthetic_lethality || activeLevelData?.synthetic_lethality || null;
 
     // ZETA PROTOCOL: War Games Oversight — Fix 1: Shape-Tolerant Sim Switch
     // Supports both /bundle shape (efficacy.drugs) and /analyze shape (drugs at root).
     // When simulation is active, bypass Doctrine and show backend efficacy data.
+    // FE-AK-001 equivalent: bundle drugs are primary; useTargetedTherapyBrief is fallback-only.
     const simDrugs = activeLevelData?.efficacy?.drugs ?? activeLevelData?.drugs ?? [];
-    const prioritized_therapies = activeScenario ? simDrugs : (doctrineBrief?.options ?? simDrugs);
+    const bundleDrugs = activeLevelData?.efficacy?.drugs ?? [];
+    const usingLegacySource = !activeScenario && bundleDrugs.length === 0;
+    const prioritized_therapies = activeScenario
+        ? simDrugs
+        : (bundleDrugs.length > 0 ? bundleDrugs : (doctrineBrief?.options ?? []));
 
     const mappedTherapies = prioritized_therapies.map(opt => ({
         ...opt,
@@ -738,6 +791,8 @@ const AyeshaWeaponCompatibility = () => {
                         </Box>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        {/* FE-AK-003: Heuristic scoring badge in header */}
+                        <HeuristicScoringBadge honesty={honesty} />
                         {activeScenario && (
                             <Chip
                                 icon={<Play size={16} />}
@@ -774,6 +829,27 @@ const AyeshaWeaponCompatibility = () => {
                         scenarioMeta={activeScenarioMeta}
                         completeness={baselineCompleteness}
                     />
+                )}
+
+                {/* FE-AK-001 equivalent: LEGACY DATA SOURCE warning */}
+                {usingLegacySource && !activeScenario && (
+                    <Alert
+                        severity="warning"
+                        sx={{ mb: 2, fontWeight: 600, fontSize: '0.82rem', border: '1px solid #f59e0b' }}
+                    >
+                        LEGACY DATA SOURCE — Drug list sourced from useTargetedTherapyBrief (doctrine brief) because
+                        bundle returned no efficacy drugs. Rankings may not reflect latest backend analysis.
+                    </Alert>
+                )}
+
+                {/* FE-AK-003: Heuristic scoring notice above primary weapon */}
+                {honesty?.heuristic_sequence_used && (
+                    <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <HeuristicScoringBadge honesty={honesty} />
+                        <Typography variant="caption" sx={{ color: '#92400e', fontSize: '0.78rem' }}>
+                            Drug scores are heuristic estimates — not validated predictions. Rankings are directional only.
+                        </Typography>
+                    </Box>
                 )}
 
                 {/* 2. Primary Weapon (Best Shot) */}

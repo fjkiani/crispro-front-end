@@ -6,6 +6,11 @@
  *           (used when backend is not running — e.g. dev mode)
  *
  * NO HARD-CODED LOGIC — all computation happens server-side when available
+ *
+ * FE-AK-005 (2026-05-10): Server response meta.deprecated and meta.use_instead
+ *   are now passed through in the returned `meta` object. Previously the hook
+ *   only returned meta.engine and meta.version, silently dropping deprecation
+ *   signals from the backend.
  */
 
 import { useState, useEffect, useCallback } from 'react';
