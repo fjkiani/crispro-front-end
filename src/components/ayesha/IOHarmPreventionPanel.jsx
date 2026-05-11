@@ -21,7 +21,7 @@
  * FE-AK-002 (2026-05-10):
  *   - Added AWAITING_DATA to DECISION_STYLES (was silently falling through to INDETERMINATE)
  *   - Guarded p_resp chip against null/undefined → shows "N/A" instead of "NaN%"
- *   - Surfaces p_resp_semantics as a labelled note below the decision banner
+ *   - Surfaces p_resp_source and p_resp_semantics as labelled notes below the decision banner
  * FE-AK-004 (2026-05-10):
  *   - Reads spe_gate_status; renders LOCKED_NO_EXPRESSION notice when active
  *
@@ -120,7 +120,7 @@ const DIRECTION_COLORS = {
 // SUB-COMPONENTS
 // ============================================================================
 
-function DecisionBanner({ decision, p_resp, p_resp_semantics, p_resp_note, regimen, rationale }) {
+function DecisionBanner({ decision, p_resp, p_resp_source, p_resp_semantics, p_resp_note, regimen, rationale }) {
     const style = DECISION_STYLES[decision] || DECISION_STYLES.INDETERMINATE;
 
     // FE-AK-002: Guard p_resp against null/undefined → show "N/A" instead of "NaN%"
@@ -199,19 +199,28 @@ function DecisionBanner({ decision, p_resp, p_resp_semantics, p_resp_note, regim
                 {rationale}
             </Typography>
 
-            {/* FE-AK-002: p_resp_semantics note */}
-            {semanticsLabel && (
+            {/* FE-AK-002: p_resp_source / p_resp_semantics / p_resp_note note row */}
+            {(semanticsLabel || p_resp_source) && (
                 <Box sx={{
-                    mt: 1.5, display: 'flex', alignItems: 'center', gap: 0.8,
+                    mt: 1.5, display: 'flex', alignItems: 'flex-start', gap: 0.8,
                     p: 1, borderRadius: 1.5,
                     bgcolor: 'rgba(255,255,255,0.6)',
                     border: `1px solid ${style.border}`,
                 }}>
-                    <Info sx={{ fontSize: 15, color: style.fg, opacity: 0.7, flexShrink: 0 }} />
-                    <Typography variant="caption" sx={{ color: style.fg, fontWeight: 600, fontSize: '0.75rem' }}>
-                        Score basis: {semanticsLabel}
-                        {p_resp_note && ` — ${p_resp_note}`}
-                    </Typography>
+                    <Info sx={{ fontSize: 15, color: style.fg, opacity: 0.7, flexShrink: 0, mt: 0.1 }} />
+                    <Box>
+                        {semanticsLabel && (
+                            <Typography variant="caption" sx={{ color: style.fg, fontWeight: 600, fontSize: '0.75rem', display: 'block' }}>
+                                Score basis: {semanticsLabel}
+                                {p_resp_note && ` — ${p_resp_note}`}
+                            </Typography>
+                        )}
+                        {p_resp_source && (
+                            <Typography variant="caption" sx={{ color: style.fg, fontWeight: 500, fontSize: '0.73rem', display: 'block', opacity: 0.85 }}>
+                                Source: {p_resp_source}
+                            </Typography>
+                        )}
+                    </Box>
                 </Box>
             )}
         </Paper>
@@ -523,6 +532,7 @@ export default function IOHarmPreventionPanel({
                 <DecisionBanner
                     decision={riskBenefitDecision.decision}
                     p_resp={riskBenefitDecision.p_resp}
+                    p_resp_source={riskBenefitDecision.p_resp_source}
                     p_resp_semantics={riskBenefitDecision.p_resp_semantics}
                     p_resp_note={riskBenefitDecision.p_resp_note}
                     regimen={riskBenefitDecision.regimen_name || riskBenefitDecision.regimen}
