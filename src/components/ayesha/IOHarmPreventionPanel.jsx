@@ -11,11 +11,19 @@
  * 3. Conservative Gating (structural safety net) — no IO boost without TMB-H/MSI-H
  *
  * Props:
- *   riskBenefitDecision - { decision, p_resp, regimen, rationale, provenance, ... }
+ *   riskBenefitDecision - { decision, p_resp, p_resp_source, p_resp_semantics, p_resp_note,
+ *                           spe_gate_status, regimen, rationale, provenance, ... }
  *   biomarkerDrivers    - { cd8b_foxp3, monocytes, endothelial } with value/percentile/direction
  *   checkpointExpression - { PDCD1, CD274, CTLA4, LAG3, TIGIT, HAVCR2 } with value/target_drug
  *   ioProfileCard        - Overall IO profile card data
  *   safetyGate           - { active, tmb, msi_status, boost }
+ *
+ * FE-AK-002 (2026-05-10):
+ *   - Added AWAITING_DATA to DECISION_STYLES (was silently falling through to INDETERMINATE)
+ *   - Guarded p_resp chip against null/undefined → shows "N/A" instead of "NaN%"
+ *   - Surfaces p_resp_semantics as a labelled note below the decision banner
+ * FE-AK-004 (2026-05-10):
+ *   - Reads spe_gate_status; renders LOCKED_NO_EXPRESSION notice when active
  *
  * Research Use Only — Not for Clinical Decision Making
  */
@@ -42,6 +50,8 @@ import {
     Biotech,
     HealthAndSafety,
     Info,
+    HourglassEmpty,
+    Lock,
 } from '@mui/icons-material';
 
 // ============================================================================
@@ -78,6 +88,26 @@ const DECISION_STYLES = {
         label: 'IO Justified',
         subtitle: 'Predicted probability of response exceeds the threshold for this regimen.',
     },
+    // FE-AK-002: AWAITING_DATA was previously missing — fell through to INDETERMINATE silently.
+    // Now has its own distinct style so the user understands data is not yet available.
+    AWAITING_DATA: {
+        bg: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+        border: '#cbd5e1',
+        fg: '#475569',
+        chipBg: '#64748b',
+        chipFg: '#fff',
+        icon: '⏳',
+        label: 'Awaiting Data',
+        subtitle: 'Response probability cannot be computed — required biomarker data has not been submitted.',
+    },
+};
+
+// FE-AK-002: Human-readable labels for p_resp_semantics values
+const P_RESP_SEMANTICS_LABELS = {
+    PREDICTED: 'Model-predicted probability',
+    IMPUTED: 'Imputed from partial data',
+    PRIOR_ONLY: 'Population prior (no patient data)',
+    AWAITING_DATA: 'Not computed — data pending',
 };
 
 const DIRECTION_COLORS = {
@@ -90,8 +120,18 @@ const DIRECTION_COLORS = {
 // SUB-COMPONENTS
 // ============================================================================
 
-function DecisionBanner({ decision, p_resp, regimen, rationale }) {
+function DecisionBanner({ decision, p_resp, p_resp_semantics, p_resp_note, regimen, rationale }) {
     const style = DECISION_STYLES[decision] || DECISION_STYLES.INDETERMINATE;
+
+    // FE-AK-002: Guard p_resp against null/undefined → show "N/A" instead of "NaN%"
+    const pRespDisplay = (p_resp != null && !isNaN(p_resp))
+        ? `p(response) = ${(p_resp * 100).toFixed(0)}%`
+        : 'p(response) = N/A';
+
+    // FE-AK-002: Human-readable semantics label
+    const semanticsLabel = p_resp_semantics
+        ? (P_RESP_SEMANTICS_LABELS[p_resp_semantics] || p_resp_semantics)
+        : null;
 
     return (
         <Paper sx={{
@@ -120,8 +160,9 @@ function DecisionBanner({ decision, p_resp, regimen, rationale }) {
                         {style.subtitle}
                     </Typography>
                 </Box>
+                {/* FE-AK-002: Null-safe p_resp chip */}
                 <Chip
-                    label={`p(response) = ${(p_resp * 100).toFixed(0)}%`}
+                    label={pRespDisplay}
                     sx={{
                         fontWeight: 800,
                         fontSize: '0.95rem',
@@ -157,6 +198,70 @@ function DecisionBanner({ decision, p_resp, regimen, rationale }) {
             }}>
                 {rationale}
             </Typography>
+
+            {/* FE-AK-002: p_resp_semantics note */}
+            {semanticsLabel && (
+                <Box sx={{
+                    mt: 1.5, display: 'flex', alignItems: 'center', gap: 0.8,
+                    p: 1, borderRadius: 1.5,
+                    bgcolor: 'rgba(255,255,255,0.6)',
+                    border: `1px solid ${style.border}`,
+                }}>
+                    <Info sx={{ fontSize: 15, color: style.fg, opacity: 0.7, flexShrink: 0 }} />
+                    <Typography variant="caption" sx={{ color: style.fg, fontWeight: 600, fontSize: '0.75rem' }}>
+                        Score basis: {semanticsLabel}
+                        {p_resp_note && ` — ${p_resp_note}`}
+                    </Typography>
+                </Box>
+            )}
+        </Paper>
+    );
+}
+
+// FE-AK-004: SPE Gate Status notice
+function SpeGateStatusNotice({ spe_gate_status }) {
+    if (!spe_gate_status || spe_gate_status === 'EVALUATED') return null;
+
+    const isLocked = spe_gate_status === 'LOCKED_NO_EXPRESSION';
+
+    return (
+        <Paper sx={{
+            p: 2, borderRadius: 2.5,
+            border: `1.5px solid ${isLocked ? '#fcd34d' : '#bfdbfe'}`,
+            bgcolor: isLocked ? '#fffbeb' : '#eff6ff',
+            display: 'flex', alignItems: 'flex-start', gap: 1.5,
+        }}>
+            {isLocked
+                ? <Lock sx={{ color: '#d97706', fontSize: 20, mt: 0.2, flexShrink: 0 }} />
+                : <Info sx={{ color: '#3b82f6', fontSize: 20, mt: 0.2, flexShrink: 0 }} />
+            }
+            <Box>
+                <Typography variant="subtitle2" sx={{
+                    fontWeight: 800,
+                    color: isLocked ? '#92400e' : '#1e40af',
+                    fontSize: '0.88rem',
+                    mb: 0.3,
+                }}>
+                    SPE Gate: {spe_gate_status.replace(/_/g, ' ')}
+                </Typography>
+                {isLocked && (
+                    <Typography variant="body2" sx={{ color: '#92400e', fontSize: '0.82rem', lineHeight: 1.5 }}>
+                        The structural pharmacology engine could not evaluate IO response probability
+                        because RNA expression data is missing. Submit expression profiling to unlock
+                        a patient-specific prediction.
+                    </Typography>
+                )}
+            </Box>
+            <Chip
+                label={isLocked ? 'Locked' : spe_gate_status}
+                size="small"
+                sx={{
+                    ml: 'auto', flexShrink: 0,
+                    fontWeight: 700,
+                    bgcolor: isLocked ? '#fef3c7' : '#dbeafe',
+                    color: isLocked ? '#92400e' : '#1e40af',
+                }}
+            />
         </Paper>
     );
 }
@@ -391,6 +496,9 @@ export default function IOHarmPreventionPanel({
         },
     ] : [];
 
+    // FE-AK-004: Extract spe_gate_status from riskBenefitDecision
+    const speGateStatus = riskBenefitDecision?.spe_gate_status ?? null;
+
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
 
@@ -407,11 +515,16 @@ export default function IOHarmPreventionPanel({
                 </Box>
             </Box>
 
+            {/* FE-AK-004: SPE Gate Status notice (shown before decision banner when locked) */}
+            <SpeGateStatusNotice spe_gate_status={speGateStatus} />
+
             {/* === LAYER 1: DECISION BANNER === */}
             {riskBenefitDecision && (
                 <DecisionBanner
                     decision={riskBenefitDecision.decision}
                     p_resp={riskBenefitDecision.p_resp}
+                    p_resp_semantics={riskBenefitDecision.p_resp_semantics}
+                    p_resp_note={riskBenefitDecision.p_resp_note}
                     regimen={riskBenefitDecision.regimen_name || riskBenefitDecision.regimen}
                     rationale={riskBenefitDecision.rationale}
                 />

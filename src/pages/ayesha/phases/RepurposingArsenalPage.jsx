@@ -10,6 +10,10 @@
  * - Bottom CTA: "Bring to Your Oncologist"
  *
  * Uses arsenalTokens for all visual constants.
+ *
+ * FE-AK-005 (2026-05-10): Reads meta.deprecated and meta.use_instead from the
+ *   hook's returned meta object. Renders a prominent deprecation banner at the
+ *   top of the page when meta.deprecated === true.
  */
 
 import React, { useMemo } from 'react';
@@ -76,12 +80,46 @@ const RepurposingArsenalPage = () => {
         { c: colors.fail, t: '🔴 NOT VIABLE — cannot reach effective concentration safely' },
     ];
 
+    // FE-AK-005: Read deprecation signal from server meta
+    const isDeprecated = meta?.deprecated === true;
+    const useInstead = meta?.use_instead || null;
+
     return (
         <div style={{
             minHeight: '100vh', background: colors.bg,
             padding: '3rem 2rem 6rem', color: colors.text,
             fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
         }}>
+            {/* FE-AK-005: Deprecation banner — shown when backend signals meta.deprecated=true */}
+            {isDeprecated && (
+                <div style={{
+                    maxWidth: spacing.pageMax, margin: '0 auto 2rem',
+                    padding: '1rem 1.5rem',
+                    borderRadius: '0.75rem',
+                    background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+                    border: '2px solid #f59e0b',
+                    display: 'flex', alignItems: 'flex-start', gap: '0.75rem',
+                }}>
+                    <span style={{ fontSize: '1.25rem', flexShrink: 0, lineHeight: 1.2 }}>⚠️</span>
+                    <div>
+                        <div style={{
+                            fontSize: '0.9rem', fontWeight: 800, color: '#92400e',
+                            letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: '0.25rem',
+                        }}>
+                            Legacy Endpoint — This data source is deprecated
+                        </div>
+                        <div style={{ fontSize: '0.82rem', color: '#78350f', lineHeight: 1.6 }}>
+                            The Repurposing Arsenal is being served from a deprecated backend endpoint.
+                            Drug rankings and feasibility verdicts may not reflect the latest scoring model.
+                            {useInstead && (
+                                <> Please use <strong>{useInstead}</strong> instead.</>
+                            )}
+                            {' '}Contact engineering if this banner persists.
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* ═══ HERO HEADER ═══ */}
             <div style={{ maxWidth: spacing.pageMax, margin: '0 auto 2.5rem' }}>
                 <h1 style={{

@@ -12,10 +12,16 @@
  *   5. Unlockable Roadmap
  *   6. Scenario Library (L2/L3)
  *   7. Other Candidates (Tier 2 & 3)
+ *
+ * FE-AK-001 (2026-05-10): Hero drug now sourced from bundle levels.L1.efficacy.drugs
+ *   instead of the legacy /targeted-brief endpoint. useTargetedTherapyBrief is retained
+ *   only as a fallback when bundle drugs are unavailable, and is labelled LEGACY when used.
+ * FE-AK-003 (2026-05-10): Reads levels.L1.efficacy.honesty; renders HEURISTIC SCORING
+ *   badge when heuristic_sequence_used=true.
  */
 import React, { Suspense, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Container, Typography, Alert, CircularProgress, Skeleton, Chip } from '@mui/material';
+import { Box, Container, Typography, Alert, CircularProgress, Skeleton, Chip, Tooltip } from '@mui/material';
 import { useAyeshaTherapyFitBundle } from '../../hooks/useAyeshaTherapyFitBundle';
 import { useTargetedTherapyBrief } from '../../hooks/useTargetedTherapyBrief';
 import TherapyHeroSection from '../../components/ayesha/TherapyHeroSection';
@@ -37,6 +43,43 @@ const ResistanceGateBanner = React.lazy(() => import('../../components/ayesha/Re
 
 const LoadingFallback = () => <Skeleton variant="rectangular" height={300} sx={{ borderRadius: 4, mb: 4 }} />;
 
+// ─── FE-AK-003: Heuristic Scoring Badge ─────────────────────────────────────
+/**
+ * Renders a visible warning badge when the scoring engine used heuristic
+ * sequencing rather than a fully evidence-backed model.
+ * Reads: levels.L1.efficacy.honesty.heuristic_sequence_used (bool)
+ *        levels.L1.efficacy.honesty.sequence_engine (string)
+ *        levels.L1.efficacy.honesty.evidence_status (string)
+ */
+const HeuristicScoringBadge = ({ honesty }) => {
+    if (!honesty?.heuristic_sequence_used) return null;
+
+    const engine = honesty.sequence_engine || 'heuristic';
+    const evidenceStatus = honesty.evidence_status || 'UNKNOWN';
+
+    return (
+        <Tooltip
+            title={`Scoring engine: ${engine} · Evidence status: ${evidenceStatus}. Drug rankings are based on heuristic sequencing, not a fully validated predictive model. Treat scores as directional estimates only.`}
+            arrow
+        >
+            <Chip
+                label="⚠ HEURISTIC SCORING"
+                size="small"
+                sx={{
+                    fontWeight: 800,
+                    fontSize: '0.72rem',
+                    letterSpacing: 0.5,
+                    bgcolor: '#fef3c7',
+                    color: '#92400e',
+                    border: '1px solid #fcd34d',
+                    cursor: 'help',
+                    height: 24,
+                }}
+            />
+        </Tooltip>
+    );
+};
+
 const AyeshaTherapyFit = () => {
     const navigate = useNavigate();
     const [creatingDossier, setCreatingDossier] = useState(false);
@@ -44,13 +87,19 @@ const AyeshaTherapyFit = () => {
 
     // Data hooks
     const { data: bundle, isLoading: bundleLoading, error: bundleError } = useAyeshaTherapyFitBundle({ level: 'l1' });
+
+    // FE-AK-001: useTargetedTherapyBrief is now a FALLBACK only.
+    // It fires only when bundle drugs are absent (e.g. backend returns empty efficacy).
+    const bundleDrugs = bundle?.levels?.L1?.efficacy?.drugs ?? [];
+    const needsLegacyFallback = !bundleLoading && bundleDrugs.length === 0;
+
     const { data: doctrineBrief, isLoading: doctrineLoading } = useTargetedTherapyBrief(
         { patientId: 'AYESHA_MAIN', context: bundle?.patient_context },
-        { enabled: !!bundle?.patient_context }
+        { enabled: needsLegacyFallback && !!bundle?.patient_context }
     );
 
     // Loading / Error
-    if (bundleLoading || (doctrineLoading && bundle?.patient_context)) {
+    if (bundleLoading || (doctrineLoading && needsLegacyFallback && bundle?.patient_context)) {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
                 <CircularProgress />
@@ -70,13 +119,32 @@ const AyeshaTherapyFit = () => {
     const currentLevel = levels?.L1?.completeness?.level || 'L1';
     const resistanceGateData = levels?.L1?.resistance_gate;
 
-    // Doctrine-mapped therapies
-    const prioritized = (doctrineBrief?.options || []).map(opt => ({
-        ...opt,
-        name: opt.drug_name,
-        confidence: opt.final_score,
-        molecular_rationale: opt.rationale,
-    }));
+    // FE-AK-003: Read honesty field from bundle
+    const honesty = levels?.L1?.efficacy?.honesty ?? null;
+
+    // FE-AK-001: Primary source = bundle drugs; fallback = legacy targeted-brief
+    let prioritized;
+    let usingLegacySource = false;
+
+    if (bundleDrugs.length > 0) {
+        // Primary path: map bundle drug shape → display shape
+        prioritized = bundleDrugs.map(drug => ({
+            ...drug,
+            name: drug.drug_name || drug.name || drug.drug,
+            confidence: drug.final_score ?? drug.confidence ?? drug.efficacy_score ?? 0,
+            molecular_rationale: drug.rationale || drug.molecular_rationale,
+        }));
+    } else {
+        // Fallback path: legacy /targeted-brief (labelled LEGACY in UI)
+        usingLegacySource = true;
+        prioritized = (doctrineBrief?.options || []).map(opt => ({
+            ...opt,
+            name: opt.drug_name,
+            confidence: opt.final_score,
+            molecular_rationale: opt.rationale,
+        }));
+    }
+
     const topDrug = prioritized[0];
     const otherDrugs = prioritized.slice(1);
     const otherDrugsToShow = showAllCandidates ? otherDrugs : otherDrugs.slice(0, 12);
@@ -135,6 +203,31 @@ const AyeshaTherapyFit = () => {
             <Box className="tf-section tf-section--narrow">
                 <IOHarmGateSection ioHarmData={bundle?.io_harm_prevention} />
             </Box>
+
+            {/* FE-AK-001 legacy source warning */}
+            {usingLegacySource && (
+                <Box sx={{ mb: 2 }}>
+                    <Alert
+                        severity="warning"
+                        sx={{ fontSize: '0.82rem', fontWeight: 600 }}
+                    >
+                        <strong>LEGACY DATA SOURCE</strong> — Hero drug is sourced from the deprecated{' '}
+                        <code>/targeted-brief</code> endpoint because the bundle returned no drug candidates.
+                        Drug rankings may not reflect the latest scoring model. Contact engineering if this
+                        persists.
+                    </Alert>
+                </Box>
+            )}
+
+            {/* FE-AK-003: Heuristic scoring notice (shown above hero when active) */}
+            {honesty?.heuristic_sequence_used && (
+                <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <HeuristicScoringBadge honesty={honesty} />
+                    <Typography variant="caption" sx={{ color: '#92400e', fontSize: '0.78rem' }}>
+                        Drug scores are heuristic estimates — not validated predictions. Rankings are directional only.
+                    </Typography>
+                </Box>
+            )}
 
             {/* Beat 1: Hero — Top Drug */}
             <TherapyHeroSection
@@ -199,6 +292,8 @@ const AyeshaTherapyFit = () => {
                         onClick={() => setShowAllCandidates(v => !v)}
                     />
                     <Chip size="small" variant="outlined" label={`Total candidates: ${otherDrugs.length}`} />
+                    {/* FE-AK-003: Heuristic badge in candidates header */}
+                    <HeuristicScoringBadge honesty={honesty} />
                 </Box>
                 <Suspense fallback={<LoadingFallback />}>
                     <AyeshaDrugPanel drugs={otherDrugsToShow} onInform={handleInformDoctor} />

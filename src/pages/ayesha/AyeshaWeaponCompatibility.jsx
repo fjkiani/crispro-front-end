@@ -1,6 +1,13 @@
+/**
+ * AyeshaWeaponCompatibility
+ *
+ * FE-AK-003 (2026-05-10): Reads levels.L1.efficacy.honesty; renders HEURISTIC SCORING
+ *   badge in the header bar and above the primary weapon card when
+ *   heuristic_sequence_used=true.
+ */
 import React, { Suspense, useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Container, Typography, Alert, CircularProgress, Skeleton, Button, Chip, Grid } from '@mui/material';
+import { Box, Container, Typography, Alert, CircularProgress, Skeleton, Button, Chip, Grid, Tooltip } from '@mui/material';
 import { useAyeshaTherapyFitBundle } from '../../hooks/useAyeshaTherapyFitBundle';
 import { useTargetedTherapyBrief } from '../../hooks/useTargetedTherapyBrief';
 import { RefreshCw, Play, Shield, AlertTriangle, Clock, ArrowRight, ArrowUp, ArrowDown, Minus, FlaskConical, FileText, BookOpen, Sparkles, Upload, TestTube, Dna, BarChart3 } from 'lucide-react';
@@ -17,6 +24,41 @@ import { API_ROOT } from '../../lib/apiConfig';
 
 
 const LoadingFallback = () => <Skeleton variant="rectangular" height={300} sx={{ borderRadius: 1, mb: 4, bgcolor: 'grey.200' }} />;
+
+// ─── FE-AK-003: Heuristic Scoring Badge ─────────────────────────────────────
+/**
+ * Renders a visible warning badge when the scoring engine used heuristic
+ * sequencing rather than a fully evidence-backed model.
+ * Reads: levels.L1.efficacy.honesty.heuristic_sequence_used (bool)
+ *        levels.L1.efficacy.honesty.sequence_engine (string)
+ *        levels.L1.efficacy.honesty.evidence_status (string)
+ */
+const HeuristicScoringBadge = ({ honesty }) => {
+    if (!honesty?.heuristic_sequence_used) return null;
+    const engine = honesty.sequence_engine || 'heuristic';
+    const evidenceStatus = honesty.evidence_status || 'UNKNOWN';
+    return (
+        <Tooltip
+            title={`Scoring engine: ${engine} · Evidence status: ${evidenceStatus}. Drug rankings are based on heuristic sequencing, not a fully validated predictive model. Treat scores as directional estimates only.`}
+            arrow
+        >
+            <Chip
+                label="⚠ HEURISTIC SCORING"
+                size="small"
+                sx={{
+                    fontWeight: 800,
+                    fontSize: '0.72rem',
+                    letterSpacing: 0.5,
+                    bgcolor: '#fef3c7',
+                    color: '#92400e',
+                    border: '1px solid #fcd34d',
+                    cursor: 'help',
+                    height: 24,
+                }}
+            />
+        </Tooltip>
+    );
+};
 
 // ─── Fix 3: Analysis Telemetry Panel ────────────────────────────────
 // Reads ONLY stable fields present in both /bundle and /analyze shapes.
@@ -648,6 +690,9 @@ const AyeshaWeaponCompatibility = () => {
 
     const resistanceGateData = activeLevelData?.resistance_gate;
 
+    // FE-AK-003: Read honesty field — always from L1 baseline (not simulation level)
+    const honesty = levels?.L1?.efficacy?.honesty ?? null;
+
     const slPayload = synthetic_lethality || activeLevelData?.synthetic_lethality || null;
 
     // ZETA PROTOCOL: War Games Oversight — Fix 1: Shape-Tolerant Sim Switch
@@ -738,6 +783,8 @@ const AyeshaWeaponCompatibility = () => {
                         </Box>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        {/* FE-AK-003: Heuristic scoring badge in header */}
+                        <HeuristicScoringBadge honesty={honesty} />
                         {activeScenario && (
                             <Chip
                                 icon={<Play size={16} />}
@@ -774,6 +821,16 @@ const AyeshaWeaponCompatibility = () => {
                         scenarioMeta={activeScenarioMeta}
                         completeness={baselineCompleteness}
                     />
+                )}
+
+                {/* FE-AK-003: Heuristic scoring notice above primary weapon */}
+                {honesty?.heuristic_sequence_used && (
+                    <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <HeuristicScoringBadge honesty={honesty} />
+                        <Typography variant="caption" sx={{ color: '#92400e', fontSize: '0.78rem' }}>
+                            Drug scores are heuristic estimates — not validated predictions. Rankings are directional only.
+                        </Typography>
+                    </Box>
                 )}
 
                 {/* 2. Primary Weapon (Best Shot) */}
