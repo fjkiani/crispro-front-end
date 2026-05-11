@@ -643,15 +643,18 @@ const AyeshaWeaponCompatibility = () => {
         scenario_id: activeScenario
     });
 
-    // 2. Fetch Doctrine Logic (Use bundle context)
+    // 2. Fetch Doctrine Logic (legacy fallback only — FE-AK-001 equivalent)
+    // bundleDrugs is computed after bundle loads; we need it here for the enabled gate.
+    const _bundleDrugsForGate = bundle?.levels?.L1?.efficacy?.drugs ?? bundle?.levels?.l1?.efficacy?.drugs ?? [];
+    const needsLegacyFallback = !bundleLoading && !activeScenario && _bundleDrugsForGate.length === 0;
     const { data: doctrineBrief, isLoading: doctrineLoading } = useTargetedTherapyBrief({
         patientId: 'AYESHA_MAIN',
         context: bundle?.patient_context
     }, {
-        enabled: !!bundle?.patient_context
+        enabled: needsLegacyFallback && !!bundle?.patient_context
     });
 
-    if (bundleLoading) {
+    if (bundleLoading || (needsLegacyFallback && doctrineLoading)) {
         return (
             <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', bgcolor: 'grey.50' }}>
                 <CircularProgress />
@@ -698,8 +701,13 @@ const AyeshaWeaponCompatibility = () => {
     // ZETA PROTOCOL: War Games Oversight — Fix 1: Shape-Tolerant Sim Switch
     // Supports both /bundle shape (efficacy.drugs) and /analyze shape (drugs at root).
     // When simulation is active, bypass Doctrine and show backend efficacy data.
+    // FE-AK-001 equivalent: bundle drugs are primary; useTargetedTherapyBrief is fallback-only.
     const simDrugs = activeLevelData?.efficacy?.drugs ?? activeLevelData?.drugs ?? [];
-    const prioritized_therapies = activeScenario ? simDrugs : (doctrineBrief?.options ?? simDrugs);
+    const bundleDrugs = activeLevelData?.efficacy?.drugs ?? [];
+    const usingLegacySource = !activeScenario && bundleDrugs.length === 0;
+    const prioritized_therapies = activeScenario
+        ? simDrugs
+        : (bundleDrugs.length > 0 ? bundleDrugs : (doctrineBrief?.options ?? []));
 
     const mappedTherapies = prioritized_therapies.map(opt => ({
         ...opt,
@@ -821,6 +829,17 @@ const AyeshaWeaponCompatibility = () => {
                         scenarioMeta={activeScenarioMeta}
                         completeness={baselineCompleteness}
                     />
+                )}
+
+                {/* FE-AK-001 equivalent: LEGACY DATA SOURCE warning */}
+                {usingLegacySource && !activeScenario && (
+                    <Alert
+                        severity="warning"
+                        sx={{ mb: 2, fontWeight: 600, fontSize: '0.82rem', border: '1px solid #f59e0b' }}
+                    >
+                        LEGACY DATA SOURCE — Drug list sourced from useTargetedTherapyBrief (doctrine brief) because
+                        bundle returned no efficacy drugs. Rankings may not reflect latest backend analysis.
+                    </Alert>
                 )}
 
                 {/* FE-AK-003: Heuristic scoring notice above primary weapon */}
