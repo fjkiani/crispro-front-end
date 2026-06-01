@@ -50,8 +50,12 @@ const computeFeasibilityClientSide = (drug) => {
  * Transform raw ovarian.json drug into the API response shape.
  */
 const transformDrug = (drug) => {
-    if (!drug.evidence_tier || !drug.feasibility_gate) return null;
-    const feas = computeFeasibilityClientSide(drug);
+    // GAP-FIX: feasibility_gate is optional — don't drop drugs that lack PK data.
+    // evidence_tier is still required (drugs without it are not evaluable).
+    if (!drug.evidence_tier) return null;
+    const feas = drug.feasibility_gate
+        ? computeFeasibilityClientSide(drug)
+        : { verdict: 'INSUFFICIENT_DATA', gap_ratio: null, free_cmax_um: null, ic50_um: null, ppb: null, cmax_um: null };
     // Merge client-computed feasibility with raw gate fields (source, pk_note)
     const gate = drug.feasibility_gate || {};
     const feasMerged = { ...feas, source: gate.source || '', pk_note: gate.pk_note || '' };
@@ -93,22 +97,43 @@ const useRepurposingArsenal = () => {
             setLoading(true);
             setError(null);
 
-            // Try backend API first (with 2s timeout for fast fallback)
+            // Try backend API first (with 8s timeout — Render cold starts take 5-7s)
+            // Retry once on 502/503 (transient hibernate-wake-error) before falling back.
             try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 2000);
-                const res = await fetch(`${API_BASE}/api/ayesha/therapy-fit/repurposing-arsenal`, {
-                    signal: controller.signal,
-                });
-                clearTimeout(timeoutId);
-                if (res.ok) {
-                    const data = await res.json();
-                    setArsenal(data);
-                    return;
+                let res = null;
+                for (let attempt = 0; attempt < 2; attempt++) {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 8000);
+                    try {
+                        res = await fetch(`${API_BASE}/api/ayesha/therapy-fit/repurposing-arsenal`, {
+                            signal: controller.signal,
+                        });
+                        clearTimeout(timeoutId);
+                        if (res.ok) {
+                            const data = await res.json();
+                            setArsenal(data);
+                            return;
+                        }
+                        // 502/503 = Render waking up — wait 3s and retry once
+                        if ((res.status === 502 || res.status === 503) && attempt === 0) {
+                            console.warn(`⚡ Backend returning ${res.status} (cold start) — retrying in 3s`);
+                            await new Promise(r => setTimeout(r, 3000));
+                            continue;
+                        }
+                        break; // Non-retryable error
+                    } catch (fetchErr) {
+                        clearTimeout(timeoutId);
+                        if (attempt === 0) {
+                            console.warn('⚡ Backend fetch failed (attempt 1) — retrying in 3s', fetchErr?.name);
+                            await new Promise(r => setTimeout(r, 3000));
+                        } else {
+                            throw fetchErr;
+                        }
+                    }
                 }
             } catch (e) {
-                // Backend unavailable — fall through to JSON fallback
-                console.warn('⚡ Backend API unavailable — loading arsenal from static JSON', e?.name);
+                // Backend unavailable after retry — fall through to JSON fallback
+                console.warn('⚡ Backend API unavailable after retry — loading arsenal from static JSON', e?.name);
             }
 
             // Fallback: load ovarian.json from static public/ (must exist in frontend public/data/)
