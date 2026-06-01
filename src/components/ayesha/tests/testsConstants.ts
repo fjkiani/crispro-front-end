@@ -79,7 +79,8 @@ export const SCENARIO_STORIES: Record<string, { label: string; desc: string; col
     // L2 scenarios
     "L2A_HRDhi_TMBhi": { label: "Strong repair deficiency + high mutations", desc: "DNA repair is broken and mutation load is high — best chance for targeted + immunotherapy", color: "#22c55e" },
     "L2B_HRDlowTMBlow": { label: "Repair intact, low mutations", desc: "Standard profile — fewer targeted options, broader chemotherapy likely indicated", color: "#f59e0b" },
-    "L2C_HRDhiTMBlow": { label: "Repair deficient only", desc: "DNA repair is broken but mutation count is low — PARP inhibitors may work", color: "#3b82f6" },
+    // GAP-14 FIX: HR deficiency implies DDR-targeted therapy broadly, not just PARPi.
+    "L2C_HRDhiTMBlow": { label: "Repair deficient only", desc: "DNA repair is broken but mutation count is low — DDR-targeted therapy (PARPi, platinum) may be indicated", color: "#3b82f6" },
     "L2D_HRDlowTMBhigh": { label: "High mutations only", desc: "High mutation burden may trigger immune response — immunotherapy candidate", color: "#8b5cf6" },
     "L2K_BestCase_Kinetic": { label: "Best possible outcome", desc: "All favorable markers present — strongest therapy options available", color: "#22c55e" },
     "L2K_WorstCase_Kinetic": { label: "Drug resistance present", desc: "Resistance markers detected — requires careful therapy selection to overcome resistance", color: "#ef4444" },

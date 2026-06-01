@@ -63,9 +63,11 @@ function evaluateHRDBaseline(profile) {
         return { state: LIGHT_STATES.NO_DATA, reason: 'HRD score not available — test not ordered' };
     }
     if (hrdScore < 42) {
-        return { state: LIGHT_STATES.BASELINE_NOTED, reason: `HRD score ${hrdScore} < 42 — HR-proficient. PARPi predicted resistant at intake.` };
+        // GAP-13 FIX: HRD < 42 means HR-proficient; don't frame as PARPi-specific.
+        return { state: LIGHT_STATES.BASELINE_NOTED, reason: `HRD score ${hrdScore} < 42 — HR-proficient. HR pathway likely intact; DDR-targeted therapy benefit uncertain.` };
     }
-    return { state: LIGHT_STATES.CLEAR, reason: `HRD score ${hrdScore} ≥ 42 — HRD-positive. PARPi eligible.` };
+    // GAP-13 FIX: HRD-high implies HR deficiency broadly — not just PARPi eligibility.
+    return { state: LIGHT_STATES.CLEAR, reason: `HRD score ${hrdScore} ≥ 42 — HRD-positive. HR deficiency confirmed; DDR-targeted therapy (PARPi, platinum) may be indicated.` };
 }
 
 function evaluateRepairShift() {

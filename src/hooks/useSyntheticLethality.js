@@ -92,8 +92,9 @@ export const useSyntheticLethality = () => {
       }
 
       // Build request body
-      const diseaseType = patientData.disease?.type || 'ovarian_cancer';
-      const disease = diseaseType.replace(/_/g, ' ').replace('hgs', '').trim() || 'ovarian_cancer';
+      // GAP-11 FIX: Use 'unknown' fallback instead of hardcoded ovarian_cancer.
+      const diseaseType = patientData.disease?.type || 'unknown';
+      const disease = diseaseType.replace(/_/g, ' ').replace('hgs', '').trim() || 'unknown';
 
       const requestBody = {
         disease: disease,

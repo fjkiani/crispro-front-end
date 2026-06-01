@@ -454,8 +454,10 @@ export const AgentProvider = ({ children }) => {
   };
 
   // Initial fetch on mount and when user changes
+  // F5 FIX: Belt-and-suspenders — skip fetch if no user OR no token to prevent 401 spam
+  // on cold load before mock auth session is established.
   useEffect(() => {
-    if (user) {
+    if (user && _getAuthToken()) {
       fetchAgents();
       fetchAlerts();
     }
