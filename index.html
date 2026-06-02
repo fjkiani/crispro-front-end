@@ -8,7 +8,7 @@
   </head>
   <body>
     <div id="root"></div>
-    <!-- CRITICAL: Response.headers protection must run BEFORE any modules load -->
+    <!-- CRITICAL: Response.headers protection + Render cold-start retry must run BEFORE any modules load -->
     <script>
       // Protect Response.headers access at the earliest possible moment
       // This runs before any ES modules are loaded to catch initialization errors
@@ -50,29 +50,82 @@
           });
         }
         
-        // Also protect fetch to ensure all responses have headers
+        // ── Render cold-start retry wrapper ──────────────────────────────────────
+        // Problem: Render free-tier services sleep after 15 min of inactivity.
+        // When waking, they return 502/503 with NO CORS headers for 5-10 seconds.
+        // The browser sees this as "TypeError: Failed to fetch" (network error).
+        // Fix: wrap window.fetch globally to retry on network errors and 502/503/504.
+        //
+        // Only retries requests to our backend (crispro-backend-v2.onrender.com).
+        // All other fetches (CDN, analytics, etc.) pass through unchanged.
+        // ─────────────────────────────────────────────────────────────────────────
         if (typeof window !== 'undefined' && window.fetch) {
-          const originalFetch = window.fetch;
-          window.fetch = function(...args) {
-            const promise = originalFetch.apply(this, args);
-            return promise.then(function(response) {
-              // Ensure response has headers property
-              if (response && !response.headers) {
-                try {
-                  Object.defineProperty(response, 'headers', {
-                    value: new Headers(),
-                    writable: false,
-                    configurable: true
-                  });
-                } catch (e) {
-                  console.warn('[Fetch protection] Could not add headers to response:', e);
+          var _originalFetch = window.fetch;
+          var _BACKEND_HOST = 'crispro-backend-v2.onrender.com';
+          var _MAX_RETRIES = 2;
+          var _BASE_DELAY_MS = 3000;
+
+          function _sleep(ms) {
+            return new Promise(function(resolve) { setTimeout(resolve, ms); });
+          }
+
+          function _isBackendUrl(args) {
+            try {
+              var url = typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url) || '';
+              return url.indexOf(_BACKEND_HOST) !== -1;
+            } catch(e) { return false; }
+          }
+
+          function _isRetryableStatus(status) {
+            return status === 502 || status === 503 || status === 504;
+          }
+
+          window.fetch = function() {
+            var args = Array.prototype.slice.call(arguments);
+            var isBackend = _isBackendUrl(args);
+
+            if (!isBackend) {
+              // Non-backend: pass through with original headers protection only
+              return _originalFetch.apply(this, args).then(function(response) {
+                if (response && !response.headers) {
+                  try { Object.defineProperty(response, 'headers', { value: new Headers(), writable: false, configurable: true }); } catch(e) {}
                 }
-              }
-              return response;
-            }).catch(function(error) {
-              console.error('[Fetch protection] Fetch error:', error);
-              throw error;
-            });
+                return response;
+              }).catch(function(error) {
+                console.error('[Fetch protection] Fetch error:', error);
+                throw error;
+              });
+            }
+
+            // Backend request: retry on network error or 502/503/504
+            var attempt = 0;
+            function doFetch() {
+              return _originalFetch.apply(window, args).then(function(response) {
+                // Ensure headers property exists
+                if (response && !response.headers) {
+                  try { Object.defineProperty(response, 'headers', { value: new Headers(), writable: false, configurable: true }); } catch(e) {}
+                }
+                // Retry on gateway errors (Render waking up)
+                if (_isRetryableStatus(response.status) && attempt < _MAX_RETRIES) {
+                  attempt++;
+                  var delay = _BASE_DELAY_MS * attempt;
+                  console.warn('[Fetch retry] ' + response.status + ' from backend — retrying in ' + delay + 'ms (attempt ' + attempt + '/' + _MAX_RETRIES + ')');
+                  return _sleep(delay).then(doFetch);
+                }
+                return response;
+              }).catch(function(error) {
+                // TypeError: Failed to fetch = network error or CORS-less 502/503
+                if (attempt < _MAX_RETRIES) {
+                  attempt++;
+                  var delay = _BASE_DELAY_MS * attempt;
+                  console.warn('[Fetch retry] Network error from backend — retrying in ' + delay + 'ms (attempt ' + attempt + '/' + _MAX_RETRIES + '): ' + error.message);
+                  return _sleep(delay).then(doFetch);
+                }
+                console.error('[Fetch protection] Fetch error:', error);
+                throw error;
+              });
+            }
+            return doFetch();
           };
         }
       })();
