@@ -19,7 +19,7 @@
  */
 
 import React, { useEffect } from "react";
-import { Routes, useNavigate, useLocation } from "react-router-dom";
+import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import theme from './theme';
@@ -42,6 +42,15 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 // Import modular routes
 import { getAllRoutes } from "./routes";
 
+// Public fullscreen pages (no auth, no sidebar/navbar)
+import Ceacam5Page from "./pages/Ceacam5Page";
+
+// Paths that are public (no auth redirect) and render fullscreen (no sidebar/navbar)
+const FULLSCREEN_PUBLIC_PATHS = ['/ceacam5'];
+
+// Paths that are public but still use the normal layout (login, signup, etc.)
+const PUBLIC_LAYOUT_PATHS = ['/login', '/signup', '/forgot-password'];
+
 // INNER COMPONENT: Consumes Contexts
 const AppContent = () => {
   const { currentUser } = useStateContext();
@@ -49,11 +58,14 @@ const AppContent = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const isFullscreenPublic = FULLSCREEN_PUBLIC_PATHS.includes(location.pathname);
+
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!loading && !authenticated) {
-      // Only redirect if trying to access a protected route (exclude login/signup)
-      if (location.pathname !== '/login' && location.pathname !== '/signup' && location.pathname !== '/forgot-password') {
+      // Only redirect if trying to access a protected route (exclude login/signup and fullscreen public pages)
+      const isPublic = PUBLIC_LAYOUT_PATHS.includes(location.pathname) || FULLSCREEN_PUBLIC_PATHS.includes(location.pathname);
+      if (!isPublic) {
         navigate('/login');
       }
     }
@@ -71,6 +83,15 @@ const AppContent = () => {
     const timeout = setTimeout(performSessionHealthCheck, 3000);
     return () => clearTimeout(timeout);
   }, []);
+
+  // Fullscreen public pages — render without sidebar/navbar
+  if (isFullscreenPublic) {
+    return (
+      <Routes>
+        <Route path="/ceacam5" element={<Ceacam5Page />} />
+      </Routes>
+    );
+  }
 
   return (
     <Box
