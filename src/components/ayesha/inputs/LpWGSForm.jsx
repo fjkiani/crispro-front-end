@@ -18,7 +18,7 @@ import {
     CircularProgress, Collapse, Switch, FormControlLabel,
 } from '@mui/material';
 import { Dna, Info, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
-import { getApiBaseUrl } from '../../../config/apiConfig';
+import { API_ROOT } from '../../../lib/apiConfig';
 
 // Common COSMIC CN signatures in HGSOC
 const CN_SIGS = [
@@ -77,8 +77,7 @@ export default function LpWGSForm({ onSave }) {
         setResult(null);
 
         try {
-            const base = getApiBaseUrl();
-            const resp = await fetch(`${base}/api/ayesha/lpwgs/score`, {
+            const resp = await fetch(`${API_ROOT}/api/ayesha/lpwgs/score`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

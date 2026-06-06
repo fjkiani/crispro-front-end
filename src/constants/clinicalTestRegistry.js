@@ -179,6 +179,46 @@ export const CLINICAL_TEST_REGISTRY = {
     unlock_keys: ['hrd_score', 'kc_ddr', 'parp_eligibility'],
   },
 
+  // Alias: hrd_score slug → same data as hrd (SLUG_ENTRY_FORMS maps both to HRDEntryForm)
+  hrd_score: {
+    id: 'hrd_score',
+    type: 'test',
+    name: 'HRD Score (Alias)',
+    short_desc: 'Alias for HRD Score entry. Quantifies genomic scarring from defective DNA repair — key PARP inhibitor eligibility biomarker.',
+    priority: 'HIGH',
+    what_it_captures: [
+      {
+        title: 'Genomic Instability Score (GIS)',
+        description: 'Composite of LOH, TAI, and LST. HRD≥42 predicts PARP benefit (Myriad myChoice). Threshold from models.py HRD_SUM_THRESHOLD=42.',
+        icon: 'activity',
+      },
+    ],
+    resistance_tracked: [
+      {
+        title: 'HRD-to-HRP Conversion',
+        description: 'Loss of HRD signal under PARP pressure (BRCA reversion, 53BP1/REV7 bypass). HRD score becomes unreliable at resistance.',
+        icon: 'alert-triangle',
+      },
+    ],
+    kill_chain_axes: ['ddr'],
+    io_signals: { unlocks_profile_card: false, unlocks_domain_boost: false },
+    validation: {
+      status: 'VALIDATED',
+      cohort: 'PRIMA/PAOLA-1/QUADRA',
+      n: null,
+      metrics: { note: 'FDA-approved companion diagnostic (Myriad myChoice CDx)' },
+      caveats: 'Static scar — does not reflect current HR status. BRCA reversion restores HR without changing GIS.',
+      pmid: '31562799',
+      computation_date: null,
+    },
+    limitations: [
+      'Static scar metric — does not reflect CURRENT HR status.',
+      'BRCA reversion restores HR function without changing GIS.',
+      'Does not distinguish HRD etiology (BRCA1 vs RAD51C vs epigenetic).',
+    ],
+    unlock_keys: ['hrd_score', 'kc_ddr', 'parp_eligibility'],
+  },
+
   tmb: {
     id: 'tmb',
     type: 'test',

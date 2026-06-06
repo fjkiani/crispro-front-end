@@ -22,7 +22,7 @@ import {
     Stack, Divider, CircularProgress, Collapse,
 } from '@mui/material';
 import { Activity, Info, ChevronDown, ChevronUp } from 'lucide-react';
-import { getApiBaseUrl } from '../../../config/apiConfig';
+import { API_ROOT } from '../../../lib/apiConfig';
 
 // Gene groups with axis labels
 const GENE_GROUPS = [
@@ -92,8 +92,7 @@ export default function RNAExpressionForm({ onSave }) {
         setResult(null);
 
         try {
-            const base = getApiBaseUrl();
-            const resp = await fetch(`${base}/api/expression/ingest`, {
+            const resp = await fetch(`${API_ROOT}/api/expression/ingest`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

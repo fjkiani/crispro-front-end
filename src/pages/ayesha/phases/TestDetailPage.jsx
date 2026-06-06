@@ -384,6 +384,7 @@ export default function TestDetailPage() {
                                     )}
 
                                     <MonitoringSidebar entry={entry} />
+                                    <CaveatPanel slug={slug} />
                                     <DataEntrySection slug={slug} />
                                 </Box>
                             </Box>
