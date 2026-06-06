@@ -9,10 +9,7 @@
  *   `localhost` / `127.0.0.1` (so typical `.env.local` still uses the proxy).
  * - In DEV, set `VITE_API_ROOT` to a non-loopback URL to hit a remote API.
  *
- * Production:
- * - Prefer `VITE_API_ROOT` (REST). `VITE_WS_ROOT` is used for WebSockets and,
- *   when set, also backs REST if `VITE_API_ROOT` is missing or points at a
- *   retired Render host still present in some dashboards.
+ * Production: set `VITE_API_ROOT` in `.env.production` / CI (e.g. Railway URL).
  *
  * Usage:
  *   import { API_ROOT, WS_ROOT } from '@/lib/apiConfig';
@@ -22,52 +19,27 @@
 const LOCAL_BACKEND = 'http://localhost:8000';
 const LOCAL_WS = 'ws://localhost:8000';
 
-/** Live production backend (Railway). */
-const DEFAULT_PRODUCTION_API =
-  'https://crispro-backend-v2-production.up.railway.app';
+// Production backend — Railway deployment.
+// This constant is the authoritative fallback when VITE_API_ROOT is unset,
+// missing the https:// prefix, or still pointing at the old Render backend.
+// Update this when the Railway service URL changes.
+const PRODUCTION_BACKEND = 'https://crispro-backend-v2-production.up.railway.app';
+const PRODUCTION_WS = 'https://crispro-backend-v2-production.up.railway.app';
 
-/** Retired Render backends — may still be set in Render dashboard env. */
-const DEPRECATED_BACKEND_HOSTS = new Set([
-  'crispro-backend-v2.onrender.com',
-  'crispro-backend-v2-1.onrender.com',
-]);
+const _rawApi = (import.meta.env.VITE_API_ROOT || '').trim();
+const _rawWs = (import.meta.env.VITE_WS_ROOT || '').trim();
 
-function normalizeHttpRoot(raw) {
-  const url = (raw || '').trim().replace(/\/$/, '');
+/** Normalise a URL string: add https:// if protocol is missing. */
+function normaliseUrl(url) {
   if (!url) return '';
-  try {
-    if (url.startsWith('ws://')) return `http://${new URL(url).host}`;
-    if (url.startsWith('wss://')) return `https://${new URL(url).host}`;
-    const u = new URL(url);
-    return `${u.protocol}//${u.host}`;
-  } catch {
-    return url;
-  }
+  if (/^https?:\/\//i.test(url)) return url;
+  if (/^wss?:\/\//i.test(url)) return url;
+  // bare hostname — add https://
+  return `https://${url}`;
 }
 
-function normalizeWsRoot(httpRoot, explicitWs) {
-  const ws = (explicitWs || '').trim();
-  if (ws) {
-    try {
-      if (ws.startsWith('ws://') || ws.startsWith('wss://')) {
-        const u = new URL(ws);
-        return `${u.protocol}//${u.host}`;
-      }
-      const http = normalizeHttpRoot(ws);
-      if (!http) return LOCAL_WS;
-      return http.replace(/^https:/, 'wss:').replace(/^http:/, 'ws:');
-    } catch {
-      return ws;
-    }
-  }
-  if (httpRoot) {
-    return httpRoot.replace(/^https:/, 'wss:').replace(/^http:/, 'ws:');
-  }
-  return LOCAL_WS;
-}
-
-/** True when explicit base is clearly “this machine”. */
-function isLoopbackApiUrl(url) {
+/** True when URL points at localhost / 127.0.0.1. */
+function isLoopbackUrl(url) {
   if (!url) return false;
   try {
     const u = new URL(url);
@@ -77,54 +49,31 @@ function isLoopbackApiUrl(url) {
   }
 }
 
-function isDeprecatedBackend(url) {
-  if (!url) return false;
-  try {
-    return DEPRECATED_BACKEND_HOSTS.has(new URL(url).hostname);
-  } catch {
-    return false;
-  }
+/** True when URL points at the old Render backend (no longer the active backend). */
+function isStaleRenderBackend(url) {
+  return url.includes('crispro-backend-v2.onrender.com');
 }
 
-const explicitApi = normalizeHttpRoot(import.meta.env.VITE_API_ROOT);
-const wsDerivedApi = normalizeHttpRoot(import.meta.env.VITE_WS_ROOT);
-const legacyBackendApi = normalizeHttpRoot(import.meta.env.VITE_BACKEND_API_URL);
-
-function resolveProductionApiRoot() {
-  if (explicitApi && !isDeprecatedBackend(explicitApi)) {
-    return explicitApi;
-  }
-  if (wsDerivedApi) {
-    if (explicitApi && isDeprecatedBackend(explicitApi)) {
-      console.warn(
-        '[apiConfig] Ignoring deprecated VITE_API_ROOT; using VITE_WS_ROOT for API:',
-        wsDerivedApi,
-      );
-    }
-    return wsDerivedApi;
-  }
-  if (legacyBackendApi && !isDeprecatedBackend(legacyBackendApi)) {
-    return legacyBackendApi;
-  }
-  if (explicitApi) {
-    console.warn(
-      '[apiConfig] VITE_API_ROOT points at a retired host; update Render env and redeploy.',
-    );
-    return explicitApi;
-  }
-  return DEFAULT_PRODUCTION_API;
-}
+const explicitApi = normaliseUrl(_rawApi);
+const explicitWs = normaliseUrl(_rawWs);
 
 /**
- * DEV: same-origin `/api/*` via Vite proxy when unset OR loopback URL.
- * PROD: resolved chain above (never localhost).
+ * DEV: same-origin proxy when unset or loopback.
+ * PROD: VITE_API_ROOT (normalised) unless it is stale/missing → PRODUCTION_BACKEND.
  */
 export const API_ROOT = import.meta.env.DEV
-  ? !explicitApi || isLoopbackApiUrl(explicitApi)
+  ? !explicitApi || isLoopbackUrl(explicitApi)
     ? ''
     : explicitApi
-  : resolveProductionApiRoot();
+  : explicitApi && !isLoopbackUrl(explicitApi) && !isStaleRenderBackend(explicitApi)
+    ? explicitApi
+    : PRODUCTION_BACKEND;
 
-export const WS_ROOT = normalizeWsRoot(API_ROOT, import.meta.env.VITE_WS_ROOT);
+export const WS_ROOT =
+  explicitWs && !isLoopbackUrl(explicitWs) && !isStaleRenderBackend(explicitWs)
+    ? explicitWs
+    : import.meta.env.DEV
+      ? LOCAL_WS
+      : PRODUCTION_WS;
 
 export default API_ROOT;
