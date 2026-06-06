@@ -5,14 +5,11 @@ import { BiologicalRationaleAccordion } from './BiologicalRationaleAccordion';
 import { BrokenPathwaysAccordion } from './BrokenPathwaysAccordion';
 import { NextTestsAccordion } from './NextTestsAccordion';
 import { RecommendedDrugsAccordion } from './RecommendedDrugsAccordion';
-import { SlCanonicalRecommendations } from './SlCanonicalRecommendations';
 import { SlEvidenceMatrixAccordion } from './SlEvidenceMatrixAccordion';
 import { SlFullJsonDrawer } from './SlFullJsonDrawer';
-import { SlMutationContextCard } from './SlMutationContextCard';
 import { SlOpportunitiesAccordion } from './SlOpportunitiesAccordion';
 import { SlReceiptsDrawer } from './SlReceiptsDrawer';
 import { SlSignalBar } from './SlSignalBar';
-import { SuggestedTherapyBanner } from './SuggestedTherapyBanner';
 import { SL_DEBUG, safeArray, safeObj } from './slUtils';
 import { getSyntheticLethalitySignal, getSyntheticLethalityWarnings } from '../../../utils/ayesha/syntheticLethalitySignals';
 
@@ -30,6 +27,15 @@ const EVIDENCE_ORDER = {
   Negative: 3,
   Missing: 4,
 };
+
+// Only tiers with positive or mechanistic evidence are shown in the main
+// recommendation ladder. "Not supported / negative" rows are excluded here
+// but remain visible in SlEvidenceMatrixAccordion for full auditability.
+const DISPLAY_TIERS = new Set([
+  'Validated SL therapeutic lever',
+  'Strong candidate dependency axis',
+  'Mechanistic candidate only',
+]);
 
 function normalizeMatrixRecommendation(row, index) {
   return {
@@ -62,6 +68,11 @@ function buildCanonicalRecommendations(payload, evidenceMatrix) {
   }
 
   const normalized = rows
+    .filter((row) => {
+      const tier =
+        row?.recommendation_tier || row?.final_recommendation_tier || row?.tier || '';
+      return DISPLAY_TIERS.has(String(tier));
+    })
     .map((row, index) => normalizeMatrixRecommendation(row, index))
     .sort((a, b) => {
       const tierCmp =
@@ -101,14 +112,9 @@ export function SyntheticLethalityCard({ slData, data, onShowTrials, levelKey: l
   const recs = safeArray(payload?.recommended_drugs);
   const essentialityScores = safeArray(payload?.essentiality_scores);
   const gating = safeObj(payload?.gating);
-  const canonical = useMemo(
-    () => buildCanonicalRecommendations(payload, evidenceMatrix),
-    [payload, evidenceMatrix]
-  );
   const slSignal = useMemo(() => getSyntheticLethalitySignal(payload), [payload]);
   const warnings = useMemo(() => getSyntheticLethalityWarnings(payload), [payload]);
   const detected = slSignal.state === 'locked';
-  const hasCanonicalRecommendations = canonical.recommendations.length > 0;
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [fullJsonOpen, setFullJsonOpen] = useState(false);
@@ -220,39 +226,17 @@ export function SyntheticLethalityCard({ slData, data, onShowTrials, levelKey: l
           </Alert>
         ))}
 
-        <SlMutationContextCard
-          detected={detected}
-          doubleHitDescription={payload?.double_hit_description}
-          essentialityScores={essentialityScores}
-          brokenPathways={broken}
-        />
-
-        <SlCanonicalRecommendations
-          recommendations={canonical.recommendations}
-          source={canonical.source}
-          onShowTrials={onShowTrials}
-        />
-
-        {!hasCanonicalRecommendations && (
-          <SuggestedTherapyBanner
-            text={payload?.suggested_therapy}
-            isSuperseded={false}
-          />
-        )}
-
         <SlReceiptsDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} receipts={receipts} />
 
         {SL_DEBUG && (
           <SlFullJsonDrawer open={fullJsonOpen} onClose={() => setFullJsonOpen(false)} payload={payload} />
         )}
 
-        {!hasCanonicalRecommendations && (
-          <RecommendedDrugsAccordion
-            missingPayload={missingPayload}
-            recs={recs}
-            isSuperseded={false}
-          />
-        )}
+        <RecommendedDrugsAccordion
+          missingPayload={missingPayload}
+          recs={recs}
+          isSuperseded={false}
+        />
 
         <BiologicalRationaleAccordion
           doubleHitDescription={payload?.double_hit_description}
