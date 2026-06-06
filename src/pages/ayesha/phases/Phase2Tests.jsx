@@ -100,8 +100,8 @@ const TestCard = ({ test, onClickDetail }) => {
                 </Box>
             </Box>
 
-            {/* Priority */}
-            <Box sx={{ mt: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+            {/* Priority + Validation Status */}
+            <Box sx={{ mt: 1.5, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                 <Chip
                     label={`Priority: ${test.priority}`}
                     size="small"
@@ -113,7 +113,35 @@ const TestCard = ({ test, onClickDetail }) => {
                         borderColor: test.priority === 'HIGH' ? '#fde68a' : 'divider',
                     }}
                 />
+                {test.validationStatus && (
+                    <Chip
+                        label={test.validationStatus}
+                        size="small"
+                        sx={{
+                            fontWeight: 600,
+                            fontSize: '0.7rem',
+                            bgcolor: test.validationStatus === 'VALIDATED' ? '#dcfce7' : '#fef9c3',
+                            color: test.validationStatus === 'VALIDATED' ? '#166534' : '#854d0e',
+                            border: '1px solid',
+                            borderColor: test.validationStatus === 'VALIDATED' ? '#bbf7d0' : '#fde68a',
+                        }}
+                    />
+                )}
             </Box>
+
+            {/* Provenance footnote */}
+            {test.provenance && (
+                <Typography variant="caption" sx={{
+                    display: 'block',
+                    mt: 1,
+                    color: 'text.disabled',
+                    fontSize: '0.72rem',
+                    lineHeight: 1.4,
+                    fontStyle: 'italic',
+                }}>
+                    {test.provenance}
+                </Typography>
+            )}
         </Paper>
     );
 };

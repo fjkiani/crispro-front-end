@@ -20,6 +20,7 @@ import CA125EntryForm from '../../../components/ayesha/CA125EntryForm';
 import HRDEntryForm from '../../../components/ayesha/inputs/HRDEntryForm';
 import CtDNAEntryForm from '../../../components/ayesha/inputs/CtDNAEntryForm';
 import RepairCapacityEntryForm from '../../../components/ayesha/inputs/RepairCapacityEntryForm';
+import { useBiomarkerUpdate } from '../../../hooks/ayesha/useBiomarkerUpdate';
 
 // ── Test Detail sub-components ────────────────────────────────────────────────
 import DetailHero from '../../../components/ayesha/test-detail/DetailHero';
@@ -170,6 +171,55 @@ function KELIMSection({ kelim }) {
     );
 }
 
+// ── Caveat Panel (for tests with no live analysis) ───────────────────────────
+const CAVEAT_CONFIGS = {
+    rna_expression: {
+        title: 'RNA Expression — Directional Only',
+        icon: '⚠️',
+        color: '#fef9c3',
+        borderColor: '#fde68a',
+        textColor: '#854d0e',
+        lines: [
+            'Trained on GSE91061 (N=105, HGSOC). Permutation p=0.191 — not statistically significant.',
+            'Bootstrap AUC=0.699; nested CV AUC=0.601 (near chance). EPV=2.9 (overfit risk).',
+            'No live scoring available. This test provides directional context only.',
+            'Results must be interpreted by a clinical genomics specialist.',
+        ],
+    },
+    lpwgs: {
+        title: 'lpWGS — Display Only',
+        icon: '📋',
+        color: '#eff6ff',
+        borderColor: '#bfdbfe',
+        textColor: '#1e40af',
+        lines: [
+            'CN signature analysis based on Macintyre et al. 2018 (BriTROC cohort, N=117). PMID 30017478.',
+            'Validated in independent cohorts. No live upload or analysis endpoint available.',
+            'Report results must be entered manually by your clinical team.',
+            'Contact your genomics lab for CN signature interpretation.',
+        ],
+    },
+};
+
+function CaveatPanel({ slug }) {
+    const cfg = CAVEAT_CONFIGS[slug];
+    if (!cfg) return null;
+    return (
+        <Paper sx={{ p: 2, borderRadius: 2.5, border: `1.5px solid ${cfg.borderColor}`, bgcolor: cfg.color }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: cfg.textColor, fontSize: '0.85rem', mb: 1 }}>
+                {cfg.icon} {cfg.title}
+            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                {cfg.lines.map((line, i) => (
+                    <Typography key={i} variant="caption" sx={{ color: cfg.textColor, fontSize: '0.78rem', lineHeight: 1.5 }}>
+                        • {line}
+                    </Typography>
+                ))}
+            </Box>
+        </Paper>
+    );
+}
+
 // ── Entry Form Section (slug → form mapping) ────────────────────────────────
 const SLUG_ENTRY_FORMS = {
     ca125_kinetics: { Form: CA125EntryForm, label: 'CA-125 Value Entry' },
@@ -179,7 +229,17 @@ const SLUG_ENTRY_FORMS = {
     repair_capacity: { Form: RepairCapacityEntryForm, label: 'Repair Capacity Entry' },
 };
 
-function DataEntrySection({ slug }) {
+// Slugs that have no live analysis — show CaveatPanel instead of a form
+const CAVEAT_ONLY_SLUGS = new Set(['rna_expression', 'lpwgs']);
+
+function DataEntrySection({ slug, onSaveSuccess }) {
+    const { update, saving, saved, error } = useBiomarkerUpdate(slug);
+
+    // Tests with no live analysis: show honest caveat, no form
+    if (CAVEAT_ONLY_SLUGS.has(slug)) {
+        return <CaveatPanel slug={slug} />;
+    }
+
     const config = SLUG_ENTRY_FORMS[slug];
     if (!config) {
         return (
@@ -188,18 +248,39 @@ function DataEntrySection({ slug }) {
                     📝 Data Entry
                 </Typography>
                 <Typography variant="caption" sx={{ color: 'text.disabled' }}>
-                    No input form available for this test. Data must be entered from the Tests &amp; Gaps page.
+                    Manual entry not available for this test. Contact your clinical team.
                 </Typography>
             </Paper>
         );
     }
     const { Form, label } = config;
+
+    const handleSave = async (data) => {
+        await update(data);
+        onSaveSuccess?.();
+    };
+
     return (
         <Paper sx={{ p: 2, borderRadius: 2.5, border: '1.5px solid #f59e0b', bgcolor: '#fffbeb' }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#92400e', fontSize: '0.85rem', mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
                 ✏️ {label}
             </Typography>
-            <Form />
+            <Form onSave={handleSave} />
+            {saving && (
+                <Typography variant="caption" sx={{ color: '#92400e', mt: 1, display: 'block' }}>
+                    Saving...
+                </Typography>
+            )}
+            {saved && (
+                <Typography variant="caption" sx={{ color: '#166534', mt: 1, display: 'block', fontWeight: 700 }}>
+                    ✓ Saved — profile updated.
+                </Typography>
+            )}
+            {error && (
+                <Typography variant="caption" sx={{ color: '#991b1b', mt: 1, display: 'block' }}>
+                    ⚠ {error}
+                </Typography>
+            )}
         </Paper>
     );
 }
