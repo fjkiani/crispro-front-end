@@ -88,9 +88,6 @@ export const CLINICAL_TEST_REGISTRY = {
       'Requires bulk RNA-seq or equivalent. Single-cell not directly compatible.',
     ],
     unlock_keys: ['io_profile_card', 'pathway_composite', 'domain_boost', 'kc_io'],
-    live_scoring: true,
-    live_scoring_endpoint: '/api/expression/ingest',
-    live_scoring_note: 'Gene-level threshold scoring (IO/VEGF/Efflux/HER2). Not a validated classifier.',
   },
 
   lpwgs: {
@@ -135,9 +132,6 @@ export const CLINICAL_TEST_REGISTRY = {
       'Resolution ~1Mb — misses focal events smaller than this.',
     ],
     unlock_keys: ['cn7_score', 'kc_ddr', 'early_resistance_warning'],
-    live_scoring: true,
-    live_scoring_endpoint: '/api/ayesha/lpwgs/score',
-    live_scoring_note: 'Sig7 threshold=0.25 (BriTROC, N=117). Post-treatment only. Confidence capped at MEDIUM.',
   },
 
   hrd: {
