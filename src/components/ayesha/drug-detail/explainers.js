@@ -139,7 +139,7 @@ export function explainEvidenceSignal(strength, citationsCount, meetGate) {
         sentences.push('This drug has not met the minimum evidence threshold — it remains an exploratory candidate.');
     }
 
-    return { sentences, level, strength: strength ?? 0, citationsCount };
+    return { sentences, level, strength: fmt(strength ?? 0, 1), citationsCount };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -316,7 +316,10 @@ function formatPathway(key) {
     return key.replace(/_/g, '/').toUpperCase();
 }
 
-export const pct = (v) => v != null ? `${Math.round(v * 100)}%` : '—';
+/** Round a float to d decimal places. Returns '—' for null/undefined. */
+export const fmt = (v, d = 2) => v != null && typeof v === 'number' && !Number.isNaN(v) ? Number(v.toFixed(d)) : '—';
+
+export const pct = (v) => v != null && typeof v === 'number' && !Number.isNaN(v) ? `${Math.round(v * 100)}%` : '—';
 
 export const tierColor = (tier) => {
     const map = {

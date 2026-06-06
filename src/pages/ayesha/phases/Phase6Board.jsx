@@ -16,7 +16,6 @@ import {
 import {
     Print, Share,
     CheckCircle, Cancel,
-    TrendingUp as TrendingUpIcon,
 } from '@mui/icons-material';
 import JourneyLayout from '../../../components/ayesha/journey/JourneyLayout';
 import AnalysisLoadingCard from '../../../components/ayesha/journey/AnalysisLoadingCard';
@@ -27,6 +26,8 @@ import { useTumorBoardBundle } from '../../../hooks/useTumorBoardBundle';
 import { useAyeshaTrials } from '../../../hooks/useAyeshaTrials';
 import OpportunityPanel from '../../../components/ayesha/tumor-board/OpportunityPanel';
 import EvidenceVault from '../../../components/ayesha/tumor-board/EvidenceVault';
+import ProvenanceSlug from '../../../components/ayesha/shared/ProvenanceSlug';
+import SourceSlug from '../../../components/ayesha/shared/SourceSlug';
 
 function TabPanel({ children, value, index, ...other }) {
     return (
@@ -121,7 +122,7 @@ const FeasibilityBadge = ({ status }) => {
 // ── Page Orchestrator ────────────────────────────────────────────────────────
 
 const Phase6Board = () => {
-    const { labs } = useAyeshaProfile();
+    const { labs, profile } = useAyeshaProfile();
     const printRef = useRef();
     const [activeTab, setActiveTab] = useState(0);
     const [level, setLevel] = useState('l1');
@@ -151,7 +152,8 @@ const Phase6Board = () => {
     const handleRunL3 = (l2BaseId, l3Id) => { setLevel('l3'); setScenarioId(l2BaseId); setL3ScenarioId(l3Id); };
 
     const drugRankingContext = useMemo(() => {
-        let scenarioLabel = 'Baseline';
+        // B21: Use API scenario label when available
+        let scenarioLabel = levelData?.scenario_label || 'Baseline';
         if (activeKey === 'L2' && scenarioId) {
             const s = l2Scenarios.find((x) => x.id === scenarioId);
             scenarioLabel = s?.meta?.description || s?.name || scenarioId;
@@ -164,7 +166,7 @@ const Phase6Board = () => {
             scenario: scenarioLabel,
             inputs: { mutations: levelData?.inputs_used?.mutations || [] },
         };
-    }, [activeKey, scenarioId, l3ScenarioId, l2Scenarios, l3Scenarios, levelData?.inputs_used?.mutations]);
+    }, [activeKey, scenarioId, l3ScenarioId, l2Scenarios, l3Scenarios, levelData?.inputs_used?.mutations, levelData?.scenario_label]);
 
     const { trials, isLoading: trialsLoading } = useAyeshaTrials({
         bundle,
@@ -201,6 +203,23 @@ const Phase6Board = () => {
             console.warn('Share failed:', e);
         }
     };
+
+    // B5: Derive monitoring plan from real data instead of hardcoding
+    const monitoringItems = useMemo(() => {
+        const items = [
+            { label: 'CA-125 tracking', active: labs?.ca125_measurements?.length > 0, icon: '📈', source: 'profile.labs' },
+        ];
+        // Only show ctDNA/Imaging if the API indicates they exist or completeness mentions them
+        const hasCtDna = completeness?.available?.some?.(c => String(c).toLowerCase().includes('ctdna') || String(c).toLowerCase().includes('mrd'));
+        const hasImaging = completeness?.available?.some?.(c => String(c).toLowerCase().includes('imaging'));
+        if (hasCtDna || profile?.imaging?.length > 0) {
+            items.push({ label: 'ctDNA / MRD panel', active: Boolean(hasCtDna), icon: '🧬', source: 'profile.completeness' });
+        }
+        if (hasImaging || profile?.imaging?.length > 0) {
+            items.push({ label: 'Imaging schedule', active: Boolean(hasImaging), icon: '🔍', source: 'profile.completeness' });
+        }
+        return items;
+    }, [labs, completeness, profile]);
 
     return (
         <JourneyLayout hideRail>
@@ -370,9 +389,16 @@ const Phase6Board = () => {
                                 ))}
                             </Box>
                         )}
-                        <Alert severity="info" sx={{ mt: 2, fontSize: '0.78rem', borderRadius: 2 }}>
-                            Based on 3-biomarker model (CD8B/FOXP3, Monocytes, Endothelial) · n=29 HGSOC · LOO-CV AUC=0.822 · Not externally validated
-                        </Alert>
+                        {/* B6: Use API model metadata if available, otherwise honest SourceSlug */}
+                        {bundle.io_harm_prevention.model_metadata ? (
+                            <Alert severity="info" sx={{ mt: 2, fontSize: '0.78rem', borderRadius: 2 }}>
+                                {bundle.io_harm_prevention.model_metadata}
+                            </Alert>
+                        ) : (
+                            <Alert severity="info" sx={{ mt: 2, fontSize: '0.78rem', borderRadius: 2 }}>
+                                Source: IO Harm Prevention model · Not externally validated · See Phase 3 for details
+                            </Alert>
+                        )}
                     </PacketSection>
                 )}
 
@@ -395,8 +421,9 @@ const Phase6Board = () => {
                                 const phase = trial.phase || 'N/A';
                                 const status = trial.overall_status || trial.status;
                                 const title = trial.brief_title || trial.title || trial.official_title || nctId;
-                                const score = trial.holistic_score ?? trial.mechanism_fit_score;
-                                const pct = Math.round((score || 0) * 100);
+                                // B16: Use real API fields, not hallucinated mechanism_fit_score
+                                const score = trial.holistic_score ?? trial.fit_score ?? trial.efficacy_score;
+                                const pctVal = score != null ? Math.round(score * 100) : null;
                                 return (
                                     <Box key={nctId || idx} sx={{
                                         p: 2, mb: 1.5, borderRadius: 2.5,
@@ -428,27 +455,29 @@ const Phase6Board = () => {
                                                     )}
                                                 </Box>
                                             </Box>
-                                            {/* Fit Score with bar */}
-                                            <Box sx={{ textAlign: 'center', minWidth: 70 }}>
-                                                <Typography variant="h6" sx={{ fontWeight: 900, color: '#3b82f6', lineHeight: 1 }}>
-                                                    {pct}
-                                                </Typography>
-                                                <Typography variant="caption" sx={{ fontSize: '0.55rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                                                    Fit Score
-                                                </Typography>
-                                                <LinearProgress
-                                                    variant="determinate"
-                                                    value={pct}
-                                                    sx={{
-                                                        mt: 0.5, height: 4, borderRadius: 2,
-                                                        bgcolor: '#e2e8f0',
-                                                        '& .MuiLinearProgress-bar': {
-                                                            bgcolor: pct >= 70 ? '#22c55e' : pct >= 40 ? '#f59e0b' : '#94a3b8',
-                                                            borderRadius: 2,
-                                                        },
-                                                    }}
-                                                />
-                                            </Box>
+                                            {/* Fit Score with bar — only show when score exists */}
+                                            {pctVal != null && (
+                                                <Box sx={{ textAlign: 'center', minWidth: 70 }}>
+                                                    <Typography variant="h6" sx={{ fontWeight: 900, color: '#3b82f6', lineHeight: 1 }}>
+                                                        {pctVal}
+                                                    </Typography>
+                                                    <Typography variant="caption" sx={{ fontSize: '0.55rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                                        Fit Score
+                                                    </Typography>
+                                                    <LinearProgress
+                                                        variant="determinate"
+                                                        value={pctVal}
+                                                        sx={{
+                                                            mt: 0.5, height: 4, borderRadius: 2,
+                                                            bgcolor: '#e2e8f0',
+                                                            '& .MuiLinearProgress-bar': {
+                                                                bgcolor: pctVal >= 70 ? '#22c55e' : pctVal >= 40 ? '#f59e0b' : '#94a3b8',
+                                                                borderRadius: 2,
+                                                            },
+                                                        }}
+                                                    />
+                                                </Box>
+                                            )}
                                         </Box>
                                     </Box>
                                 );
@@ -465,46 +494,49 @@ const Phase6Board = () => {
                     )}
                 </PacketSection>
 
-                {/* Section 5: Monitoring Plan — glass cards with icons */}
+                {/* Section 5: Monitoring Plan — data-driven, not hardcoded */}
                 <PacketSection number={5} title="Monitoring Plan">
                     <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
                         Active monitoring signals and scheduled assessments:
                     </Typography>
-                    <Grid container spacing={2}>
-                        {[
-                            { label: 'CA-125 tracking', active: labs?.ca125_measurements?.length > 0, icon: '📈' },
-                            { label: 'ctDNA / MRD panel', active: false, icon: '🧬' },
-                            { label: 'Imaging schedule', active: false, icon: '🔍' },
-                        ].map(item => (
-                            <Grid item xs={12} sm={4} key={item.label}>
-                                <Box sx={{
-                                    p: 2, borderRadius: 2.5,
-                                    background: item.active
-                                        ? 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)'
-                                        : 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)',
-                                    border: '1px solid',
-                                    borderColor: item.active ? '#86efac' : '#fca5a5',
-                                    transition: 'transform 0.15s',
-                                    '&:hover': { transform: 'translateY(-2px)' },
-                                }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.75 }}>
-                                        <Typography sx={{ fontSize: '1.1rem' }}>{item.icon}</Typography>
-                                        {item.active
-                                            ? <CheckCircle sx={{ fontSize: 16, color: '#16a34a' }} />
-                                            : <Cancel sx={{ fontSize: 16, color: '#ef4444' }} />
-                                        }
-                                        <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '0.8rem' }}>{item.label}</Typography>
-                                    </Box>
-                                    <Typography variant="caption" sx={{
-                                        color: item.active ? '#16a34a' : '#ef4444',
-                                        fontWeight: 600, fontSize: '0.7rem',
+                    {monitoringItems.length > 0 ? (
+                        <Grid container spacing={2}>
+                            {monitoringItems.map(item => (
+                                <Grid item xs={12} sm={4} key={item.label}>
+                                    <Box sx={{
+                                        p: 2, borderRadius: 2.5,
+                                        background: item.active
+                                            ? 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)'
+                                            : 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)',
+                                        border: '1px solid',
+                                        borderColor: item.active ? '#86efac' : '#fca5a5',
+                                        transition: 'transform 0.15s',
+                                        '&:hover': { transform: 'translateY(-2px)' },
                                     }}>
-                                        {item.active ? '● Active' : '○ Not available — test needed'}
-                                    </Typography>
-                                </Box>
-                            </Grid>
-                        ))}
-                    </Grid>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.75 }}>
+                                            <Typography sx={{ fontSize: '1.1rem' }}>{item.icon}</Typography>
+                                            {item.active
+                                                ? <CheckCircle sx={{ fontSize: 16, color: '#16a34a' }} />
+                                                : <Cancel sx={{ fontSize: 16, color: '#ef4444' }} />
+                                            }
+                                            <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '0.8rem' }}>{item.label}</Typography>
+                                        </Box>
+                                        <Typography variant="caption" sx={{
+                                            color: item.active ? '#16a34a' : '#ef4444',
+                                            fontWeight: 600, fontSize: '0.7rem',
+                                        }}>
+                                            {item.active ? '● Active' : '○ Not available — test needed'}
+                                        </Typography>
+                                        <SourceSlug source={item.source} compact />
+                                    </Box>
+                                </Grid>
+                            ))}
+                        </Grid>
+                    ) : (
+                        <Alert severity="info" sx={{ borderRadius: 2 }}>
+                            Monitoring plan not available from current data. Discuss monitoring schedule with your oncologist.
+                        </Alert>
+                    )}
                 </PacketSection>
 
                 {/* Section 6: Limitations & Missing Data */}
@@ -571,27 +603,8 @@ const Phase6Board = () => {
                     </TabPanel>
                 </Box>
 
-                {/* Provenance Footer */}
-                <Box sx={{
-                    textAlign: 'center', pt: 4, pb: 2,
-                    display: 'flex', flexDirection: 'column', gap: 0.5,
-                    '@media print': { display: 'block', pt: 4, mt: 'auto' }
-                }}>
-                    <Box sx={{
-                        display: 'inline-flex', alignItems: 'center', gap: 1,
-                        mx: 'auto', px: 2.5, py: 1, borderRadius: 2,
-                        bgcolor: '#f8fafc', border: '1px solid #e2e8f0',
-                    }}>
-                        <TrendingUpIcon sx={{ fontSize: 14, color: '#94a3b8' }} />
-                        <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 700, letterSpacing: '0.05em', fontSize: '0.6rem', textTransform: 'uppercase' }}>
-                            PROVENANCE LOG
-                        </Typography>
-                    </Box>
-                    <Typography variant="caption" sx={{ color: '#94a3b8', display: 'block', fontSize: '0.65rem' }}>
-                        Engine: therapy_fit_v2 · Analysis mode: {levelData.contract_version || 'v2.1'} ·
-                        Data generated: {new Date().toLocaleDateString()} · CrisPRO.ai
-                    </Typography>
-                </Box>
+                {/* B4: Real provenance footer — replaces fake "therapy_fit_v2" + client date */}
+                <ProvenanceSlug bundle={bundle} levelData={levelData} />
             </Box>
         </JourneyLayout>
     );

@@ -47,7 +47,7 @@ export function SlCheckpointOpportunityCard({
       </Stack>
 
       <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
-        Axis: ATR/CHK1 and/or WEE1 (rendered because these pathways appear in `essential_pathways`).
+        Axis: Checkpoint (ATR/CHK1/WEE1) — rendered because these pathways appear in `essential_pathways`.
       </Typography>
 
       {checkpointDepMap?.length > 0 && (

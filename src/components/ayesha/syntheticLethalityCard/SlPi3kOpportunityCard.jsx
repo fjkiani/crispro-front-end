@@ -69,7 +69,11 @@ export function SlPi3kOpportunityCard({
             ))}
           </Stack>
         </Box>
-      ) : null}
+      ) : (
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+          No PI3K/AKT/mTOR-targeted drugs in the current bundle. Discuss with your oncologist.
+        </Typography>
+      )}
     </Box>
   );
 }

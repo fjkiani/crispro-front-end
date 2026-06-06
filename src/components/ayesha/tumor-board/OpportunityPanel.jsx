@@ -71,7 +71,7 @@ export default function OpportunityPanel({
                         Genetic vulnerabilities identified in the tumor that can be exploited for precision therapy.
                     </Typography>
                     <Suspense fallback={<Box sx={{ height: 200, bgcolor: 'action.hover', borderRadius: 2 }} />}>
-                        <SyntheticLethalityCard data={slPayload} levelKey={levelKey} onShowTrials={(axis) => navigate(`/ayesha/trials-full?axis=${axis}`)} />
+                        <SyntheticLethalityCard data={slPayload} levelKey={levelKey} testsNeeded={tests} onShowTrials={(axis) => navigate(`/ayesha/trials-full?axis=${axis}`)} />
                     </Suspense>
                 </CardContent>
             </Card>

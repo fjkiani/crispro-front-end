@@ -193,20 +193,32 @@ export default function EvidenceVault({
             </Card>
 
             {/* Provenance */}
-            {rawBundle && (
-                <Card sx={{ bgcolor: '#0f172a', border: '1px solid #1e293b', borderRadius: 3 }}>
-                    <CardContent>
-                        <Typography variant="overline" sx={{ color: '#64748b', fontWeight: 700, letterSpacing: 1.5, display: 'block', mb: 1 }}>
-                            Run Provenance
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: '#94a3b8', display: 'block' }}>
-                            Contract: {rawBundle.contract_version || rawBundle.contractVersion || '—'} &bull;
-                            Generated: {rawBundle.generated_at || rawBundle.generatedAt || '—'} &bull;
-                            Run ID: {levelData?.efficacy?.provenance?.run_id || '—'}
-                        </Typography>
-                    </CardContent>
-                </Card>
-            )}
+            {rawBundle && (() => {
+                const contract = rawBundle.contract_version || rawBundle.contractVersion;
+                const generated = rawBundle.generated_at || rawBundle.generatedAt;
+                const runId = levelData?.efficacy?.provenance?.run_id;
+                const hasAny = contract || generated || runId;
+                return (
+                    <Card sx={{ bgcolor: '#0f172a', border: '1px solid #1e293b', borderRadius: 3 }}>
+                        <CardContent>
+                            <Typography variant="overline" sx={{ color: '#64748b', fontWeight: 700, letterSpacing: 1.5, display: 'block', mb: 1 }}>
+                                Run Provenance
+                            </Typography>
+                            {hasAny ? (
+                                <Typography variant="caption" sx={{ color: '#94a3b8', display: 'block' }}>
+                                    Contract: {contract || '—'} &bull;
+                                    Generated: {generated || '—'} &bull;
+                                    Run ID: {runId || '—'}
+                                </Typography>
+                            ) : (
+                                <Typography variant="caption" sx={{ color: '#64748b', fontStyle: 'italic', display: 'block' }}>
+                                    Provenance data not available for this run.
+                                </Typography>
+                            )}
+                        </CardContent>
+                    </Card>
+                );
+            })()}
         </Box>
     );
 }

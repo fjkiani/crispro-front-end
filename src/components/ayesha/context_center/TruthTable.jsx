@@ -33,9 +33,9 @@ const TruthTable = ({ levelData, level }) => {
                     2. TRUTH TABLE ({level})
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 1 }}>
-                    {/* 1. Baseline Identity Chip (New) */}
+                    {/* 1. Baseline Identity Chip — derived from first mutation gene */}
                     <Chip
-                        label="BASELINE: PATIENT-SPECIFIC (MBD4)"
+                        label={`BASELINE: PATIENT-SPECIFIC${mutations.length > 0 && mutations[0]?.gene ? ` (${mutations[0].gene})` : ''}`}
                         size="small"
                         sx={{ height: 20, fontSize: '0.65rem', bgcolor: '#276749', color: '#9ae6b4', fontWeight: 700, border: '1px solid #48bb78' }}
                     />
@@ -100,7 +100,7 @@ const TruthTable = ({ levelData, level }) => {
                                     />
                                 </TableCell>
                                 <TableCell align="right">
-                                    <ValueCell value={m.data_origin === 'scenario_inferred' ? 'Inferred' : 'NGS'} isSimulated={m.data_origin === 'scenario_inferred'} />
+                                    <ValueCell value={m.data_origin === 'scenario_inferred' ? 'Inferred' : (m.source || 'Clinical')} isSimulated={m.data_origin === 'scenario_inferred'} />
                                 </TableCell>
                             </TableRow>
                         ))}

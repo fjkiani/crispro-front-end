@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Typography, Card, CardContent, Chip, Collapse, Grid } from '@mui/material';
-import { ShieldCheck, ShieldAlert, CircleAlert, CheckCircle2, FlaskConical, Dna } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, CircleAlert, FlaskConical, Dna } from 'lucide-react';
+import SourceSlug from './shared/SourceSlug';
 
 /**
  * ARSENAL COMPONENT: Resistance Gate Banner
@@ -38,28 +39,15 @@ const ResistanceGateBanner = ({ data, levelKey }) => {
 
     // Theme Colors
     const theme = isVeto ? {
-        bg: '#fef2f2', // Red-50
-        border: '#fecaca', // Red-200
-        text: '#991b1b', // Red-800
-        icon: '#dc2626', // Red-600
-        accent: '#ef4444' // Red-500
+        bg: '#fef2f2', border: '#fecaca', text: '#991b1b', icon: '#dc2626', accent: '#ef4444'
     } : isPass ? {
-        bg: '#f0fdf4', // Green-50
-        border: '#bbf7d0', // Green-200
-        text: '#166534', // Green-800
-        icon: '#16a34a', // Green-600
-        accent: '#22c55e' // Green-500
+        bg: '#f0fdf4', border: '#bbf7d0', text: '#166534', icon: '#16a34a', accent: '#22c55e'
     } : {
-        bg: '#f8fafc', // Slate-50
-        border: '#e2e8f0', // Slate-200
-        text: '#475569', // Slate-600
-        icon: '#94a3b8', // Slate-400
-        accent: '#64748b' // Slate-500
+        bg: '#f8fafc', border: '#e2e8f0', text: '#475569', icon: '#94a3b8', accent: '#64748b'
     };
 
     const [expanded] = React.useState(true); // Always expanded (patient-proof)
 
-    // If NOT_EVALUATED, we still render a minimal banner (Tumor Board requirement).
     const isNotEvaluated = data.status === 'NOT_EVALUATED';
     const probIsNumber = typeof resistance_probability === 'number' && !Number.isNaN(resistance_probability);
     const probText = probIsNumber ? `${(resistance_probability * 100).toFixed(1)}%` : '—';
@@ -170,9 +158,13 @@ const ResistanceGateBanner = ({ data, levelKey }) => {
                                 <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#1e293b', mb: 0.5 }}>
                                     NOT EVALUATED (missing required inputs)
                                 </Typography>
+                                {/* B10: Use API reason when available, label fallback */}
                                 <Typography variant="body2" sx={{ color: '#475569' }}>
-                                    {data.reason || 'Resistance gating requires SAE features and transcriptomic expression (e.g., MFAP4).'}
+                                    {data.reason || 'Resistance gating requires additional biomarker data to evaluate.'}
                                 </Typography>
+                                {!data.reason && (
+                                    <SourceSlug source="resistance_gate (default reason)" compact />
+                                )}
                                 <Typography variant="body2" sx={{ color: '#475569', mt: 1 }}>
                                     Action: {action}
                                 </Typography>
@@ -207,11 +199,14 @@ const ResistanceGateBanner = ({ data, levelKey }) => {
                                                     {signal.provenance?.diamond_source && (
                                                         <Chip label="Diamond SAE" size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: '#e0f2fe', color: '#0369a1' }} />
                                                     )}
-                                                    <Chip
-                                                        label={`Probability: ${(signal.probability * 100).toFixed(0)}%`}
-                                                        size="small"
-                                                        sx={{ height: 20, fontSize: '0.65rem', border: '1px solid #cbd5e1', bgcolor: 'transparent' }}
-                                                    />
+                                                    {/* B11: Guard signal.probability against undefined */}
+                                                    {typeof signal.probability === 'number' && (
+                                                        <Chip
+                                                            label={`${(signal.probability * 100).toFixed(0)}%`}
+                                                            size="small"
+                                                            sx={{ height: 20, fontSize: '0.65rem', border: '1px solid #cbd5e1', bgcolor: 'transparent' }}
+                                                        />
+                                                    )}
                                                 </Box>
                                             </Box>
                                         </Box>
@@ -220,13 +215,14 @@ const ResistanceGateBanner = ({ data, levelKey }) => {
 
                                 {signals.length === 0 && (
                                     <Box sx={{ p: 2, width: '100%' }}>
+                                        {/* B9: Short honest statement instead of hardcoded medical narrative */}
                                         <Typography variant="body2" sx={{ color: '#4ade80', fontWeight: 600, mb: 0.5 }}>
-                                            No intrinsic resistance mechanisms detected
+                                            No intrinsic resistance signals detected by the screening model.
                                         </Typography>
                                         <Typography variant="caption" sx={{ color: '#64748b', lineHeight: 1.6, display: 'block' }}>
-                                            The resistance screening model did not flag any known resistance-associated mutations or expression patterns in this tumor profile.
-                                            This suggests the tumor may be more responsive to mechanism-guided therapies. However, acquired resistance can develop during treatment — ongoing monitoring is recommended.
+                                            Acquired resistance can develop during treatment — ongoing monitoring is recommended.
                                         </Typography>
+                                        <SourceSlug source="resistance_gate.signals (local interpretation)" compact />
                                     </Box>
                                 )}
 

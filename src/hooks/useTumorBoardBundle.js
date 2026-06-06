@@ -14,18 +14,8 @@ import {
 const TB_BUNDLE_STORAGE_PREFIX = 'tumor_board_bundle_v1:';
 
 const getAuthToken = () => {
-  try {
-    const sessionStr = localStorage.getItem('mock_auth_session');
-    if (sessionStr) {
-      const session = JSON.parse(sessionStr);
-      const t = session?.access_token;
-      if (t && t !== 'null' && t !== 'undefined') return t;
-    }
-  } catch (e) {
-    // ignore
-  }
-  const t2 = localStorage.getItem('supabase_auth_token');
-  if (t2 && t2 !== 'null' && t2 !== 'undefined') return t2;
+  const t = localStorage.getItem('supabase_auth_token');
+  if (t && t !== 'null' && t !== 'undefined') return t;
   return null;
 };
 
@@ -67,6 +57,7 @@ async function fetchTumorBoardBundle({
   const ca125History = readCA125History();
   const hrdEntry = readHRD();
   const body = {};
+  const localSources = [];
   if (ca125History) {
     body.ca125_history = ca125History;
     // Most recent value as single-reading shortcut
@@ -75,16 +66,24 @@ async function fetchTumorBoardBundle({
       body.ca125_value = last.value;
       body.ca125_date = last.date;
     }
+    localSources.push('ca125_history');
   }
   if (hrdEntry?.hrd_score != null) {
     body.hrd_score = hrdEntry.hrd_score;
     body.hrd_status = hrdEntry.hrd_status;
+    localSources.push('hrd');
   }
 
   // Replication Stress Score inputs — enables 8th vector axis (PMID 34552099)
   const rssInputs = readRSSInputs();
   if (rssInputs && Object.keys(rssInputs).length > 0) {
     body.rss_inputs = rssInputs;
+    localSources.push('rss');
+  }
+
+  // Tag the request with local-data provenance so the UI can label it honestly
+  if (localSources.length > 0) {
+    body._local_data_sources = localSources;
   }
 
   const [bundleRes, scenariosRes] = await Promise.all([

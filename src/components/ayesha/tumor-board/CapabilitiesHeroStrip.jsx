@@ -31,11 +31,13 @@ const ENGINE_DEFS = [
         icon: ShieldIcon,
         color: '#b45309',
         getStatus: ({ resistanceGate }) => {
-            if (!resistanceGate) return { text: 'No signals detected', active: false };
+            if (!resistanceGate) return { text: 'Not evaluated', active: false };
             const count = resistanceGate.active_signals ?? resistanceGate.signals_detected ?? 0;
             const policy = resistanceGate.policy || '2-of-N';
+            const policyRan = resistanceGate.policy_ran ?? resistanceGate.policy_active ?? false;
             if (count > 0) return { text: `${count} signal${count > 1 ? 's' : ''} · ${policy}`, active: true, alert: true };
-            return { text: `${policy} monitoring active`, active: true };
+            if (policyRan) return { text: `${policy} monitoring active`, active: true };
+            return { text: `${policy} policy set · no signals`, active: true };
         },
     },
     {
@@ -44,7 +46,7 @@ const ENGINE_DEFS = [
         icon: BiotechIcon,
         color: '#047857',
         getStatus: ({ ioHarm }) => {
-            if (!ioHarm?.decision_result) return { text: 'Pending TMB data', active: false };
+            if (!ioHarm?.decision_result) return { text: 'Pending IO assessment', active: false };
             const d = ioHarm.decision_result;
             const pResp = d.p_resp != null ? `${Math.round(d.p_resp * 100)}%` : '—';
             return { text: `${d.decision} · p(resp) = ${pResp}`, active: true, alert: d.decision === 'RULE_OUT' };
@@ -57,7 +59,7 @@ const ENGINE_DEFS = [
         color: '#c2410c',
         getStatus: ({ drugs }) => {
             if (!drugs?.length) return { text: 'Analyzing...', active: false };
-            return { text: `${drugs.length} drugs ranked · 8D vector`, active: true };
+            return { text: `${drugs.length} drugs ranked`, active: true };
         },
     },
     {

@@ -7,9 +7,12 @@
  *   - resistance_risk_conclusion_is_default (bool)  false = 2-of-3 fired
  *   - kill_chain_state                     (string) "MONITORING" | "ALERT" | null
  *   - ca125_history                        ([{value, date}])
+ *   - policy_description                   (string, optional — from API)
+ *   - lead_time_stats                      (string, optional — from API)
+ *   - provenance.engine_used               (string, optional — from API)
  *
  * RUO label is ALWAYS VISIBLE — never conditional, never hidden.
- * Lead-time footnote fixed: "Median lead-time 82d (n=5, gated [RUO])"
+ * Hardcoded thresholds/lead-time are labeled as such when API doesn't provide them.
  *
  * Owner: Zo / CrisPRO
  * Source: kill_chain_policy.py → holistic_score_service.py
@@ -17,7 +20,6 @@
 import React, { useState } from 'react';
 import {
     Box, Typography, Chip, Collapse, Divider, Button,
-    LinearProgress,
 } from '@mui/material';
 import {
     Shield as ShieldIcon,
@@ -30,6 +32,7 @@ import {
     Plus,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import SourceSlug from './shared/SourceSlug';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 function safeArray(v) { return Array.isArray(v) ? v : []; }
@@ -102,6 +105,16 @@ export default function KillChainStatusWidget({ resistanceGate }) {
     const killChainState = resistanceGate?.kill_chain_state ?? null;
     const ca125History = safeArray(resistanceGate?.ca125_history);
     const n125 = ca125History.length;
+
+    // B1: Use API policy description if available, otherwise label as hardcoded
+    const policyDescription = resistanceGate?.policy_description || null;
+    const hasApiPolicy = Boolean(policyDescription);
+
+    // B2: Use API engine name if available
+    const engineUsed = resistanceGate?.provenance?.engine_used || null;
+
+    // B3: Use API lead-time stats if available
+    const leadTimeStats = resistanceGate?.lead_time_stats || null;
 
     const state = deriveState(policyRan, conclusionDefault, killChainState);
     const theme = stateTheme(state);
@@ -190,19 +203,22 @@ export default function KillChainStatusWidget({ resistanceGate }) {
                 </Box>
             )}
 
-            {/* ── Awaiting state: explicit "what's needed" ── */}
+            {/* ── Awaiting state: what's needed ── */}
             {state === 'awaiting' && (
                 <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'action.hover', border: '1px solid', borderColor: 'divider', mb: 1.5 }}>
-                    <Typography variant="caption" sx={{ color: 'text.secondary', lineHeight: 1.6, display: 'block' }}>
-                        Kill Chain policy requires ≥2 of:{' '}
-                        <strong style={{ fontWeight: 700 }}>CA-125 series (≥3 readings)</strong>,{' '}
-                        <strong style={{ fontWeight: 700 }}>HRD shift (≥15 points)</strong>,{' '}
-                        <strong style={{ fontWeight: 700 }}>DNA repair signal</strong>{' '}
-                        <span>
-                            (capacity drop ≥0.20 <em>or</em> DDR pathway suppressed below 40%)
-                        </span>.
-                        Log readings or run NGS update to activate monitoring.
-                    </Typography>
+                    {hasApiPolicy ? (
+                        <Typography variant="caption" sx={{ color: 'text.secondary', lineHeight: 1.6, display: 'block' }}>
+                            {policyDescription}
+                        </Typography>
+                    ) : (
+                        <Typography variant="caption" sx={{ color: 'text.secondary', lineHeight: 1.6, display: 'block' }}>
+                            Insufficient data to activate resistance monitoring. Log CA-125 readings or run NGS update to activate.
+                        </Typography>
+                    )}
+                    <SourceSlug
+                        source={hasApiPolicy ? 'resistance_gate.policy_description' : 'kill_chain_policy (hardcoded thresholds)'}
+                        compact
+                    />
                 </Box>
             )}
 
@@ -222,7 +238,7 @@ export default function KillChainStatusWidget({ resistanceGate }) {
             <Collapse in={expanded}>
                 <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'action.hover', border: '1px solid', borderColor: 'divider', mb: 1.5 }}>
                     <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: 'Roboto Mono, monospace', display: 'block', lineHeight: 1.8 }}>
-                        Source: kill_chain_v0<br />
+                        Source: {engineUsed || 'kill_chain_policy (local)'}<br />
                         Policy: 2-of-3 (CA-125 + HRD + REPAIR_SHIFT)<br />
                         policy_ran: {String(policyRan)}<br />
                         conclusion_is_default: {String(conclusionDefault)}<br />
@@ -267,8 +283,15 @@ export default function KillChainStatusWidget({ resistanceGate }) {
                 <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.62rem', lineHeight: 1.5, display: 'block' }}>
                     ⚠️ Research Use Only — not clinical guidance.
                     Based on biomarker signals only.
-                    Median lead-time 82d (n=5, gated analysis, RUO gated ≤365d pre-recurrence).
+                    {leadTimeStats ? (
+                        ` ${leadTimeStats}`
+                    ) : (
+                        ' Lead-time estimate not available from current data.'
+                    )}
                 </Typography>
+                {!leadTimeStats && (
+                    <SourceSlug source="kill_chain_policy (hardcoded lead-time removed)" compact />
+                )}
             </Box>
         </Box>
     );

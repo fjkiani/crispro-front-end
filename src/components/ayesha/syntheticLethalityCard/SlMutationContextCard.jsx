@@ -95,7 +95,7 @@ export function SlMutationContextCard({
           {primaryDriver?.functional_consequence
             ? `${String(primaryDriver.functional_consequence)}. `
             : ''}
-          Canonical recommendations below should be interpreted against this MBD4-driven BER collapse first, not against the legacy drug list.
+          Canonical recommendations below should be interpreted against this {primaryDriver?.gene || 'anchor'}-driven {primaryDriver?.pathway_impact || 'pathway disruption'} first, not against the legacy drug list.
         </Typography>
       ) : null}
 

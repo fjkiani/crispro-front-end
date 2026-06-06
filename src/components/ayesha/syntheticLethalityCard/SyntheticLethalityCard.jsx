@@ -87,7 +87,7 @@ function buildCanonicalRecommendations(payload, evidenceMatrix) {
   };
 }
 
-export function SyntheticLethalityCard({ slData, data, onShowTrials, levelKey: levelKeyProp }) {
+export function SyntheticLethalityCard({ slData, data, onShowTrials, levelKey: levelKeyProp, testsNeeded }) {
   const payload = slData || data;
   const levelKey = String(levelKeyProp || 'L1').toUpperCase();
 
@@ -152,15 +152,9 @@ export function SyntheticLethalityCard({ slData, data, onShowTrials, levelKey: l
   const pi3kDrugs = useMemo(() => {
     const allow = new Set(['PI3K', 'AKT', 'MTOR', 'PI3K_AKT_MTOR']);
     const matched = recs.filter((d) => allow.has(String(d?.target_pathway || '').toUpperCase()));
-    if (matched.length) return matched;
-
-    if (!opportunity.pi3kAxis) return [];
-    return [
-      { drug_name: 'Everolimus', drug_class: 'mTOR inhibitor', evidence_tier: 'mechanistic' },
-      { drug_name: 'Alpelisib', drug_class: 'PI3K inhibitor', evidence_tier: 'mechanistic' },
-      { drug_name: 'Capivasertib', drug_class: 'AKT inhibitor', evidence_tier: 'mechanistic' },
-    ];
-  }, [recs, opportunity.pi3kAxis]);
+    // B14: Don't fabricate drugs when recs is empty — only show real API data
+    return matched;
+  }, [recs]);
 
   const depmapLines = useMemo(() => {
     const lines = [];
@@ -275,7 +269,7 @@ export function SyntheticLethalityCard({ slData, data, onShowTrials, levelKey: l
           onShowTrials={onShowTrials}
         />
 
-        <NextTestsAccordion />
+        <NextTestsAccordion testsNeeded={testsNeeded} essentialityScores={essentialityScores} />
 
         <SlEvidenceMatrixAccordion evidenceMatrix={evidenceMatrix} />
       </CardContent>
