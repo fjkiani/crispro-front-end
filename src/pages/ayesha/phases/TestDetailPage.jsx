@@ -20,6 +20,8 @@ import CA125EntryForm from '../../../components/ayesha/CA125EntryForm';
 import HRDEntryForm from '../../../components/ayesha/inputs/HRDEntryForm';
 import CtDNAEntryForm from '../../../components/ayesha/inputs/CtDNAEntryForm';
 import RepairCapacityEntryForm from '../../../components/ayesha/inputs/RepairCapacityEntryForm';
+import RNAExpressionForm from '../../../components/ayesha/inputs/RNAExpressionForm';
+import LpWGSForm from '../../../components/ayesha/inputs/LpWGSForm';
 import { useBiomarkerUpdate } from '../../../hooks/ayesha/useBiomarkerUpdate';
 
 // ── Test Detail sub-components ────────────────────────────────────────────────
@@ -182,7 +184,7 @@ const CAVEAT_CONFIGS = {
         lines: [
             'Trained on GSE91061 (N=105, HGSOC). Permutation p=0.191 — not statistically significant.',
             'Bootstrap AUC=0.699; nested CV AUC=0.601 (near chance). EPV=2.9 (overfit risk).',
-            'No live scoring available. This test provides directional context only.',
+            'Live axis scoring available via the form below (IO/VEGF/Efflux/HER2 gene thresholds).',
             'Results must be interpreted by a clinical genomics specialist.',
         ],
     },
@@ -194,9 +196,9 @@ const CAVEAT_CONFIGS = {
         textColor: '#1e40af',
         lines: [
             'CN signature analysis based on Macintyre et al. 2018 (BriTROC cohort, N=117). PMID 30017478.',
-            'Validated in independent cohorts. No live upload or analysis endpoint available.',
-            'Report results must be entered manually by your clinical team.',
-            'Contact your genomics lab for CN signature interpretation.',
+            'Validated in independent cohorts. Live CN signature scoring available via the form below.',
+            'Enter Sig7 exposure from your lpWGS report. Threshold: Sig7 ≥ 0.25 → POOR (BriTROC, N=117).',
+            'Confidence capped at MEDIUM pending multi-cohort validation. RUO.',
         ],
     },
 };
@@ -227,18 +229,16 @@ const SLUG_ENTRY_FORMS = {
     hrd_score: { Form: HRDEntryForm, label: 'HRD Score Entry' },
     ctdna_mrd: { Form: CtDNAEntryForm, label: 'ctDNA / MRD Entry' },
     repair_capacity: { Form: RepairCapacityEntryForm, label: 'Repair Capacity Entry' },
+    rna_expression: { Form: RNAExpressionForm, label: 'RNA Expression Scoring' },
+    lpwgs: { Form: LpWGSForm, label: 'CN Signature Scoring (lpWGS)' },
 };
 
-// Slugs that have no live analysis — show CaveatPanel instead of a form
-const CAVEAT_ONLY_SLUGS = new Set(['rna_expression', 'lpwgs']);
+
+// Slugs that call the backend directly — skip useBiomarkerUpdate wrapper
+const SELF_SCORING_SLUGS = new Set(['rna_expression', 'lpwgs']);
 
 function DataEntrySection({ slug, onSaveSuccess }) {
     const { update, saving, saved, error } = useBiomarkerUpdate(slug);
-
-    // Tests with no live analysis: show honest caveat, no form
-    if (CAVEAT_ONLY_SLUGS.has(slug)) {
-        return <CaveatPanel slug={slug} />;
-    }
 
     const config = SLUG_ENTRY_FORMS[slug];
     if (!config) {
@@ -254,6 +254,18 @@ function DataEntrySection({ slug, onSaveSuccess }) {
         );
     }
     const { Form, label } = config;
+
+    // Self-scoring forms (RNA, lpWGS) handle their own API calls — no useBiomarkerUpdate wrapper
+    if (SELF_SCORING_SLUGS.has(slug)) {
+        return (
+            <Paper sx={{ p: 2, borderRadius: 2.5, border: '1.5px solid #6366f1', bgcolor: '#f5f3ff' }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#4338ca', fontSize: '0.85rem', mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    🔬 {label}
+                </Typography>
+                <Form onSave={(data) => onSaveSuccess?.(data)} />
+            </Paper>
+        );
+    }
 
     const handleSave = async (data) => {
         await update(data);
