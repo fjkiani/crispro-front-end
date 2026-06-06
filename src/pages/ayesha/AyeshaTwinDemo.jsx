@@ -1,235 +1,119 @@
-import React, { useState } from 'react';
-import { Box, Alert, CircularProgress, Typography, Grid, Card, CardContent } from '@mui/material';
+/**
+ * AyeshaTwinDemo — Digital Twin page (/ayesha-digital-twin)
+ *
+ * Clean single-pass layout. One SL instance. No duplicate sections.
+ *
+ * Layout:
+ *   Header → Controls → [loading/error] → PatientProfileCard
+ *   → OpportunityPanel (SL + resistance gate + tests needed — ONE instance)
+ *   → DrugRankingPanel
+ *   → ProvenanceCard
+ *
+ * Removed: DigitalTwinSection (duplicated OpportunityPanel), EssentialityScoreDisplay,
+ *   SOCRecommendationCard, CA125Tracker, MechanismInsightPanel, HintTilesPanel,
+ *   MechanismChips, FoodRecommendationsCard — all legacy/duplicate.
+ */
+import React from 'react';
+import { Box, Alert, CircularProgress, Typography } from '@mui/material';
 
-// Custom hooks
 import { useAyeshaProfile } from '../../hooks/ayesha/useAyeshaProfile';
 import { useAyeshaCareData } from '../../hooks/ayesha/useAyeshaCareData';
 
-// Utility functions
-import { transformToDigitalTwin } from '../../utils/ayesha/digitalTwinTransform';
-
-// Ayesha clinical components (SOC / CA-125 / SAE Phase-1)
-import { SOCRecommendationCard, CA125Tracker, HintTilesPanel, MechanismChips } from '../../components/ayesha';
-import EssentialityScoreDisplay from '../../components/ayesha/EssentialityScoreDisplay';
 import DrugRankingPanel from '../../components/ayesha/DrugRankingPanel';
-import MechanismInsightPanel from '../../components/ayesha/tests/MechanismInsightPanel';
-import { useTestsPageState } from '../../hooks/ayesha/useTestsPageState';
-import '../../components/therapy-fit/therapy-fit.css';
+import OpportunityPanel from '../../components/ayesha/tumor-board/OpportunityPanel';
 
-// Modular components
 import {
   TwinDemoHeader,
   TwinDemoControls,
   PatientProfileCard,
-  FoodRecommendationsCard,
   ProvenanceCard,
-  DigitalTwinSection
 } from '../../components/ayesha/twin';
 
-/**
- * Ayesha Digital Twin - Real Patient Data
- * 
- * Shows Ayesha's actual Digital Twin using her real patient profile.
- * Uses /api/ayesha/complete_care_v2 endpoint with AYESHA_11_17_25_PROFILE.
- * 
- * Modularized for scalability:
- * - Hooks: API calls and state management
- * - Utils: Data transformation logic
- * - Components: Reusable UI sections
- */
 export default function AyeshaTwinDemo() {
-  const { profile, buildRequest } = useAyeshaProfile();
-  const [mechanismViewMode, setMechanismViewMode] = useState('expected');
+  const { profile } = useAyeshaProfile();
 
-  // Load complete care data with all features enabled for Digital Twin
   const { result: careData, loading, error, refresh } = useAyeshaCareData({
-    include_trials: true,
-    include_wiwfm: true,  // Enable WIWFM for drug recommendations
-    include_food: true,   // Enable food validation
-    include_resistance: true,  // Enable resistance prediction
+    include_trials: false,
+    include_wiwfm: true,
+    include_food: false,
+    include_resistance: true,
     include_resistance_prediction: true,
-    include_soc: true,
-    include_ca125: true,
+    include_soc: false,
+    include_ca125: false,
     include_biomarker: true,
-    max_trials: 200,
+    max_trials: 0,
   });
 
-  // Transform care data to Digital Twin format using REAL API data
-  const digitalTwinData = careData ? transformToDigitalTwin({
-    case_data: {
-      patient_id: profile.patient?.patient_id || 'AK',
-      disease: profile.disease,
-      mutations: [
-        ...(profile.germline?.mutations || []),
-        ...(profile.tumor_context?.somatic_mutations || [])
-      ],
-      biomarkers: profile.tumor_context?.biomarkers || {},
-    },
-    food_recommendations: careData.food_validation?.recommendations || careData.food_recommendations || [],
-    drug_recommendations: careData.wiwfm?.drugs || careData.wiwfm?.recommendations || [],
-    mechanism_map: careData.mechanism_map || {},
-    sae_features: careData.sae_features || {},
-    synthetic_lethality: careData.synthetic_lethality || null,
-    resistance_prediction: careData.resistance_prediction || null,
-    analysis_summary: careData.summary || {},
-    provenance: careData.provenance || {},
-  }) : null;
+  const slPayload = careData?.synthetic_lethality || null;
+  const resistanceGate = careData?.resistance_gate || careData?.resistance_prediction?.resistance_gate || null;
+  const drugs = careData?.wiwfm?.drugs || careData?.wiwfm?.recommendations || careData?.drug_recommendations || [];
+  const testsNeeded = careData?.tests_needed || [];
 
-  // Pathway coverage for MechanismInsightPanel (via therapy fit data)
-  const testsState = useTestsPageState();
+  const caseData = {
+    patient_id: profile?.patient?.patient_id || 'AK',
+    disease: profile?.disease,
+    mutations: [
+      ...(profile?.germline?.mutations || []),
+      ...(profile?.tumor_context?.somatic_mutations || []),
+    ],
+    biomarkers: profile?.tumor_context?.biomarkers || {},
+  };
 
   return (
-    <Box sx={{ p: 4, maxWidth: 1400, mx: 'auto' }}>
-      {/* Header */}
+    <Box sx={{ p: 4, maxWidth: 1200, mx: 'auto' }}>
       <TwinDemoHeader />
 
-      {/* Controls - Refresh button */}
       <TwinDemoControls
-        onRun={() => refresh && refresh()}
+        onRun={() => refresh?.()}
         loading={loading}
       />
 
-      {/* Loading */}
       {loading && (
-        <Box sx={{ textAlign: 'center', py: 4 }}>
-          <CircularProgress size={60} />
+        <Box sx={{ textAlign: 'center', py: 6 }}>
+          <CircularProgress size={48} />
           <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-            Loading Ayesha's Digital Twin analysis...
+            Loading digital twin analysis…
           </Typography>
         </Box>
       )}
 
-      {/* Error */}
-      {error && (
+      {error && !loading && (
         <Alert severity="error" sx={{ mb: 3 }}>
-          <Typography variant="body2">
-            <strong>Failed to load Digital Twin:</strong> {error}
-          </Typography>
+          <strong>Analysis failed:</strong> {error}
         </Alert>
       )}
 
-      {/* Results */}
-      {careData && digitalTwinData && (
-        <Box>
-          {/* Patient Profile Card */}
-          <PatientProfileCard caseData={{
-            patient_id: profile.patient?.patient_id || 'AK',
-            disease: profile.disease,
-            mutations: [
-              ...(profile.germline?.mutations || []),
-              ...(profile.tumor_context?.somatic_mutations || [])
-            ],
-            biomarkers: profile.tumor_context?.biomarkers || {},
-          }} />
-
-          {/* 🧬 DIGITAL TWIN MOAT COMPONENTS */}
-          <DigitalTwinSection digitalTwinData={digitalTwinData} />
-
-          {/* 🧪 Gene Essentiality Analysis */}
-          {((careData.essentiality_scores && careData.essentiality_scores.length > 0) || (careData.synthetic_lethality?.essentiality_scores && careData.synthetic_lethality.essentiality_scores.length > 0)) && (
-            <Box sx={{ mb: 3 }}>
-              <EssentialityScoreDisplay
-                essentialityScores={(careData.essentiality_scores && careData.essentiality_scores.length > 0) ? careData.essentiality_scores : careData.synthetic_lethality.essentiality_scores}
-                title="Gene Essentiality Analysis"
-              />
-            </Box>
-          )}
-
-          {/* High-signal clinical context for Ayesha (SOC + CA-125 + Next tests + Hints + Mechanism map) */}
-          <Box sx={{ mb: 3 }}>
-            <Grid container spacing={2}>
-              {careData.soc_recommendation && (
-                <Grid item xs={12} md={6}>
-                  <SOCRecommendationCard
-                    {...careData.soc_recommendation}
-                    // Static WIWFM overlay — real values from API win if present
-                    patient_fit_score={careData.soc_recommendation.patient_fit_score ?? 0.81}
-                    patient_fit_confidence={careData.soc_recommendation.patient_fit_confidence ?? 0.76}
-                    engine_validation_status={careData.soc_recommendation.engine_validation_status ?? "wiwfm_validated"}
-                  />
-                </Grid>
-              )}
-
-              {careData.ca125_intelligence && (
-                <Grid item xs={12} md={6}>
-                  <CA125Tracker
-                    current_value={careData.ca125_intelligence.current_value}
-                    burden_class={careData.ca125_intelligence.burden_class}
-                    forecast={careData.ca125_intelligence.forecast}
-                    resistance_rule={careData.ca125_intelligence.resistance_rule}
-                    monitoring_strategy={careData.ca125_intelligence.monitoring_strategy}
-                  />
-                </Grid>
-              )}
-
-              {/* 🧠 Biological Pathway Analysis (replaces basic NextTestCard) */}
-              {testsState && testsState.coverage && testsState.coverage.length > 0 && (
-                <Grid item xs={12}>
-                  <MechanismInsightPanel
-                    coverage={testsState.coverage}
-                    expectedMechanism={testsState.expectedMechanism}
-                    mechanismViewMode={mechanismViewMode}
-                    onViewModeChange={setMechanismViewMode}
-                    scenarioRequires={testsState.scenarioRequires || []}
-                    activeScenarioCard={testsState.activeScenarioCard || null}
-                    scenarioAlignment={testsState.scenarioAlignment || null}
-                    isPreview={false}
-                    activeLevelKey="L1"
-                  />
-                </Grid>
-              )}
-
-              {careData.hint_tiles?.tiles && (
-                <Grid item xs={12} md={6}>
-                  <HintTilesPanel tiles={careData.hint_tiles.tiles} />
-                </Grid>
-              )}
-
-              {careData.mechanism_map && (
-                <Grid item xs={12}>
-                  <Card>
-                    <CardContent>
-                      <Typography variant="h6" gutterBottom>
-                        Mechanism map (pre/post‑NGS)
-                      </Typography>
-                      <MechanismChips mechanism_map={careData.mechanism_map} />
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                        Research Use Only (RUO). Mechanism chips reflect model emphasis and available biomarkers—not medical advice.
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              )}
-            </Grid>
-          </Box>
-
-          {/* Food Recommendations */}
-          <FoodRecommendationsCard
-            foodRecommendations={careData.food_recommendations || []}
-            analysisSummary={careData.summary || {}}
-          />
-
-          {/* 💊 Therapy Fit Rankings — upgraded from DrugRecommendationsCard */}
-          <DrugRankingPanel
-            drugs={careData.wiwfm?.drugs || careData.wiwfm?.recommendations || careData.drug_recommendations || []}
-            context={{ level: 'L1', scenario: 'Digital Twin', provenance: careData.provenance }}
-            title="Therapy Fit Rankings"
-          />
-
-          {/* Provenance */}
-          <ProvenanceCard provenance={careData.provenance || {}} />
-        </Box>
-      )}
-
-      {/* Empty State */}
       {!loading && !error && !careData && (
         <Alert severity="info" sx={{ mb: 3 }}>
-          <Typography variant="body2">
-            Click "Run Analysis" to generate your Digital Twin.
-          </Typography>
+          Click "Run Demo Analysis" to generate the digital twin.
         </Alert>
+      )}
+
+      {careData && (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <PatientProfileCard caseData={caseData} />
+
+          {/* Single SL + resistance + tests instance */}
+          <OpportunityPanel
+            slPayload={slPayload}
+            resistanceGate={resistanceGate}
+            levelKey="L1"
+            testsNeeded={testsNeeded}
+            missing={[]}
+          />
+
+          {/* Drug rankings — only when data present */}
+          {drugs.length > 0 && (
+            <DrugRankingPanel
+              drugs={drugs}
+              context={{ level: 'L1', scenario: 'Digital Twin', provenance: careData.provenance }}
+              title="Therapy Fit Rankings"
+            />
+          )}
+
+          <ProvenanceCard provenance={careData.provenance || {}} />
+        </Box>
       )}
     </Box>
   );
 }
-

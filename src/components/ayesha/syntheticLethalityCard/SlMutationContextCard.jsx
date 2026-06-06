@@ -2,6 +2,28 @@ import React, { useMemo } from 'react';
 import { Box, Chip, Stack, Typography } from '@mui/material';
 import { safeArray } from './slUtils';
 
+/**
+ * Sanitize a pathway_impact string that may arrive as a Python-serialized list.
+ * e.g. "['BER'] NON-FUNCTIONAL" → "BER — NON-FUNCTIONAL"
+ *      "BER pathway disrupted"  → "BER pathway disrupted"
+ */
+function sanitizePathwayImpact(raw) {
+  if (!raw) return null;
+  const s = String(raw).trim();
+  // Strip leading Python list: "['BER', 'MMR'] SOME TEXT" → "BER, MMR — SOME TEXT"
+  const listMatch = s.match(/^\[([^\]]+)\]\s*(.*)/);
+  if (listMatch) {
+    const genes = listMatch[1]
+      .split(',')
+      .map((g) => g.trim().replace(/^['"]|['"]$/g, ''))
+      .filter(Boolean)
+      .join(', ');
+    const rest = listMatch[2].trim();
+    return rest ? `${genes} — ${rest}` : genes;
+  }
+  return s;
+}
+
 function findPrimaryDriver(essentialityScores, brokenPathways) {
   const scoreHit = safeArray(essentialityScores).find(
     (entry) => String(entry?.gene || '').toUpperCase() === 'MBD4'
@@ -16,8 +38,8 @@ function findPrimaryDriver(essentialityScores, brokenPathways) {
   return {
     gene: 'MBD4',
     essentiality_score: pathwayHit?.disruption_score,
-    pathway_impact: pathwayHit?.description,
-    functional_consequence: 'Pathway-level BER loss detected from bundle context',
+    pathway_impact: sanitizePathwayImpact(pathwayHit?.description),
+    functional_consequence: null, // removed: was a hardcoded meta-instruction
   };
 }
 
@@ -87,15 +109,9 @@ export function SlMutationContextCard({
         </Typography>
       ) : null}
 
-      {primaryDriver?.pathway_impact || primaryDriver?.functional_consequence ? (
+      {primaryDriver?.pathway_impact ? (
         <Typography variant="body2" sx={{ color: '#334155', lineHeight: 1.6 }}>
-          {primaryDriver?.pathway_impact
-            ? `${String(primaryDriver.pathway_impact)}. `
-            : ''}
-          {primaryDriver?.functional_consequence
-            ? `${String(primaryDriver.functional_consequence)}. `
-            : ''}
-          Canonical recommendations below should be interpreted against this {primaryDriver?.gene || 'anchor'}-driven {primaryDriver?.pathway_impact || 'pathway disruption'} first, not against the legacy drug list.
+          {String(primaryDriver.pathway_impact)}
         </Typography>
       ) : null}
 
