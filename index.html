@@ -56,7 +56,7 @@
         // The browser sees this as "TypeError: Failed to fetch" (network error).
         // Fix: wrap window.fetch globally to retry on network errors and 502/503/504.
         //
-        // Only retries requests to our backend (crispro-backend-v2.onrender.com).
+        // Only retries requests to our backend (Railway production host).
         // All other fetches (CDN, analytics, etc.) pass through unchanged.
         // ─────────────────────────────────────────────────────────────────────────
         if (typeof window !== 'undefined' && window.fetch) {

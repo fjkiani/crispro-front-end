@@ -22,9 +22,6 @@ services:
       - key: VITE_ENABLE_MOCK_AUTH
         value: "false"
       - key: VITE_API_ROOT
-        # Backend moved to Railway 2026-06-05. Old Render backend (crispro-backend-v2.onrender.com)
-        # was causing CORS failures because it was no longer the live backend.
-        # NOTE: sync: false — Render dashboard value takes precedence over this file.
-        # You MUST also update the dashboard manually: VITE_API_ROOT → value below.
         value: "https://crispro-backend-v2-production.up.railway.app"
-        sync: false
+      - key: VITE_WS_ROOT
+        value: "https://crispro-backend-v2-production.up.railway.app"

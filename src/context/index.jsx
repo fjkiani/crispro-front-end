@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
+import { WS_ROOT } from "../lib/apiConfig";
 import { db } from "../utils/dbConfig"; // Adjust the path to your dbConfig
 import { Users, Records } from "../utils/schema"; // Adjust the path to your schema definitions
 // import { eq } from "drizzle-orm"; // DISABLED: Database operations moved to backend
@@ -33,16 +34,9 @@ export const StateContextProvider = ({ children }) => {
   
   console.log("[StateContext Provider] Initial currentUser:", currentUser);
 
-  // Define mainWsUrl here using the environment variable
-  // Fallback to a local default if VITE_WS_ROOT is not set, with a warning.
-  let mainWsUrl = null;
-  if (import.meta.env.VITE_WS_ROOT) {
-    mainWsUrl = `${import.meta.env.VITE_WS_ROOT}/ws`; // Assuming /ws is the general endpoint
-  } else {
-    console.warn("[StateContext] VITE_WS_ROOT is not defined. WebSocket connections originating from context will likely fail or use incorrect fallbacks if any component tries to use mainWsUrl without it being properly set through environment variables.");
-    // Optionally, you could set a local fallback FOR DEVELOPMENT ONLY if absolutely needed,
-    // but it's better to ensure VITE_WS_ROOT is always set.
-    // mainWsUrl = 'ws://localhost:8008/ws'; // EXAMPLE DEVELOPMENT FALLBACK ONLY
+  const mainWsUrl = WS_ROOT ? `${WS_ROOT}/ws` : null;
+  if (!mainWsUrl && import.meta.env.PROD) {
+    console.warn("[StateContext] WS_ROOT is empty; WebSocket features may fail.");
   }
   console.log('[StateContext Provider] mainWsUrl initialized to:', mainWsUrl);
 
