@@ -79,22 +79,9 @@ export default function AyeshaCompleteCare() {
   // Use custom hook for API orchestration
   const { result, loading, error, generatePlan } = useCompleteCareOrchestrator();
 
-  // Static SL fallback for Ayesha's known MBD4+TP53 → PARP inhibitor profile
-  // Shown when backend does not return synthetic_lethality (API offline or slow)
-  const AYESHA_STATIC_SL = {
-    synthetic_lethality_detected: true,
-    detected: true,
-    mechanism: "MBD4 loss disables Base Excision Repair (BER). TP53 silences apoptosis. Tumor survives solely on Homologous Recombination (HR). PARP inhibitors trap PARP at unrepaired BER sites, collapsing HR — cell death follows.",
-    double_hit_description: "MBD4 (BER loss) + TP53 (apoptosis silencing) → HR-only survival → PARP trap → lethal",
-    genes_involved: ["MBD4", "TP53"],
-    recommended_drugs: [
-      { drug_name: "Olaparib", name: "Olaparib", confidence: 0.87, tier: "1A", evidence_tier: "1A", mechanism: "PARP1/2 trapping at unrepaired BER sites → replication fork collapse" },
-      { drug_name: "Niraparib", name: "Niraparib", confidence: 0.79, tier: "1B", evidence_tier: "1B", mechanism: "PARP trapping + PARP1 selectivity for HRD tumors" }
-    ]
-  };
-
-  // Effective SL data — real API result preferred, static fallback for demo
-  const effectiveSL = result?.synthetic_lethality || AYESHA_STATIC_SL;
+  // S36: No static SL fallback — only use real API data
+  // When backend does not return synthetic_lethality, show honest empty state
+  const effectiveSL = result?.synthetic_lethality || null;
 
   // Handle generate plan - delegate to hook
   const handleGeneratePlan = useCallback(() => {

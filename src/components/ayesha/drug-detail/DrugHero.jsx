@@ -14,7 +14,8 @@ import { explainClinicalBand, explainRuoReason, tierColor } from './explainers';
 export default function DrugHero({ drug, rank, totalDrugs }) {
     const band = drug.clinical_band || '';
     const bandInfo = explainClinicalBand(band);
-    const tc = tierColor(drug.tier);
+    const effectiveTier = drug.evidence_tier || drug.tier;
+    const tc = tierColor(effectiveTier);
     const ruo = drug.ruo_reasons || [];
     const moaLabel = drug.moa_category || drug.moa || '';
 
@@ -36,8 +37,8 @@ export default function DrugHero({ drug, rank, totalDrugs }) {
 
             {/* Badge row */}
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                {drug.tier && (
-                    <Chip label={drug.tier} size="small" sx={{ fontWeight: 800, bgcolor: tc.bg, color: tc.fg }} />
+                {effectiveTier && (
+                    <Chip label={effectiveTier} size="small" sx={{ fontWeight: 800, bgcolor: tc.bg, color: tc.fg }} />
                 )}
                 {band && bandInfo && (
                     <Tooltip title={bandInfo.long} arrow>

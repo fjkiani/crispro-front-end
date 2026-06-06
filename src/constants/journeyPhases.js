@@ -111,7 +111,7 @@ export const UNLOCK_TESTS = [
         provenance: 'Validated: Myriad myChoice CDx (FDA-approved). Cutoff ≥42 (GI score). See clinical documentation for trial references.',
         validationStatus: 'VALIDATED',
         priority: 'HIGH',
-        status: 'present',  // will be computed from patient data
+        status: 'missing',  // only API/profile data can mark present
     },
     {
         id: 'tmb',
@@ -147,7 +147,7 @@ export const UNLOCK_TESTS = [
         provenance: 'Validated: GCIG consensus criteria. KELIM score cutoff 1.0. See clinical documentation for trial references.',
         validationStatus: 'VALIDATED',
         priority: 'HIGH',
-        status: 'present',
+        status: 'missing',
     },
     {
         id: 'ctdna',
@@ -179,17 +179,33 @@ export const UNLOCK_TESTS = [
  * Dynamically updates the UNLOCK_TESTS static array with live completeness data
  * from the therapy fit bundle API.
  */
+const ID_ALIASES = {
+    'hrdscore': 'hrd', 'hrd': 'hrd',
+    'tmbscore': 'tmb', 'tmb': 'tmb', 'tumormutationalburden': 'tmb',
+    'rnasequencing': 'rna', 'rna': 'rna', 'rnaexpression': 'rna',
+    'ca125': 'ca125', 'ca125baseline': 'ca125', 'ca125score': 'ca125',
+    'ctdna': 'ctdna', 'ctdnamrd': 'ctdna', 'mrd': 'ctdna',
+    'lpwgs': 'lpwgs', 'lowpasswgs': 'lpwgs',
+};
+
+function normalizeTestId(raw) {
+    if (!raw) return null;
+    const key = String(raw).toLowerCase().replace(/[^a-z0-9]/g, '');
+    return ID_ALIASES[key] || key;
+}
+
 export const mergeTestStatus = (tests, completeness) => {
+    const presentIds = new Set(
+        (completeness?.present || []).map(normalizeTestId).filter(Boolean)
+    );
+    const missingIds = new Set(
+        (completeness?.missing || []).map(normalizeTestId).filter(Boolean)
+    );
+
     return tests.map(test => {
-        // If it's present in API completeness
-        if (completeness?.present?.includes(test.id) || test.status === 'present') {
-            return { ...test, status: 'present' };
-        }
-        // If it's explicitly identified as missing by API
-        if (completeness?.missing?.includes(test.id)) {
-            return { ...test, status: 'missing' };
-        }
-        return test; // keep static default status (usually 'missing')
+        if (presentIds.has(test.id)) return { ...test, status: 'present' };
+        if (missingIds.has(test.id)) return { ...test, status: 'missing' };
+        return test;
     });
 };
 

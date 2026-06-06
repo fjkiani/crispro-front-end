@@ -162,7 +162,7 @@ export default function ArsenalDrugDetailPage() {
                 {/* Footer */}
                 <div style={{ marginTop: '3rem', paddingTop: '1.5rem', borderTop: `1px solid ${colors.border}`, textAlign: 'center' }}>
                     <p style={{ ...typography.provenance, color: colors.caption }}>
-                        SPE v2.0 · Zeta-Verification active 🔱 · {new Date().toLocaleDateString()}
+                        {drug?.sporadic_gates_provenance?.engine || 'therapy_fit'} · Run: {drug?.sporadic_gates_provenance?.run_id || '—'}
                     </p>
                 </div>
             </div>

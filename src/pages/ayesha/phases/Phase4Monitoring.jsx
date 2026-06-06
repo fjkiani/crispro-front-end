@@ -257,18 +257,17 @@ const Phase4Monitoring = () => {
                         >
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                                 {[
-                                    { organ: '🫁 Lungs', event: 'Pneumonitis', watch: 'Cough, dyspnea' },
-                                    { organ: '❤️ Heart', event: 'Myocarditis', watch: 'Chest pain, arrhythmia' },
-                                    { organ: '🟤 Liver', event: 'Hepatitis', watch: 'ALT/AST elevation' },
-                                    { organ: '🩺 Colon', event: 'Colitis', watch: 'Diarrhea, cramping' },
-                                    { organ: '🦋 Thyroid', event: 'Thyroiditis', watch: 'TSH abnormality' },
+                                    { organ: 'Lungs', event: 'Pneumonitis', watch: 'Cough, dyspnea' },
+                                    { organ: 'Heart', event: 'Myocarditis', watch: 'Chest pain, arrhythmia' },
+                                    { organ: 'Liver', event: 'Hepatitis', watch: 'ALT/AST elevation' },
+                                    { organ: 'Colon', event: 'Colitis', watch: 'Diarrhea, cramping' },
+                                    { organ: 'Thyroid', event: 'Thyroiditis', watch: 'TSH abnormality' },
                                 ].map(item => (
                                     <Box key={item.organ} sx={{
                                         p: 1, borderRadius: 1.5,
                                         bgcolor: '#fef2f2', border: '1px solid #fecaca',
                                         display: 'flex', alignItems: 'center', gap: 1,
                                     }}>
-                                        <Typography sx={{ fontSize: '0.85rem', minWidth: 28 }}>{item.organ.split(' ')[0]}</Typography>
                                         <Box sx={{ flex: 1 }}>
                                             <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.8rem' }}>
                                                 {item.event}
@@ -276,6 +275,7 @@ const Phase4Monitoring = () => {
                                             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                                                 Watch: {item.watch}
                                             </Typography>
+                                            <Chip label="Standard Guideline (not personalized)" size="small" sx={{ ml: 1, height: 14, fontSize: '0.5rem', bgcolor: '#f1f5f9', color: '#64748b', fontWeight: 600 }} />
                                         </Box>
                                     </Box>
                                 ))}
@@ -319,7 +319,7 @@ const Phase4Monitoring = () => {
                         PROVENANCE LOG
                     </Typography>
                     <Typography variant="caption" sx={{ color: 'text.disabled', display: 'block' }}>
-                        Monitoring engine: static_dashboard_v1 // Data mapped from: profile.labs, profile.mrd, profile.imaging // Data generated: {new Date().toLocaleDateString()}
+                        profile data mapping // Source: local (no API bundle call) // Data mapped from: profile.labs, profile.mrd, profile.imaging
                     </Typography>
                 </Box>
             </Box>

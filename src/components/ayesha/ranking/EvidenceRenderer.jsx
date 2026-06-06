@@ -50,7 +50,7 @@ export default function EvidenceRenderer({ rationale }) {
                         if (item.type === 'evidence') {
                             return (
                                 <Typography key={rIdx} variant="body2">
-                                    📚 <strong>Evidence Level:</strong> {item.strength || 0}
+                                    📚 <strong>Evidence Level:</strong> {typeof item.strength === 'number' ? Math.round(item.strength * 100) + '%' : '—'}
                                 </Typography>
                             );
                         }

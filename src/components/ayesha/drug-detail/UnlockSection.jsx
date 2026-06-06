@@ -108,7 +108,7 @@ export default function UnlockSection({ completeness, insights }) {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, p: 2, bgcolor: '#f0fdf4', borderRadius: 2, border: '1px solid #bbf7d0' }}>
                     <CheckCircle sx={{ color: 'success.main' }} />
                     <Typography variant="body2" sx={{ fontWeight: 600, color: '#166534' }}>
-                        All available biomarkers are present. This is the highest confidence available.
+                        All available biomarkers are present. Confidence is at the current level cap ({score != null ? Math.round(score * 100) + '%' : '—'}).
                     </Typography>
                 </Box>
             )}

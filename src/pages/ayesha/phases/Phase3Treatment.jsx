@@ -127,7 +127,7 @@ const Phase3Treatment = () => {
                         </TabPanel>
 
                         <TabPanel value={tab} index={1}>
-                            <MissingDataTab missing={missing} />
+                            <MissingDataTab missing={missing} completenessScore={completeness?.completeness_score} />
                         </TabPanel>
 
                         <TabPanel value={tab} index={2}>
@@ -163,7 +163,7 @@ const Phase3Treatment = () => {
                     Set Up Monitoring →
                 </Button>
 
-                <ProvenanceLog contractVersion={levelData.contract_version} />
+                <ProvenanceLog contractVersion={levelData.contract_version} provenance={levelData?.efficacy?.provenance} generatedAt={bundle?.generated_at} />
             </Box>
         </JourneyLayout>
     );

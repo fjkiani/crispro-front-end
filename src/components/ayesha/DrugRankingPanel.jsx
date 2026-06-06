@@ -52,7 +52,7 @@ export default function DrugRankingPanel({ drugs = [], onViewDetails, context = 
     setCreatingDossier(idx);
     try {
       const ctx = {
-        patient_id: 'AK',
+        patient_id: context.patient_id || context.inputs?.patient_id || 'unknown',
         level: context.level || 'L1',
         scenario: context.scenario || 'Baseline',
         mutations: context.inputs?.mutations || [],
@@ -85,7 +85,7 @@ export default function DrugRankingPanel({ drugs = [], onViewDetails, context = 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
         <MedicationIcon color="primary" fontSize="large" />
         <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-          ARSENAL (DRUG EFFICACY RANKINGS)
+          {title || 'ARSENAL (DRUG EFFICACY RANKINGS)'}
         </Typography>
       </Box>
 
@@ -116,7 +116,7 @@ export default function DrugRankingPanel({ drugs = [], onViewDetails, context = 
               <Box sx={{ mb: 2 }}>
                 <LinearProgress
                   variant="determinate"
-                  value={(drug.efficacy_score || 0) * 100}
+                  value={((drug.final_score || drug.efficacy_score || 0)) * 100}
                   color="primary"
                   sx={{ height: 10, borderRadius: 1 }}
                 />

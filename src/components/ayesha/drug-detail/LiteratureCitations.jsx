@@ -32,8 +32,7 @@ export default function LiteratureCitations({ citations, loading, noCacheAction 
                     </Typography>
                 </Box>
                 <Typography variant="body2" sx={{ color: '#64748b', mb: 2 }}>
-                    Our literature agent evaluated the NCBI database but could not find high-confidence clinical evidence
-                    specifically linking this drug mechanism to this precise biomarker profile.
+                    No citations were found in this API response for this drug–mutation pairing.
                 </Typography>
                 {noCacheAction && (
                     <Button variant="outlined" size="small" color="inherit" onClick={noCacheAction}>

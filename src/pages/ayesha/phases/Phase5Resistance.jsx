@@ -148,14 +148,14 @@ const Phase5Resistance = () => {
                 { name: 'Cyclin E1 pathway agents', reason: ccne1_meta?.treatmentShift || 'CDK2-axis agents when DDR dependency is lost.' },
             ]
             : [
-                { name: 'Anti-angiogenics', reason: 'Standard HGSOC contingency when no specific DDR target available. (Standard Guideline)' },
-                { name: 'Platinum re-challenge', reason: 'If platinum-free interval is >6 months. (Standard Guideline)' },
+                { name: 'Anti-angiogenics', reason: 'Standard HGSOC contingency when no specific DDR target available.', isProfileDriven: false },
+                { name: 'Platinum re-challenge', reason: 'If platinum-free interval is >6 months.', isProfileDriven: false },
             ];
 
     const platinumContingency = [
-        { name: 'Non-platinum chemo', reason: 'Different mechanism than platinum — may still be effective. (Standard Guideline)' },
-        { name: 'Antibody-Drug Conjugates (ADCs)', reason: 'Targeted delivery reduces systemic toxicity while attacking tumor cells. (Standard Guideline)' },
-        { name: 'Immunotherapy combinations', reason: 'May enhance immune surveillance if biomarkers (like TMB/PD-L1) support it. (Standard Guideline)' },
+        { name: 'Non-platinum chemo', reason: 'Different mechanism than platinum — may still be effective.', isProfileDriven: false },
+        { name: 'Antibody-Drug Conjugates (ADCs)', reason: 'Targeted delivery reduces systemic toxicity while attacking tumor cells.', isProfileDriven: false },
+        { name: 'Immunotherapy combinations', reason: 'May enhance immune surveillance if biomarkers (like TMB/PD-L1) support it.', isProfileDriven: false },
     ];
 
     return (
@@ -292,9 +292,9 @@ const Phase5Resistance = () => {
                                     title="If IO Resistance Develops"
                                     rationale="If immunotherapy stops working or if IO was ruled out, these are the contingency options."
                                     classes={[
-                                        { name: 'Combo IO (anti-CTLA-4 + anti-PD-1)', reason: 'May overcome single-agent resistance by targeting multiple checkpoints. Higher toxicity risk — requires close monitoring.' },
-                                        { name: 'IO + targeted therapy', reason: 'Combining IO with PARP or anti-angiogenics may create synergistic immune activation. (Active clinical trial area)' },
-                                        { name: 'Alternate checkpoint targets', reason: 'LAG-3, TIGIT, TIM-3 inhibitors in clinical trials. Emerging options for IO-refractory patients.' },
+                                        { name: 'Combo IO (anti-CTLA-4 + anti-PD-1)', reason: 'May overcome single-agent resistance by targeting multiple checkpoints. Higher toxicity risk — requires close monitoring.', isProfileDriven: false },
+                                        { name: 'IO + targeted therapy', reason: 'Combining IO with PARP or anti-angiogenics may create synergistic immune activation. (Active clinical trial area)', isProfileDriven: false },
+                                        { name: 'Alternate checkpoint targets', reason: 'LAG-3, TIGIT, TIM-3 inhibitors in clinical trials. Emerging options for IO-refractory patients.', isProfileDriven: false },
                                     ]}
                                 >
                                     <Alert severity="warning" sx={{ mt: 2 }}>
@@ -329,10 +329,10 @@ const Phase5Resistance = () => {
                         PROVENANCE LOG
                     </Typography>
                     <Typography variant="caption" sx={{ color: 'text.disabled', display: 'block' }}>
-                        Contingency engine: rules_v1_germline + kill_chain_metadata_v1 //
+                        Contingency: rules_v1_germline + kill_chain_metadata_v1 //
                         Somatic genes detected: {somaticGenes.length > 0 ? somaticGenes.join(', ') : 'none'} //
                         Resistance classes: {resistanceClasses.length || 'none'} //
-                        Data generated: {new Date().toLocaleDateString()}
+                        Source: local profile + resistance metadata API
                     </Typography>
                 </Box>
             </Box>

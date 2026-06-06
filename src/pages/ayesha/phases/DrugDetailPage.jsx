@@ -81,7 +81,7 @@ export default function DrugDetailPage() {
 
     return (
         <ThemeProvider theme={pageTheme}>
-            <JourneyLayout>
+            <JourneyLayout completeness={completeness}>
                 <Box sx={{ maxWidth: 1200, mx: 'auto', py: 3, px: { xs: 2, md: 0 } }}>
 
                     {/* Back */}
@@ -174,7 +174,7 @@ export default function DrugDetailPage() {
                             display: 'flex', justifyContent: 'center',
                         }}>
                             <Typography variant="caption" sx={{ color: '#94a3b8', fontSize: '0.72rem' }}>
-                                Data: Ayesha TherapyFit Engine · Level {completeness?.level || 'L1'} · {totalDrugs || '—'} drugs evaluated
+                                {provenance?.engine_used || 'therapy_fit'} · Run: {provenance?.run_id || '—'} · Level {completeness?.level || 'L1'} · {totalDrugs || '—'} drugs evaluated
                             </Typography>
                         </Box>
                     )}

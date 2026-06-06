@@ -84,10 +84,10 @@ export function useAyeshaTrials({
                 {};
 
             const payload = {
-                stage: tc.stage || 'IVB',
+                stage: tc.stage || null,
                 treatment_line: treatmentLine,
-                germline_status: tc.germline_status || 'negative',
-                location_state: 'NY',
+                germline_status: tc.germline_status || null,
+                location_state: null,
                 max_results: maxResults,
                 tumor_context: tc,
                 sae_mechanism_vector: mechanismVector,

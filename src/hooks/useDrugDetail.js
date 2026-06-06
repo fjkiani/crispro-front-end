@@ -8,16 +8,8 @@ import {
  * Helper — get auth token from storage.
  */
 const getAuthToken = () => {
-    try {
-        const sessionStr = localStorage.getItem('mock_auth_session');
-        if (sessionStr) {
-            const session = JSON.parse(sessionStr);
-            const t = session?.access_token;
-            if (t && t !== 'null' && t !== 'undefined') return t;
-        }
-    } catch (e) { /* ignore */ }
-    const t2 = localStorage.getItem('supabase_auth_token');
-    return (t2 && t2 !== 'null' && t2 !== 'undefined') ? t2 : null;
+    const t = localStorage.getItem('supabase_auth_token');
+    return (t && t !== 'null' && t !== 'undefined') ? t : null;
 };
 
 /**

@@ -247,7 +247,7 @@ export function getPrimaryDirective(slResult, resistanceAlert, trialCount, socRe
             ],
             receipts: {
                 level: 'L3',
-                inputs: ['ctDNA Trend', 'Kill Chain Signals', 'Genomic Profiling'],
+                inputs: resistanceAlert?.sources || ['Resistance signal data'],
                 missing: [],
             },
             actionLabel: 'VIEW RESISTANCE LAB',
@@ -268,7 +268,7 @@ export function getPrimaryDirective(slResult, resistanceAlert, trialCount, socRe
             ],
             receipts: {
                 level: 'L3',
-                inputs: ['NGS Panel', 'Germline Testing', 'Pathway Analysis'],
+                inputs: slResult?.provenance?.inputs || ['SL detection pipeline'],
                 missing: [],
             },
             actionLabel: 'VIEW DIGITAL TWIN',
@@ -294,7 +294,11 @@ export function getPrimaryDirective(slResult, resistanceAlert, trialCount, socRe
             ],
             receipts: {
                 level: 'L1',
-                inputs: ['Stage', 'Histology', 'Biomarkers'],
+                inputs: [
+                    ...(profile?.tumor_context?.stage ? ['Stage'] : []),
+                    ...(profile?.tumor_context?.histology ? ['Histology'] : []),
+                    ...(profile?.tumor_context?.biomarkers ? Object.keys(profile.tumor_context.biomarkers).map(k => k.toUpperCase()) : []),
+                ].filter(Boolean),
                 missing: profile?.tumor_context?.hrd_score ? [] : ['HRD Score'],
             },
             actionLabel: 'VIEW THERAPY FIT',

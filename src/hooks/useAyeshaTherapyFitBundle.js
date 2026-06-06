@@ -20,6 +20,10 @@ const THERAPY_FIT_BUNDLE_STORAGE_PREFIX = 'therapy_fit_bundle_v1:';
  *
  * Returns a composite object matching the UI's expectation.
  * Auth token is read via shared getAuthToken() from sessionPersistence.
+ *
+ * S31: Consumers should check isFetching to show a "refreshing data" banner
+ * when stale cache is displayed while a fresh request is in flight.
+ * The hook returns the full useQuery result including isFetching.
  */
 const fetchStrictBundle = async ({ level = 'all', scenario_id = null, l3_scenario_id = null, efficacy_mode = 'fast' }) => {
   const token = getAuthToken();

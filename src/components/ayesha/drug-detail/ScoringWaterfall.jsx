@@ -6,58 +6,67 @@
  *   PGx Safety:     15%   |   Resistance Risk: 15% (RUO)
  *
  * Renders in light-mode card with actual values from the drug object where available.
+ * No fabricated engine names or fake source strings.
  */
 import React from 'react';
 import {
     Box, Typography, Paper, LinearProgress, Chip, Divider,
 } from '@mui/material';
 import { pct } from './explainers';
+import SourceSlug from '../shared/SourceSlug';
 
 const WEIGHTS = [
     {
         key: 'mechanism', label: 'Mechanism Fit', pct: 40,
-        source: 'pathway_model_v2', color: '#818cf8', ruo: false,
+        scoreKey: 'mechanism_fit_score', color: '#818cf8', ruo: false,
         desc: 'How well the drug\'s mechanism aligns with mutated pathways in the patient\'s tumor.',
-        getActual: (drug) => drug?.mechanism_fit_score,
     },
     {
         key: 'eligibility', label: 'Eligibility', pct: 30,
-        source: 'eligibility_engine', color: '#34d399', ruo: false,
+        scoreKey: 'eligibility_score', color: '#34d399', ruo: false,
         desc: 'Whether the patient meets the clinical criteria (age, prior treatment, organ function) for this drug.',
-        getActual: (drug) => drug?.eligibility_score,
     },
     {
         key: 'pgx', label: 'PGx Safety', pct: 15,
-        source: 'pgx_service', color: '#fbbf24', ruo: false,
+        scoreKey: 'pgx_score', color: '#fbbf24', ruo: false,
         desc: 'Pharmacogenomic safety — risk of adverse drug reactions based on the patient\'s metabolism profile.',
-        getActual: (drug) => drug?.pgx_score,
     },
     {
         key: 'resistance', label: 'Resistance Risk', pct: 15,
-        source: 'kill_chain_policy', color: '#f87171', ruo: true,
+        scoreKey: 'resistance_score', color: '#f87171', ruo: true,
         desc: 'Evaluates whether the tumor\'s resistance mechanisms could neutralize this drug.',
-        getActual: (drug) => drug?.resistance_score,
     },
 ];
 
 export default function ScoringWaterfall({ drug }) {
     const finalScore = drug?.final_score || drug?.efficacy_score;
+    const hasAnyActual = WEIGHTS.some(w => drug?.[w.scoreKey] != null);
 
     return (
         <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
                 <Typography variant="h5" sx={{ fontWeight: 800, fontSize: '1.25rem' }}>
-                    📊 Scoring Breakdown
+                    Scoring Breakdown
                 </Typography>
             </Box>
             <Typography variant="body1" sx={{ color: 'text.secondary', mb: 2.5, fontSize: '1rem', lineHeight: 1.7 }}>
-                The holistic match score is a weighted combination of four independent engines.
+                The holistic match score is a weighted combination of four independent components.
                 Each contributes a percentage-weighted portion to the final score.
             </Typography>
 
+            {/* Honest notice when component scores are not available */}
+            {!hasAnyActual && (
+                <Box sx={{ mb: 2, p: 1.5, borderRadius: 2, bgcolor: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                    <Typography variant="caption" sx={{ color: '#64748b', lineHeight: 1.5 }}>
+                        Component scores are not available in this API response — showing weight template only.
+                        Actual per-component values will appear when the backend returns them.
+                    </Typography>
+                </Box>
+            )}
+
             <Box sx={{ borderRadius: 2, border: '1px solid', borderColor: 'divider', overflow: 'hidden' }}>
                 {WEIGHTS.map((w, i) => {
-                    const actual = w.getActual(drug);
+                    const actual = drug?.[w.scoreKey];
                     return (
                         <Box key={w.key} sx={{ p: 2, borderBottom: i < WEIGHTS.length - 1 ? '1px solid' : 'none', borderColor: 'divider' }}>
                             {/* Label row */}
@@ -77,7 +86,7 @@ export default function ScoringWaterfall({ drug }) {
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                                     {actual != null && (
                                         <Typography variant="caption" sx={{ fontWeight: 700, color: w.color }}>
-                                            Actual: {(actual * 100).toFixed(0)}
+                                            Actual: {Math.round(actual * 100)}
                                         </Typography>
                                     )}
                                     <Typography variant="body2" sx={{ fontWeight: 800, color: w.color, fontFamily: 'monospace', minWidth: 40, textAlign: 'right' }}>
@@ -89,7 +98,7 @@ export default function ScoringWaterfall({ drug }) {
                             {/* Progress bar */}
                             <LinearProgress
                                 variant="determinate"
-                                value={w.pct * 2.5}
+                                value={actual != null ? Math.round(actual * 100) : w.pct * 2.5}
                                 sx={{
                                     height: 6, borderRadius: 3, bgcolor: '#f1f5f9',
                                     '& .MuiLinearProgress-bar': { bgcolor: w.color, borderRadius: 3 },
@@ -100,9 +109,11 @@ export default function ScoringWaterfall({ drug }) {
                             <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}>
                                 {w.desc}
                             </Typography>
-                            <Typography variant="caption" sx={{ color: '#94a3b8', fontSize: '0.6rem' }}>
-                                Source: {w.source}
-                            </Typography>
+                            <SourceSlug
+                                source={actual != null ? 'API response' : null}
+                                label="Value source"
+                                compact
+                            />
                         </Box>
                     );
                 })}

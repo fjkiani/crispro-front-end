@@ -234,7 +234,7 @@ const Phase2Tests = () => {
                         PROVENANCE LOG
                     </Typography>
                     <Typography variant="caption" sx={{ color: 'text.disabled', display: 'block' }}>
-                        Tests evaluation engine: dynamic_unlocks_v1 // Data mapped from: profile.germline, profile.tumor_context // Data generated: {new Date().toLocaleDateString()}
+                        profile completeness mapping // Source: local (no API bundle call) // Data mapped from: profile.germline, profile.tumor_context
                     </Typography>
                 </Box>
             </Box>

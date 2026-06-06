@@ -39,7 +39,7 @@ export default function ThreatRadarSection({ careLoading, slResult, ca125, io, r
                             color={slSignal.color}
                             evidenceLevel={slSignal.evidenceLevel}
                             evidenceText={slSignal.text}
-                            inputsUsed="NGS • Pathway Map"
+                            inputsUsed={slResult?.provenance ? `SL pipeline (${slResult.provenance.engine || "v1"})` : "SL detection pipeline"}
                             actionLabel="Digital Twin"
                             onAction={() => navigate('/ayesha-digital-twin')}
                         />
@@ -67,7 +67,7 @@ export default function ThreatRadarSection({ careLoading, slResult, ca125, io, r
                             color={io?.eligible ? 'success' : 'default'}
                             evidenceLevel={profile?.tumor_context?.biomarkers?.tmb ? 'L2' : 'L1'}
                             evidenceText={io?.eligible ? 'Immunotherapy Eligible' : 'Low Immune Markers'}
-                            inputsUsed={profile?.tumor_context?.biomarkers?.tmb ? 'TMB • PD-L1 Verified' : 'Markers Missing'}
+                            inputsUsed={profile?.tumor_context?.biomarkers?.tmb ? 'TMB available' : 'Markers Missing'}
                             actionLabel="Therapy Fit"
                             onAction={() => navigate('/ayesha/therapy-fit')}
                         />
@@ -82,7 +82,7 @@ export default function ThreatRadarSection({ careLoading, slResult, ca125, io, r
                             evidenceText={resistance?.alert_triggered
                                 ? resistance.message
                                 : 'No Overt Resistance'}
-                            inputsUsed="Clinical History"
+                            inputsUsed={resistance?.provenance ? `Resistance API (${resistance.provenance.engine || "v1"})` : "Resistance metadata"}
                             actionLabel="Resistance Lab"
                             onAction={() => navigate('/ayesha/journey/resistance')}
                         />

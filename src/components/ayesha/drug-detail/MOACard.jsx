@@ -302,7 +302,7 @@ export default function MOACard({ drug }) {
                         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
                             <Info sx={{ fontSize: 14, color: '#94a3b8', mt: 0.3 }} />
                             <Typography variant="caption" sx={{ color: '#94a3b8', lineHeight: 1.5 }}>
-                                Source: Ayesha TherapyFit Engine · {drug.data_level || 'L1'} scoring
+                                {drug.sporadic_gates_provenance?.engine || 'therapy_fit'} · {drug.data_level || 'L1'} scoring
                             </Typography>
                         </Box>
                     </Box>

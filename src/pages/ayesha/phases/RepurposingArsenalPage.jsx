@@ -171,7 +171,7 @@ const RepurposingArsenalPage = () => {
             {/* PMID/NCT footnote */}
             <div style={{ maxWidth: spacing.pageMax, margin: '0 auto 2.5rem', textAlign: 'center' }}>
                 <p style={{ ...typography.captionSm, color: colors.caption }}>
-                    Backed by {stats.pmids} peer-reviewed sources and {stats.ncts} clinical trials · SPE v{meta.version || '2.0'} · {new Date().toLocaleDateString()}
+                    Backed by {stats.pmids} peer-reviewed sources and {stats.ncts} clinical trials · {meta.engine || 'therapy_fit'} v{meta.version || '—'}
                 </p>
             </div>
 
@@ -262,7 +262,7 @@ const RepurposingArsenalPage = () => {
                     `${meta.engine || 'SPE'} v${meta.version || '2.0'}`,
                     `${total} drug candidates`,
                     `${stats.pmids} PMID citations`,
-                    'Zeta-Verification active 🔱',
+                    'Source: therapy_fit pipeline',
                 ].map(t => (
                     <span key={t} style={{ ...typography.provenance, color: colors.caption }}>{t}</span>
                 ))}

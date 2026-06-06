@@ -12,7 +12,7 @@ function generateExplanation(drug) {
     if (!drug) return { text: "No data available for interpretation.", type: "refusal" };
 
     const name = drug.drug || drug.name || "Unknown Agent";
-    const tier = (drug.tier || "unknown").toLowerCase();
+    const tier = (drug.evidence_tier || drug.tier || "unknown").toLowerCase();
     const badges = drug.badges || [];
     const citations = drug.citations_count || (drug.citations ? drug.citations.length : 0);
     const score = Math.round((drug.efficacy_score || 0) * 100);
@@ -30,9 +30,9 @@ function generateExplanation(drug) {
     let reason = "";
 
     // Tier-based logic
-    if (tier === "supported" || tier === "1") {
+    if (tier === "supported" || tier === "1" || tier === "i") {
         reason = `Tier 1 recommendation (Score: ${score}%) supported by strong clinical evidence.`;
-    } else if (tier === "consider" || tier === "2") {
+    } else if (tier === "consider" || tier === "2" || tier === "ii") {
         reason = `Tier 2 option (Score: ${score}%) worth considering based on mechanistic rationale.`;
     } else {
         reason = `Candidate (Score: ${score}%) has preliminary evidence but lacks top-tier clinical validation.`;

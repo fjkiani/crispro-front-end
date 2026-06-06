@@ -13,16 +13,18 @@ export default function ScoreRingSidebar({ drug }) {
 
     const score = drug.efficacy_score ?? drug.final_score ?? null;
     const confidence = drug.confidence ?? null;
-    const scoreValue = score != null ? Math.round(score * 100) : 0;
+    const scoreValue = score != null ? Math.round(score * 100) : null;
 
     const r = 44;
     const circumference = 2 * Math.PI * r;
-    const offset = circumference - (circumference * scoreValue) / 100;
+    const offset = scoreValue != null ? circumference - (circumference * scoreValue) / 100 : circumference;
 
-    let color = '#ef4444';
-    if (scoreValue >= 70) color = '#22c55e';
+    let color = '#94a3b8';
+    if (scoreValue == null) color = '#94a3b8';
+    else if (scoreValue >= 70) color = '#22c55e';
     else if (scoreValue >= 50) color = '#f59e0b';
     else if (scoreValue >= 30) color = '#f97316';
+    else color = '#ef4444';
 
     return (
         <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider', textAlign: 'center' }}>
@@ -44,7 +46,7 @@ export default function ScoreRingSidebar({ drug }) {
                 </svg>
                 <Box sx={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Typography sx={{ fontWeight: 900, fontSize: '2rem', color }}>
-                        {scoreValue}%
+                        {scoreValue != null ? `${scoreValue}%` : '—'}
                     </Typography>
                 </Box>
             </Box>

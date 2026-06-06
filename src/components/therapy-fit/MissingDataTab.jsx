@@ -10,7 +10,7 @@ import { Box, Typography, Paper, Alert, Button } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import '../therapy-fit/therapy-fit.css';
 
-export default function MissingDataTab({ missing = [] }) {
+export default function MissingDataTab({ missing = [], completenessScore }) {
     const navigate = useNavigate();
 
     return (
@@ -32,7 +32,7 @@ export default function MissingDataTab({ missing = [] }) {
                     </Typography>
                 </Paper>
             )) : (
-                <Alert severity="success">All key inputs are present — rankings are at full confidence.</Alert>
+                <Alert severity="success">All key inputs are present — confidence is at the current level cap ({completenessScore != null ? Math.round(completenessScore * 100) + "%" : "—"}).</Alert>
             )}
 
             <Button

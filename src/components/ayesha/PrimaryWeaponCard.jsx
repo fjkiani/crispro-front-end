@@ -1,24 +1,63 @@
+/**
+ * PrimaryWeaponCard — Top-ranked drug hero card.
+ *
+ * S15/S16/S17/S18 anti-slop rewrite:
+ *   - No STATIC_BACKUP_EXPLANATION — explanation derived from API data or honest fallback
+ *   - "Recommended Treatment" → "Top Ranked Option (RUO)"
+ *   - clinical_band defaults to null (no "Likely Responsive")
+ *   - "Compatibility" → "Model Confidence (RUO)"
+ *   - Tier chip uses evidence_tier, not tier
+ *   - SourceSlug for data lineage
+ */
 import React, { useState } from 'react';
-import { Alert, Card, CardContent, Typography, Box, Chip, Skeleton, Button, Collapse, Divider } from '@mui/material';
+import { Alert, Card, CardContent, Typography, Box, Chip, Button, Collapse, Divider } from '@mui/material';
 import { Crosshair, Target, Zap, ScrollText, BookOpen, AlertCircle } from 'lucide-react';
+import SourceSlug from './shared/SourceSlug';
 
-const STATIC_BACKUP_EXPLANATION = {
-    explanation: "This treatment targets the tumor's inability to repair DNA (HRD+). By exploiting this specific vulnerability, we can induce cancer cell death while sparing healthy tissue — a process known as synthetic lethality.",
-    provider: "zeta-static",
-    context: "fallback"
-};
-
-const PrimaryWeaponCard = ({ topDrug, drug, patientContext, onInform, isSimulation }) => {
+const PrimaryWeaponCard = ({ topDrug, drug, patientContext, onInform, isSimulation, levelData }) => {
     const resolvedDrug = topDrug || drug;
     if (!resolvedDrug) return null;
 
-    const confidence = Math.round((resolvedDrug.confidence || 0) * 100);
-    const llmData = STATIC_BACKUP_EXPLANATION;
+    const confidence = resolvedDrug.confidence != null ? Math.round(resolvedDrug.confidence * 100) : null;
     const [showEvidence, setShowEvidence] = useState(false);
 
-    const tier = resolvedDrug.evidence_tier || "Research";
+    // S40: evidence_tier takes priority over tier
+    const rawTier = resolvedDrug.evidence_tier || resolvedDrug.tier || null;
+    const tierDisplay = (() => {
+        if (!rawTier) return 'Unclassified';
+        const t = String(rawTier).toLowerCase();
+        if (t === 'supported' || t === '1' || t === 'i') return 'Tier 1 Evidence';
+        if (t === 'consider' || t === '2' || t === 'ii') return 'Tier 2 Option';
+        return `Tier ${rawTier}`;
+    })();
+
     const citations = resolvedDrug.citations_count || 0;
-    const clinicalBand = resolvedDrug.clinical_band || "Likely Responsive";
+    const clinicalBand = resolvedDrug.clinical_band || null;
+
+    // Derive explanation from API data, not hardcoded narrative
+    const hasSL = levelData?.synthetic_lethality?.synthetic_lethality_detected;
+    const hrdStatus = levelData?.inputs_used?.tumor_context?.hrd_status;
+    const hrdScore = levelData?.inputs_used?.tumor_context?.hrd_score;
+    const hasHRD = hrdStatus === 'positive' || (hrdScore != null && hrdScore >= 42);
+
+    const explanation = (() => {
+        // Prefer API rationale
+        if (resolvedDrug.rationale) {
+            if (typeof resolvedDrug.rationale === 'string') return resolvedDrug.rationale;
+            if (Array.isArray(resolvedDrug.rationale)) {
+                const slItem = resolvedDrug.rationale.find(r => r.type === 'synthetic_lethality');
+                if (slItem?.explanation) return slItem.explanation;
+                const first = resolvedDrug.rationale[0];
+                if (first?.explanation) return first.explanation;
+            }
+        }
+        // Derive from SL/HRD flags
+        if (hasSL && hasHRD) return 'Synthetic lethality detected with HRD-positive status — this drug targets the tumor\'s DNA repair vulnerability.';
+        if (hasSL) return 'Synthetic lethality detected — this drug exploits a dual-hit vulnerability in the tumor.';
+        if (hasHRD) return 'HRD-positive status detected — this drug targets the tumor\'s impaired DNA repair capacity.';
+        // Honest fallback
+        return 'This drug was ranked highest by the scoring model. Specific mechanistic rationale was not provided in this API response.';
+    })();
 
     return (
         <Card sx={{
@@ -46,13 +85,13 @@ const PrimaryWeaponCard = ({ topDrug, drug, patientContext, onInform, isSimulati
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
                             <Crosshair color="#2563eb" size={20} />
                             <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 700, letterSpacing: 1, fontSize: '0.8125rem' }}>
-                                Recommended Treatment
+                                Top Ranked Option (RUO)
                             </Typography>
                             <Chip
-                                label={tier === 'I' ? "Tier 1 Evidence" : `Tier ${tier}`}
+                                label={tierDisplay}
                                 size="small"
                                 icon={<BookOpen size={12} />}
-                                sx={{ fontWeight: 600, bgcolor: tier === 'I' ? 'success.light' : '#f1f5f9', color: tier === 'I' ? 'success.dark' : 'text.secondary' }}
+                                sx={{ fontWeight: 600, bgcolor: rawTier?.toLowerCase() === 'supported' || rawTier === '1' || rawTier === 'i' ? 'success.light' : '#f1f5f9', color: rawTier?.toLowerCase() === 'supported' || rawTier === '1' || rawTier === 'i' ? 'success.dark' : 'text.secondary' }}
                             />
                         </Box>
 
@@ -67,7 +106,7 @@ const PrimaryWeaponCard = ({ topDrug, drug, patientContext, onInform, isSimulati
                         </Typography>
 
                         <Typography variant="body1" sx={{ color: 'text.secondary', fontWeight: 500, maxWidth: '600px', lineHeight: 1.6, fontSize: '1.0625rem' }}>
-                            {clinicalBand} — Targeting verified vulnerabilities in the tumor's defense mechanisms.
+                            {clinicalBand || 'Ranked #1 by model'} — {explanation.split('.')[0]}.
                         </Typography>
 
                         {/* Tabs: How It Works / Clinical Evidence */}
@@ -113,19 +152,25 @@ const PrimaryWeaponCard = ({ topDrug, drug, patientContext, onInform, isSimulati
                                 minHeight: 100
                             }}>
                                 {!showEvidence ? (
-                                    <Typography variant="body1" sx={{ fontSize: '1.0625rem', lineHeight: 1.7, color: 'text.primary' }}>
-                                        {llmData.explanation}
-                                    </Typography>
+                                    <Box>
+                                        <Typography variant="body1" sx={{ fontSize: '1.0625rem', lineHeight: 1.7, color: 'text.primary' }}>
+                                            {explanation}
+                                        </Typography>
+                                        <SourceSlug
+                                            source={resolvedDrug.rationale ? 'API response' : (hasSL || hasHRD ? 'profile-derived' : null)}
+                                            label="Explanation source"
+                                        />
+                                    </Box>
                                 ) : (
                                     <Box>
                                         <Box sx={{ display: 'flex', gap: 4, mb: 2 }}>
                                             <Box>
                                                 <Typography variant="caption" color="text.secondary">Clinical Band</Typography>
-                                                <Typography variant="body2" color="text.primary" fontWeight="700">{clinicalBand}</Typography>
+                                                <Typography variant="body2" color="text.primary" fontWeight="700">{clinicalBand || '—'}</Typography>
                                             </Box>
                                             <Box>
                                                 <Typography variant="caption" color="text.secondary">Evidence Tier</Typography>
-                                                <Typography variant="body2" color="text.primary" fontWeight="700">{tier}</Typography>
+                                                <Typography variant="body2" color="text.primary" fontWeight="700">{tierDisplay}</Typography>
                                             </Box>
                                             <Box>
                                                 <Typography variant="caption" color="text.secondary">Citations</Typography>
@@ -133,7 +178,10 @@ const PrimaryWeaponCard = ({ topDrug, drug, patientContext, onInform, isSimulati
                                             </Box>
                                         </Box>
                                         <Alert severity="info" icon={<AlertCircle size={20} />}>
-                                            Clinical evidence suggests high sensitivity in similar HRD+ contexts.
+                                            {clinicalBand
+                                                ? `Clinical band: ${clinicalBand}. Evidence tier: ${tierDisplay}.`
+                                                : `Evidence tier: ${tierDisplay}. No clinical band assigned in this response.`
+                                            }
                                         </Alert>
                                     </Box>
                                 )}
@@ -183,11 +231,11 @@ const PrimaryWeaponCard = ({ topDrug, drug, patientContext, onInform, isSimulati
                         <Typography variant="h1" sx={{
                             fontSize: { xs: '3.5rem', md: '4.5rem' },
                             fontWeight: 900,
-                            color: 'primary.main',
+                            color: confidence != null ? 'primary.main' : 'text.disabled',
                             lineHeight: 1,
                             letterSpacing: '-3px',
                         }}>
-                            {confidence}%
+                            {confidence != null ? `${confidence}%` : '—'}
                         </Typography>
                         <Typography variant="overline" sx={{
                             color: 'text.secondary',
@@ -197,8 +245,13 @@ const PrimaryWeaponCard = ({ topDrug, drug, patientContext, onInform, isSimulati
                             mt: 1,
                             textAlign: 'center',
                         }}>
-                            Compatibility
+                            Model Confidence (RUO)
                         </Typography>
+                        <SourceSlug
+                            source={resolvedDrug.sporadic_gates_provenance?.engine || null}
+                            label="Score engine"
+                            compact
+                        />
                     </Box>
                 </Box>
             </CardContent>

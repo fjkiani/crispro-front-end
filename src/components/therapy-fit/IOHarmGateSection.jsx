@@ -21,7 +21,7 @@ export default function IOHarmGateSection({ ioHarmData, suppressFooterDisclaimer
                     biomarkerDrivers={ioHarmData.biomarker_drivers}
                     checkpointExpression={ioHarmData.checkpoint_expression}
                     ioProfileCard={ioHarmData.io_profile_card}
-                    safetyGate={ioHarmData.safety_gate || { active: true }}
+                    safetyGate={ioHarmData.safety_gate || { active: false }}
                     suppressFooterDisclaimer={suppressFooterDisclaimer}
                 />
             </Suspense>
