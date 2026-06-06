@@ -11,7 +11,9 @@ export function fingerprintLocalInputs() {
     const ca = localStorage.getItem('ayesha_ca125_history_v1') || '';
     const hrd = localStorage.getItem('ayesha_hrd_v1') || '';
     const rss = localStorage.getItem('ayesha_rss_inputs_v1') || '';
-    const blob = `${ca}\n${hrd}\n${rss}`;
+    // Written by useBiomarkerUpdate on every successful PATCH — busts the bundle cache
+    const biomarkerTs = localStorage.getItem('ayesha_biomarker_updated_at') || '';
+    const blob = `${ca}\n${hrd}\n${rss}\n${biomarkerTs}`;
     let h = 5381;
     for (let i = 0; i < blob.length; i += 1) {
       h = ((h << 5) + h) ^ blob.charCodeAt(i);

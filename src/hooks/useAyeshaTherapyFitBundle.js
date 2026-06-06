@@ -21,7 +21,7 @@ const THERAPY_FIT_BUNDLE_STORAGE_PREFIX = 'therapy_fit_bundle_v1:';
  * Returns a composite object matching the UI's expectation.
  * Auth token is read via shared getAuthToken() from sessionPersistence.
  */
-const fetchStrictBundle = async ({ level = 'all', scenario_id = null, l3_scenario_id = null, efficacy_mode = 'comprehensive' }) => {
+const fetchStrictBundle = async ({ level = 'all', scenario_id = null, l3_scenario_id = null, efficacy_mode = 'fast' }) => {
   const token = getAuthToken();
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -58,7 +58,7 @@ const fetchStrictBundle = async ({ level = 'all', scenario_id = null, l3_scenari
   return mergeTherapyFitBundleWithScenarios(bundleData, scenariosData);
 };
 
-export function useAyeshaTherapyFitBundle({ level = 'all', scenario_id = null, l3_scenario_id = null, efficacy_mode = 'comprehensive' } = {}, options = {}) {
+export function useAyeshaTherapyFitBundle({ level = 'all', scenario_id = null, l3_scenario_id = null, efficacy_mode = 'fast' } = {}, options = {}) {
   const queryKeyPayload = useMemo(
     () => ({
       level,

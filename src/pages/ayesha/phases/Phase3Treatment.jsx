@@ -35,7 +35,7 @@ function TabPanel({ children, value, index }) {
 const Phase3Treatment = () => {
     const navigate = useNavigate();
     const [tab, setTab] = useState(0);
-    const { data: bundle, isLoading, error } = useAyeshaTherapyFitBundle({ level: 'l1' });
+    const { data: bundle, isLoading, error } = useAyeshaTherapyFitBundle({ level: 'l1', efficacy_mode: 'fast' });
 
     const levelData = bundle?.levels?.L1 || {};
     const drugs = levelData?.efficacy?.drugs || [];

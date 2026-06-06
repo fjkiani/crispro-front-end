@@ -16,7 +16,7 @@ import { Schedule, TrendingUp, TrendingDown, TrendingFlat } from '@mui/icons-mat
 
 import JourneyLayout from '../../../components/ayesha/journey/JourneyLayout';
 import { CLINICAL_TEST_REGISTRY } from '../../../constants/clinicalTestRegistry';
-import CA125EntryForm from '../../../components/ayesha/CA125EntryForm';
+import CA125EntryForm from '../../../components/ayesha/inputs/CA125EntryForm';
 import HRDEntryForm from '../../../components/ayesha/inputs/HRDEntryForm';
 import CtDNAEntryForm from '../../../components/ayesha/inputs/CtDNAEntryForm';
 import RepairCapacityEntryForm from '../../../components/ayesha/inputs/RepairCapacityEntryForm';

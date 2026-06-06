@@ -58,6 +58,11 @@ export function useBiomarkerUpdate(slug) {
             }
 
             setSaved(true);
+            // Bust the therapy-fit bundle sessionStorage cache so the next Treatment page
+            // load re-fetches with the new biomarker data (fingerprintLocalInputs reads this key)
+            try {
+              localStorage.setItem('ayesha_biomarker_updated_at', String(Date.now()));
+            } catch {}
             // Auto-clear success state after 3s
             setTimeout(() => setSaved(false), 3000);
         } catch (err) {

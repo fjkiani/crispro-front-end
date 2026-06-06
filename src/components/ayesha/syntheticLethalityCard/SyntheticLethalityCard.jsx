@@ -233,10 +233,12 @@ export function SyntheticLethalityCard({ slData, data, onShowTrials, levelKey: l
           onShowTrials={onShowTrials}
         />
 
-        <SuggestedTherapyBanner
-          text={payload?.suggested_therapy}
-          isSuperseded={hasCanonicalRecommendations}
-        />
+        {!hasCanonicalRecommendations && (
+          <SuggestedTherapyBanner
+            text={payload?.suggested_therapy}
+            isSuperseded={false}
+          />
+        )}
 
         <SlReceiptsDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} receipts={receipts} />
 
@@ -244,11 +246,13 @@ export function SyntheticLethalityCard({ slData, data, onShowTrials, levelKey: l
           <SlFullJsonDrawer open={fullJsonOpen} onClose={() => setFullJsonOpen(false)} payload={payload} />
         )}
 
-        <RecommendedDrugsAccordion
-          missingPayload={missingPayload}
-          recs={recs}
-          isSuperseded={hasCanonicalRecommendations}
-        />
+        {!hasCanonicalRecommendations && (
+          <RecommendedDrugsAccordion
+            missingPayload={missingPayload}
+            recs={recs}
+            isSuperseded={false}
+          />
+        )}
 
         <BiologicalRationaleAccordion
           doubleHitDescription={payload?.double_hit_description}

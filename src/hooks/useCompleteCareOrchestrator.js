@@ -44,7 +44,7 @@ class TTLCache {
 
 const essentialityCache = new TTLCache(30); // 30 min
 const vusCache = new TTLCache(60); // 60 min
-const slCache = new TTLCache(30); // 30 min
+const slCache = new TTLCache(5); // 5 min — matches carePlanCache cadence
 const carePlanCache = new TTLCache(5); // 5 min – stale-while-revalidate for page loads
 
 /** True if parallel /api/agents/synthetic_lethality returned real fields (not `{}` / provenance-only shell). */
@@ -204,7 +204,7 @@ const buildRequestFromProfile = (profile) => {
 /**
  * Call Synthetic Lethality endpoint
  */
-const fetchSyntheticLethality = async (patientProfile) => {
+const fetchSyntheticLethality = async (patientProfile, { forceRefresh = false } = {}) => {
   try {
     const slMutations = [];
     // Add MBD4 from germline
@@ -240,9 +240,11 @@ const fetchSyntheticLethality = async (patientProfile) => {
     const diseaseKey = patientProfile.disease?.type || 'ovarian_cancer_hgs';
     const genesKey = slMutations.map(m => m.gene).filter(Boolean).sort().join(',');
     const cacheKey = `sl:${diseaseKey}:${genesKey}`;
-    const cached = slCache.get(cacheKey);
-    if (cached) {
-      return { ...cached, provenance: { ...(cached.provenance || {}), client_cache_hit: true } };
+    if (!forceRefresh) {
+      const cached = slCache.get(cacheKey);
+      if (cached) {
+        return { ...cached, provenance: { ...(cached.provenance || {}), client_cache_hit: true } };
+      }
     }
 
     const slResponse = await fetch(getSyntheticLethalityUrl(), {
@@ -491,6 +493,7 @@ export const useCompleteCareOrchestrator = () => {
       const merged = { ...baseRequest, ...options };
       const skipAuxiliary = !!merged.skip_auxiliary_parallel_requests;
       const skipSlParallel = !!merged.skip_synthetic_lethality_parallel;
+      const isExplicitRefresh = !!options?._forceSlRefresh;
       const {
         skip_auxiliary_parallel_requests: _skipAux,
         skip_synthetic_lethality_parallel: _skipSl,
@@ -514,7 +517,7 @@ export const useCompleteCareOrchestrator = () => {
       const slPromise =
         skipAuxiliary || skipSlParallel
           ? Promise.resolve(null)
-          : fetchSyntheticLethality(patientProfile);
+          : fetchSyntheticLethality(patientProfile, { forceRefresh: isExplicitRefresh });
 
       // 4. Main Care Plan API call
       const mainPlanPromise = fetch(`${API_ROOT}/api/ayesha/complete_care_v2`, {
@@ -614,7 +617,8 @@ export const useCompleteCareOrchestrator = () => {
   }, []);
 
   const refreshPlan = useCallback((patientProfile) => {
-    return generatePlan(patientProfile);
+    // _forceSlRefresh=true bypasses the slCache so "Run Analysis" always re-fetches SL
+    return generatePlan(patientProfile, { _forceSlRefresh: true });
   }, [generatePlan]);
 
   return {
