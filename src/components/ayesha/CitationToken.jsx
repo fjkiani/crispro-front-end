@@ -61,7 +61,7 @@ function doiUrl(anchor) {
   return `https://doi.org/${v}`;
 }
 
-export function CitationToken({ value, size = 'small', variant = 'chip', onUnknown }) {
+export function CitationToken({ value, size = 'small', variant = 'chip', onUnknown, tooltipOverride }) {
   const { kind, value: v } = classifyToken(value);
 
   if (kind === 'empty') return null;
@@ -118,11 +118,17 @@ export function CitationToken({ value, size = 'small', variant = 'chip', onUnkno
   }
 
   if (kind === 'internal') {
-    // Non-clickable: this token refers to an internal repo path that has not
-    // been published / promoted to a public anchor yet. Surfaces honestly.
+    // Non-clickable: this token refers to an internal Phylo evidence receipt
+    // (e.g. internal:crispro-mbd4-atr-gdsc-v1 carries the GDSC1 pharmacologic
+    // stratification statistics, not a public PMID). Renders honestly with a
+    // lock icon; consumers can pass tooltipOverride to surface the receipt
+    // summary text (e.g. EvidenceMatrixTable passes cell.summary).
+    const tip = tooltipOverride
+      ? tooltipOverride
+      : 'Internal Phylo evidence receipt. The anchor identifies a backend-computed evidence cell; the receipt prose lives on the surrounding payload (e.g. cell.summary in evidence_matrix.rows).';
     return (
       <Tooltip
-        title="Internal evidence reference (not yet published as a public anchor). The backend will be migrated to a github: anchor in PR-B1."
+        title={tip}
         placement="top"
         arrow
       >
@@ -175,7 +181,7 @@ export function CitationToken({ value, size = 'small', variant = 'chip', onUnkno
 
 // Convenience: render a list of tokens as a horizontal stack with the right
 // spacing. Limits to `max` tokens and shows "+N more" tail when truncated.
-export function CitationTokenList({ values, max = 5, size = 'small', variant = 'chip' }) {
+export function CitationTokenList({ values, max = 5, size = 'small', variant = 'chip', tooltipOverride }) {
   const list = Array.isArray(values) ? values : [];
   if (list.length === 0) return null;
   const shown = list.slice(0, max);
@@ -183,7 +189,7 @@ export function CitationTokenList({ values, max = 5, size = 'small', variant = '
   return (
     <Box sx={{ display: 'inline-flex', flexWrap: 'wrap', gap: 0.5, alignItems: 'center' }}>
       {shown.map((v, i) => (
-        <CitationToken key={`${String(v)}-${i}`} value={v} size={size} variant={variant} />
+        <CitationToken key={`${String(v)}-${i}`} value={v} size={size} variant={variant} tooltipOverride={tooltipOverride} />
       ))}
       {overflow > 0 ? (
         <Typography variant="caption" color="text.secondary">+{overflow} more</Typography>

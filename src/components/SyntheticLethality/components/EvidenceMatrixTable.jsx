@@ -73,7 +73,9 @@ export function EvidenceMatrixTable({ matrix }) {
                 const key = String(pmid);
                 if (!seen.has(key)) {
                   seen.add(key);
-                  allPmids.push({ pmid, modality: k });
+                  // PR-F5: carry cell.summary so internal: anchors can render
+                  // the receipt prose as their tooltip via tooltipOverride.
+                  allPmids.push({ pmid, modality: k, cellSummary: cell.summary || '' });
                 }
               }
             }
@@ -129,13 +131,32 @@ export function EvidenceMatrixTable({ matrix }) {
                     <Typography variant="caption" sx={{ color: 'text.secondary', mr: 0.5 }}>
                       Evidence anchors:
                     </Typography>
-                    {allPmids.slice(0, 6).map(({ pmid, modality }, i) => (
-                      <Tooltip key={`${row.axis}-${String(pmid)}-${i}`} title={`From ${modality}`} placement="top" arrow>
-                        <Box sx={{ display: 'inline-block' }}>
-                          <CitationToken value={pmid} size="small" variant="chip" />
-                        </Box>
-                      </Tooltip>
-                    ))}
+                    {allPmids.slice(0, 6).map(({ pmid, modality, cellSummary }, i) => {
+                      const isInternal = typeof pmid === 'string' && pmid.toLowerCase().startsWith('internal:');
+                      // For internal: anchors we suppress the "From {modality}"
+                      // outer Tooltip because CitationToken already provides a
+                      // richer payload-derived tooltip via tooltipOverride.
+                      // For numeric PMIDs we keep the existing outer Tooltip.
+                      if (isInternal) {
+                        return (
+                          <Box key={`${row.axis}-${String(pmid)}-${i}`} sx={{ display: 'inline-block' }}>
+                            <CitationToken
+                              value={pmid}
+                              size="small"
+                              variant="chip"
+                              tooltipOverride={cellSummary ? `${cellSummary} (modality: ${modality})` : undefined}
+                            />
+                          </Box>
+                        );
+                      }
+                      return (
+                        <Tooltip key={`${row.axis}-${String(pmid)}-${i}`} title={`From ${modality}`} placement="top" arrow>
+                          <Box sx={{ display: 'inline-block' }}>
+                            <CitationToken value={pmid} size="small" variant="chip" />
+                          </Box>
+                        </Tooltip>
+                      );
+                    })}
                     {allPmids.length > 6 ? (
                       <Typography variant="caption" color="text.secondary">+{allPmids.length - 6} more</Typography>
                     ) : null}
