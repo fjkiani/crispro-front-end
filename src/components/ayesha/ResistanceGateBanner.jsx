@@ -215,14 +215,22 @@ const ResistanceGateBanner = ({ data, levelKey }) => {
 
                                 {signals.length === 0 && (
                                     <Box sx={{ p: 2, width: '100%' }}>
-                                        {/* B9: Short honest statement instead of hardcoded medical narrative */}
+                                        {/* PR-F3: surface the empty-signal state honestly.
+                                            We DO NOT render a hardcoded medical caveat. The
+                                            previous version printed "Acquired resistance can
+                                            develop..." unconditionally, which is generic
+                                            prose not derived from any backend field. The
+                                            screening result itself (zero signals) is the
+                                            entire claim — anything else is FE invention. */}
                                         <Typography variant="body2" sx={{ color: '#4ade80', fontWeight: 600, mb: 0.5 }}>
                                             No intrinsic resistance signals detected by the screening model.
                                         </Typography>
-                                        <Typography variant="caption" sx={{ color: '#64748b', lineHeight: 1.6, display: 'block' }}>
-                                            Acquired resistance can develop during treatment — ongoing monitoring is recommended.
-                                        </Typography>
-                                        <SourceSlug source="resistance_gate.signals (local interpretation)" compact />
+                                        {(typeof data.resistance_probability === 'number' && !Number.isNaN(data.resistance_probability)) ? (
+                                            <Typography variant="caption" sx={{ color: '#64748b', lineHeight: 1.6, display: 'block' }}>
+                                                Screening probability: {(data.resistance_probability * 100).toFixed(1)}% &middot; risk level: {String(data.risk_level || '—')} &middot; status: {String(data.status || '—')}
+                                            </Typography>
+                                        ) : null}
+                                        <SourceSlug source="resistance_gate.signals" compact />
                                     </Box>
                                 )}
 

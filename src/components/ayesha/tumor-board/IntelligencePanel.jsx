@@ -18,6 +18,38 @@ const LEVEL_UNLOCK_MAP = {
     ccne1_expression: 'L3',
 };
 
+// Maps backend's human-readable `completeness.missing` strings (Title Case with
+// spaces) to LEVEL_UNLOCK_MAP keys (snake_case). Backend currently returns
+// e.g. "HRD score", "TMB score", "RNA expression data", "CA-125 lab values" —
+// none of which match the legacy snake_case keys above. This normalizer keeps
+// the legacy keys intact (so any internal callers still resolve) and adds a
+// best-effort lookup for the prod human-readable strings.
+const MISSING_LABEL_NORMALIZER = {
+    'HRD score': 'hrd_score',
+    'HRD status': 'hrd_status',
+    'TMB score': 'tmb',
+    'TMB status': 'tmb_status',
+    'Somatic mutations': 'somatic_mutations',
+    'SIG7 exposure': 'sig7_exposure',
+    'CA-125 lab values': 'ca125_series',
+    'CA-125 value': 'ca125_value',
+    'RNA expression data': 'rna_expression',
+    'CCNE1 expression': 'ccne1_expression',
+};
+
+function levelForMissingItem(label) {
+    if (label == null) return undefined;
+    // Try direct snake_case lookup first (legacy callers)
+    if (LEVEL_UNLOCK_MAP[label]) return LEVEL_UNLOCK_MAP[label];
+    // Try the explicit prod-label normalizer
+    const mapped = MISSING_LABEL_NORMALIZER[label];
+    if (mapped && LEVEL_UNLOCK_MAP[mapped]) return LEVEL_UNLOCK_MAP[mapped];
+    // Last-resort heuristic: lowercase + replace non-alphanumerics with underscore
+    const slug = String(label).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    if (LEVEL_UNLOCK_MAP[slug]) return LEVEL_UNLOCK_MAP[slug];
+    return undefined;
+}
+
 const LEVEL_BADGE_STYLE = {
     L0: { bgcolor: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.25)' },
     L1: { bgcolor: 'rgba(251,191,36,0.15)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.25)' },
@@ -99,7 +131,7 @@ export default function IntelligencePanel({ completeness, missing }) {
                                 </Typography>
                                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                                     {missing.slice(0, 8).map((m) => {
-                                        const lvl = LEVEL_UNLOCK_MAP[m];
+                                        const lvl = levelForMissingItem(m);
                                         return (
                                             <Box key={m} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                                 <Chip

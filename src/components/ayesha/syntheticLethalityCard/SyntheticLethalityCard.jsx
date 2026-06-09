@@ -120,14 +120,28 @@ export function SyntheticLethalityCard({ slData, data, onShowTrials, levelKey: l
   const [fullJsonOpen, setFullJsonOpen] = useState(false);
 
   const opportunity = useMemo(() => {
-    const ids = new Set(essential.map((p) => String(p?.pathway_id || '')).filter(Boolean));
-    const checkpointAxis = ids.has('ATR') || ids.has('WEE1');
-    const parpAxis = ids.has('HR') || ids.has('PARP');
+    // Derive axis presence flags from both `essential_pathways` (legacy
+    // contract) and the `matrix_axis` enum values on `recommended_drugs`
+    // (current backend contract). For AK, `essential_pathways` is empty in
+    // prod (see backend defect B-003) but `recommended_drugs` ships with
+    // `matrix_axis` populated, so axis flags must derive from both.
+    const pathwayIds = new Set(essential.map((p) => String(p?.pathway_id || '')).filter(Boolean));
+    const recAxes = new Set(recs.map((d) => String(d?.matrix_axis || '')).filter(Boolean));
+
+    const checkpointAxis = pathwayIds.has('ATR') || pathwayIds.has('WEE1') || recAxes.has('atr_wee1');
+    const parpAxis = pathwayIds.has('HR') || pathwayIds.has('PARP') || recAxes.has('parp_inhibitors');
+
+    // Cytidine + Immunotherapy axes (the manuscript-aligned axes that the
+    // legacy PI3K opportunity card slot now surfaces).
+    const cytidineAxis = recAxes.has('cytidine_analogs');
+    const immunotherapyAxis = recAxes.has('immunotherapy');
+
+    // Legacy PI3K pathway lookup — kept for backward-compat with any payload
+    // that ever ships PI3K_AKT_MTOR in essential_pathways. AK does not.
     const pi3kPathway =
       essential.find((p) => String(p?.pathway_name || '').toUpperCase() === 'PI3K_AKT_MTOR') ||
       essential.find((p) => String(p?.pathway_id || '').toUpperCase() === 'PI3K_AKT_MTOR') ||
       null;
-    const pi3kAxis = !!pi3kPathway;
 
     const checkpointMeta =
       essential.find((p) => p?.pathway_id === 'ATR' || p?.pathway_id === 'WEE1')?.essentiality_metadata || {};
@@ -137,29 +151,56 @@ export function SyntheticLethalityCard({ slData, data, onShowTrials, levelKey: l
     return {
       checkpointAxis,
       parpAxis,
-      pi3kAxis,
-      essentialIds: ids,
+      cytidineAxis,
+      immunotherapyAxis,
+      pathwayIds,
+      recAxes,
       checkpointDepMap: safeArray(checkpointMeta.depmap_lines),
       parpDepMap: safeArray(parpMeta.depmap_lines),
       pi3kPathway,
     };
-  }, [essential]);
+  }, [essential, recs]);
 
+  // Filter `recommended_drugs` by `matrix_axis` enum (current backend
+  // contract) rather than `target_pathway` prose. The backend now ships
+  // axis short codes (atr_wee1, parp_inhibitors, cytidine_analogs,
+  // immunotherapy) on `matrix_axis`; `target_pathway` holds long-form prose
+  // and was never a stable filter key. For backward compatibility, fall
+  // back to `target_pathway` short-code matching when `matrix_axis` is
+  // absent.
   const checkpointDrugs = useMemo(() => {
-    const allow = new Set(['ATR', 'WEE1']);
-    return recs.filter((d) => allow.has(String(d?.target_pathway || '')));
+    const axisAllow = new Set(['atr_wee1']);
+    const legacyAllow = new Set(['ATR', 'WEE1']);
+    return recs.filter((d) => {
+      const axis = String(d?.matrix_axis || '');
+      if (axis) return axisAllow.has(axis);
+      return legacyAllow.has(String(d?.target_pathway || ''));
+    });
   }, [recs]);
 
   const parpDrugs = useMemo(() => {
-    const allow = new Set(['HR', 'PARP']);
-    return recs.filter((d) => allow.has(String(d?.target_pathway || '')));
+    const axisAllow = new Set(['parp_inhibitors']);
+    const legacyAllow = new Set(['HR', 'PARP']);
+    return recs.filter((d) => {
+      const axis = String(d?.matrix_axis || '');
+      if (axis) return axisAllow.has(axis);
+      return legacyAllow.has(String(d?.target_pathway || ''));
+    });
   }, [recs]);
 
+  // The "PI3K" card slot now surfaces manuscript-aligned axes that don't
+  // have a dedicated card: cytidine_analogs (Validated SL therapeutic lever)
+  // and immunotherapy (Mechanistic candidate). The card title is dynamic
+  // (rendered inside SlPi3kOpportunityCard) based on which axes have drugs.
+  // Legacy fallback: PI3K/AKT/MTOR short codes on target_pathway.
   const pi3kDrugs = useMemo(() => {
-    const allow = new Set(['PI3K', 'AKT', 'MTOR', 'PI3K_AKT_MTOR']);
-    const matched = recs.filter((d) => allow.has(String(d?.target_pathway || '').toUpperCase()));
-    // B14: Don't fabricate drugs when recs is empty — only show real API data
-    return matched;
+    const axisAllow = new Set(['cytidine_analogs', 'immunotherapy']);
+    const legacyAllow = new Set(['PI3K', 'AKT', 'MTOR', 'PI3K_AKT_MTOR']);
+    return recs.filter((d) => {
+      const axis = String(d?.matrix_axis || '');
+      if (axis) return axisAllow.has(axis);
+      return legacyAllow.has(String(d?.target_pathway || '').toUpperCase());
+    });
   }, [recs]);
 
   const depmapLines = useMemo(() => {

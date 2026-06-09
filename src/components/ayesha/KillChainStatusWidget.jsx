@@ -239,7 +239,7 @@ export default function KillChainStatusWidget({ resistanceGate }) {
                 <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'action.hover', border: '1px solid', borderColor: 'divider', mb: 1.5 }}>
                     <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: 'Roboto Mono, monospace', display: 'block', lineHeight: 1.8 }}>
                         Source: {engineUsed || 'kill_chain_policy (local)'}<br />
-                        Policy: 2-of-3 (CA-125 + HRD + REPAIR_SHIFT)<br />
+                        Policy: {hasApiPolicy ? policyDescription : 'awaiting backend resistance_gate.policy_description (PR-B2)'}<br />
                         policy_ran: {String(policyRan)}<br />
                         conclusion_is_default: {String(conclusionDefault)}<br />
                         kill_chain_state: {killChainState ?? 'null'}<br />
