@@ -23,12 +23,17 @@ export function SlCheckpointOpportunityCard({
       </Box>
     );
   }
-  if (!hasCheckpointAxis) {
+  // B-003 widen: render the card if either the legacy `essential_pathways`
+  // flag is true OR there are drugs with `matrix_axis === 'atr_wee1'` in
+  // recommended_drugs. AK ships matrix_axis values without populating
+  // essential_pathways.
+  if (!hasCheckpointAxis && (!checkpointDrugs || checkpointDrugs.length === 0)) {
     return (
       <Box sx={{ p: 1.5, borderRadius: 2, border: '1px solid #e2e8f0', bgcolor: '#ffffff' }}>
         <Typography sx={{ fontWeight: 900 }}>Checkpoint-axis opportunity</Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-          Not present in this SL payload’s `essential_pathways`.
+          Not present in this SL payload (no ATR/WEE1 in essential_pathways and no
+          matching drugs in recommended_drugs).
         </Typography>
       </Box>
     );
