@@ -27,6 +27,7 @@ import ScoringBreakdown from './ScoringBreakdown';
 import { humanize } from '../../utils/drugRendering';
 import { drugToSlug } from '../../hooks/useDrugDetail';
 import TherapyFitExplainerAgent from './TherapyFitExplainerAgent';
+import { CitationToken } from './CitationToken';
 import { saveDossier } from '../../utils/dossierStore';
 
 
@@ -145,22 +146,17 @@ export default function DrugRankingPanel({ drugs = [], onViewDetails, context = 
               {/* Scoring Breakdown — 40/30/15/15 weights (expandable) */}
               <ScoringBreakdown drug={drug} />
 
-              {/* Citations (PMIDs) */}
+              {/* Citations (PMIDs) — rendered via CitationToken so non-numeric
+                  anchors like internal: / github: don't get templated into
+                  broken PubMed URLs. */}
               {citationPmids.length > 0 && (
-                <Box sx={{ mt: 1 }}>
+                <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 0.75 }}>
                   <Typography variant="caption" color="text.secondary">
-                    Citations: {citationPmids.slice(0, 3).map(pmid => (
-                      <a
-                        key={pmid}
-                        href={`https://pubmed.ncbi.nlm.nih.gov/${pmid}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ marginLeft: '8px', color: 'inherit' }}
-                      >
-                        PMID:{pmid}
-                      </a>
-                    ))}
+                    Citations:
                   </Typography>
+                  {citationPmids.slice(0, 3).map((pmid, i) => (
+                    <CitationToken key={`${String(pmid)}-${i}`} value={pmid} size="small" variant="inline" />
+                  ))}
                 </Box>
               )}
 

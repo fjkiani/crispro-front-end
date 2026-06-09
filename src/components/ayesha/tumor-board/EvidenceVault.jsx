@@ -66,6 +66,76 @@ export default function EvidenceVault({
                 </CardContent>
             </Card>
 
+            {/* Gold Standard Calibration — only renders when backend ships
+                synthetic_lethality.provenance.evidence_matrix.gold_standard_summary.
+                For AK, this is the 2185-char MBD4 + Cytidine Analogs calibration block.
+                Empty state when absent. */}
+            {(() => {
+                const goldStd = levelData?.synthetic_lethality?.provenance?.evidence_matrix?.gold_standard_summary;
+                if (typeof goldStd !== 'string' || goldStd.trim().length === 0) return null;
+                return (
+                    <Card sx={{ bgcolor: '#0f172a', border: '1px solid #1e293b', borderRadius: 3 }}>
+                        <CardContent>
+                            <Typography variant="overline" sx={{ color: '#64748b', fontWeight: 700, letterSpacing: 1.5, display: 'block', mb: 1 }}>
+                                Gold Standard Calibration
+                            </Typography>
+                            <Box
+                                component="pre"
+                                sx={{
+                                    color: '#cbd5e1',
+                                    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+                                    fontSize: '0.78rem',
+                                    whiteSpace: 'pre-wrap',
+                                    wordBreak: 'break-word',
+                                    m: 0,
+                                    p: 1.5,
+                                    bgcolor: '#1e293b',
+                                    border: '1px solid #334155',
+                                    borderRadius: 2,
+                                    maxHeight: 320,
+                                    overflow: 'auto',
+                                }}
+                            >
+                                {goldStd}
+                            </Box>
+                            <Typography variant="caption" sx={{ color: '#64748b', display: 'block', mt: 1, fontStyle: 'italic' }}>
+                                Source: synthetic_lethality.provenance.evidence_matrix.gold_standard_summary
+                            </Typography>
+                        </CardContent>
+                    </Card>
+                );
+            })()}
+
+            {/* Per-drug Evidence Manifests — summarises efficacy.drugs[*].evidence_manifest
+                presence. Surfaces honest counts rather than burying the data. */}
+            {(() => {
+                const drugs = safeArray(levelData?.efficacy?.drugs);
+                if (drugs.length === 0) return null;
+                const withManifest = drugs.filter((d) => d && d.evidence_manifest && typeof d.evidence_manifest === 'object' && Object.keys(d.evidence_manifest).length > 0);
+                const totalCitations = withManifest.reduce((acc, d) => {
+                    const cits = Array.isArray(d.evidence_manifest?.citations) ? d.evidence_manifest.citations.length : 0;
+                    return acc + cits;
+                }, 0);
+                return (
+                    <Card sx={{ bgcolor: '#0f172a', border: '1px solid #1e293b', borderRadius: 3 }}>
+                        <CardContent>
+                            <Typography variant="overline" sx={{ color: '#64748b', fontWeight: 700, letterSpacing: 1.5, display: 'block', mb: 1 }}>
+                                Evidence Manifests
+                            </Typography>
+                            {withManifest.length === 0 ? (
+                                <Typography variant="caption" sx={{ color: '#64748b', fontStyle: 'italic' }}>
+                                    No per-drug evidence_manifest payloads on this run.
+                                </Typography>
+                            ) : (
+                                <Typography variant="caption" sx={{ color: '#94a3b8', display: 'block' }}>
+                                    {withManifest.length} of {drugs.length} drugs ship an evidence_manifest. Total citations across manifests: {totalCitations}.
+                                </Typography>
+                            )}
+                        </CardContent>
+                    </Card>
+                );
+            })()}
+
             {/* Inputs Used */}
             <Card sx={{ bgcolor: '#0f172a', border: '1px solid #1e293b', borderRadius: 3 }}>
                 <CardContent>

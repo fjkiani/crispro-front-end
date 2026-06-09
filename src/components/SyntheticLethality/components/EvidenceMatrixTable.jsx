@@ -7,6 +7,7 @@ import {
 import ScienceIcon from '@mui/icons-material/Science';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
+import { CitationToken } from '../../ayesha/CitationToken';
 
 export function EvidenceMatrixTable({ matrix }) {
   if (!matrix || !matrix.rows || matrix.rows.length === 0) return null;
@@ -58,8 +59,28 @@ export function EvidenceMatrixTable({ matrix }) {
           </tr>
         </Box>
         <Box component="tbody">
-          {matrix.rows.map((row) => (
-            <tr key={row.axis} style={{ borderBottom: '1px solid #e2e8f0' }}>
+          {matrix.rows.map((row) => {
+            // Aggregate all pmids from each modality cell. De-dupe while
+            // preserving first-seen order so the row's evidence footer is
+            // honest about what was actually consulted.
+            const allPmids = [];
+            const seen = new Set();
+            const modalityKeys = ['crispr', 'expression', 'prism', 'gdsc', 'in_vitro', 'in_vivo', 'clinical'];
+            for (const k of modalityKeys) {
+              const cell = row[k];
+              if (!cell || !Array.isArray(cell.pmids)) continue;
+              for (const pmid of cell.pmids) {
+                const key = String(pmid);
+                if (!seen.has(key)) {
+                  seen.add(key);
+                  allPmids.push({ pmid, modality: k });
+                }
+              }
+            }
+            const colspan = 2 + modalityKeys.length;
+            return (
+            <React.Fragment key={row.axis}>
+            <tr style={{ borderBottom: allPmids.length > 0 ? 'none' : '1px solid #e2e8f0' }}>
               <Box component="td" sx={{ p: 1, maxWidth: 120 }}>
                 <Tooltip title={row.mechanism} placement="right" arrow>
                   <Typography variant="body2" sx={{ fontWeight: 900, cursor: 'help', display: 'inline-block', borderBottom: '1px dotted #94a3b8' }}>
@@ -101,7 +122,29 @@ export function EvidenceMatrixTable({ matrix }) {
                 );
               })}
             </tr>
-          ))}
+            {allPmids.length > 0 ? (
+              <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                <Box component="td" colSpan={colspan} sx={{ p: 1, bgcolor: '#fafafa', borderBottom: '1px solid #e2e8f0' }}>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 0.5 }}>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', mr: 0.5 }}>
+                      Evidence anchors:
+                    </Typography>
+                    {allPmids.slice(0, 6).map(({ pmid, modality }, i) => (
+                      <Tooltip key={`${row.axis}-${String(pmid)}-${i}`} title={`From ${modality}`} placement="top" arrow>
+                        <Box sx={{ display: 'inline-block' }}>
+                          <CitationToken value={pmid} size="small" variant="chip" />
+                        </Box>
+                      </Tooltip>
+                    ))}
+                    {allPmids.length > 6 ? (
+                      <Typography variant="caption" color="text.secondary">+{allPmids.length - 6} more</Typography>
+                    ) : null}
+                  </Box>
+                </Box>
+              </tr>
+            ) : null}
+            </React.Fragment>
+          );})}
         </Box>
       </Box>
     </Box>
