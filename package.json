@@ -4,9 +4,9 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
-    "build": "NODE_OPTIONS=--max-old-space-size=4096 vite build",
-    "build:render": "NODE_OPTIONS=--max-old-space-size=4096 vite build",
-    "build:production": "NODE_OPTIONS=--max-old-space-size=4096 vite build",
+    "build": "NODE_OPTIONS=--max-old-space-size=8192 vite build",
+    "build:render": "NODE_OPTIONS=--max-old-space-size=8192 vite build",
+    "build:production": "NODE_OPTIONS=--max-old-space-size=8192 vite build",
     "preview": "vite preview",
     "deploy": "yarn build && npx thirdweb@latest upload dist",
     "db:migrate": "node scripts/migrate.js",
