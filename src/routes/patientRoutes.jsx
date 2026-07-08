@@ -22,6 +22,7 @@ import AyeshaWeaponCompatibility from '../pages/ayesha/AyeshaWeaponCompatibility
 import AyeshaTestsUnlocks from '../pages/ayesha/AyeshaTestsUnlocks';
 import AyeshaHolisticScoring from '../pages/ayesha/AyeshaHolisticScoring';
 import PatientStrategyBoard from '../pages/ayesha/PatientStrategyBoard';
+import TumorBoardV3 from '../pages/ayesha/TumorBoardV3';
 import TestsPage from '../pages/ayesha/TestsPage';
 import PostDebulkingMRD from '../pages/ayesha/PostDebulkingMRD';
 import TrialReplaySandbox from '../components/ayesha/simulator/TrialReplaySandbox';
@@ -226,6 +227,16 @@ export const patientRoutes = [
     element={
       <PatientRoute>
         <PatientStrategyBoard />
+      </PatientRoute>
+    }
+  />
+  ,
+  <Route
+    key="ayesha-tumor-board-v3"
+    path="/ayesha/tumor-board/v3"
+    element={
+      <PatientRoute>
+        <TumorBoardV3 />
       </PatientRoute>
     }
   />
