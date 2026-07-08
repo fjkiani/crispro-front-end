@@ -284,6 +284,61 @@ export const moatNavigationItems = [
     color: '#8b5cf6', // Purple
     personas: ['oncologist', 'researcher']
   },
+  {
+    name: "pharma-dashboard",
+    label: "Brenus Dashboard",
+    shortLabel: "Brenus",
+    imgUrl: research,
+    link: '/pharma/dashboard',
+    description: 'Brenus intelligence hub - RAG chat, CEACAM5 dossier, fit-gap',
+    color: '#0279EE', // Phylo blue
+    tier: 'production',
+    personas: ['pharma']
+  },
+  {
+    name: "pharma-rag-chat",
+    label: "Brenus RAG",
+    shortLabel: "RAG",
+    imgUrl: research,
+    link: '/pharma/rag-chat',
+    description: 'Ask questions about Brenus BreAK CRC-001 and CrisPRO fit',
+    color: '#0279EE',
+    tier: 'production',
+    personas: ['pharma']
+  },
+  {
+    name: "pharma-ceacam5",
+    label: "CEACAM5 Dossier",
+    shortLabel: "CEACAM5",
+    imgUrl: records,
+    link: '/pharma/ceacam5',
+    description: 'CEACAM5 competitor dossier vs. tusamitamab, labetuzumab',
+    color: '#75A025', // Phylo green
+    tier: 'production',
+    personas: ['pharma']
+  },
+  {
+    name: "pharma-fit-gap",
+    label: "CrisPRO Fit-Gap",
+    shortLabel: "Fit-Gap",
+    imgUrl: records,
+    link: '/pharma/fit-gap',
+    description: 'CrisPRO capability mapping vs. Brenus asks',
+    color: '#FF9400', // Phylo orange
+    tier: 'production',
+    personas: ['pharma']
+  },
+  {
+    name: "hospital-tumor-board",
+    label: "Tumor Board",
+    shortLabel: "Board",
+    imgUrl: screening,
+    link: '/hospital/tumor-board',
+    description: 'Multi-disciplinary tumor board dossier viewer',
+    color: '#10b981',
+    tier: 'production',
+    personas: ['hospital', 'oncologist']
+  },
 ];
 
 /**

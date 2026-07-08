@@ -15,8 +15,8 @@ import DSRRequest from '../pages/DSRRequest';
 
 export const authRoutes = [
   // Public auth routes
-  <Route key="login" path="/login" element={<Login />} />,
-  <Route key="signup" path="/signup" element={<Signup />} />,
+  <Route key="login" path="/login/*" element={<Login />} />,
+  <Route key="signup" path="/signup/*" element={<Signup />} />,
   
   // Root redirect
   <Route key="root" path="/" element={<AuthRedirect />} />,

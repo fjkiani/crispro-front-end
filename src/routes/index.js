@@ -11,6 +11,8 @@ import { moatRoutes } from './moatRoutes';
 import { patientRoutes } from './patientRoutes';
 import { oncologistRoutes } from './oncologistRoutes';
 import { researchRoutes } from './researchRoutes';
+import { pharmaRoutes } from './pharmaRoutes';
+import { hospitalRoutes } from './hospitalRoutes';
 import { legacyRoutes } from './legacyRoutes';
 import { devRoutes } from './devRoutes';
 import { getExperimentalRoutes } from './experimentalRoutes';
@@ -29,6 +31,8 @@ export const getAllRoutes = (includeDev = import.meta.env.DEV, includeExperiment
     ...moatRoutes,        // MOAT Core - Primary focus
     ...patientRoutes,
     ...oncologistRoutes,  // Oncologist persona routes
+    ...hospitalRoutes,    // Hospital persona routes (Brenus tumor board)
+    ...pharmaRoutes,      // Pharma persona routes (Brenus BD/CEACAM5/RAG)
     ...researchRoutes,
     ...legacyRoutes,      // Legacy/Unclear routes - kept for backward compatibility
   ];
@@ -57,6 +61,8 @@ export const routeCategories = {
   moat: moatRoutes,
   patient: patientRoutes,
   oncologist: oncologistRoutes,
+  hospital: hospitalRoutes,
+  pharma: pharmaRoutes,
   research: researchRoutes,
   legacy: legacyRoutes,
   experimental: getExperimentalRoutes,

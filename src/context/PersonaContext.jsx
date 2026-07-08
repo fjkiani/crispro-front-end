@@ -11,7 +11,9 @@ export const usePersona = () => {
   return context;
 };
 
-// Persona access matrix - Finalized based on MOAT Frontend Design
+// -----------------------------------------------------------------------------
+// Persona access matrix — 5 personas (patient, oncologist, hospital, pharma, researcher)
+// -----------------------------------------------------------------------------
 const PERSONA_ACCESS = {
   patient: {
     pages: [
@@ -22,7 +24,7 @@ const PERSONA_ACCESS = {
       '/patient/tasks',
       '/home',
       '/profile',
-      // Allow patients to access research and other tools (read-only or limited)
+      // Read-only access to select tools
       '/research-intelligence',
       '/clinical-genomics',
       '/synthetic-lethality',
@@ -36,7 +38,6 @@ const PERSONA_ACCESS = {
       'view_own_care_plan',
       'view_own_trials',
       'basic_drug_efficacy',
-      // Patient can view their own complete care plan (read-only)
       'view_own_complete_care',
     ],
   },
@@ -60,7 +61,7 @@ const PERSONA_ACCESS = {
       '/radonc-co-pilot',
       '/universal-dossiers',
       '/universal-trial-intelligence',
-      '/universal-complete-care', // MOAT: Complete care plan for any patient
+      '/universal-complete-care',
       '/doctor-dashboard',
       '/workload-dashboard',
       '/screening-schedules',
@@ -72,6 +73,10 @@ const PERSONA_ACCESS = {
       '/profile',
       '/dashboard',
       '/sentinel',
+      // NEW: hospital tumor-board access shared with oncologist role
+      '/hospital/tumor-board',
+      '/hospital/onboarding',
+      '/hospital/patients',
     ],
     features: [
       'view_patient_profiles',
@@ -82,69 +87,104 @@ const PERSONA_ACCESS = {
       'dosing_guidance',
       'mutation_analysis',
       'agent_dashboard',
-      // MOAT: Oncologist has full access to orchestrator capabilities for their patients
-      'orchestrator_pipeline', // Full MOAT pipeline execution for patient care
-      'file_upload', // VCF/PDF/MAF upload for patient data
-      'status_polling', // Real-time pipeline progress tracking
-      'resistance_playbook', // Resistance prediction and management
-      'sae_features', // SAE feature display for mechanism understanding
-      'mechanism_fit', // Mechanism-based trial matching
-      'complete_care_plan', // Generate and view complete care plans
+      'orchestrator_pipeline',
+      'file_upload',
+      'status_polling',
+      'resistance_playbook',
+      'sae_features',
+      'mechanism_fit',
+      'complete_care_plan',
+      'tumor_board',
+    ],
+  },
+  hospital: {
+    // Hospital persona = same as oncologist plus tumor-board tooling.
+    // Kept as a distinct persona so navigation can be tailored.
+    pages: [
+      '/hospital/tumor-board',
+      '/hospital/onboarding',
+      '/hospital/patients',
+      '/universal-dossiers',
+      '/universal-trial-intelligence',
+      '/universal-complete-care',
+      '/patient/profile',
+      '/patient/onboarding',
+      '/ayesha-complete-care',
+      '/ayesha-trials',
+      '/doctor-dashboard',
+      '/workload-dashboard',
+      '/home',
+      '/profile',
+    ],
+    features: [
+      'view_patient_profiles',
+      'manage_patients',
+      'tumor_board',
+      'clinical_tools',
+      'treatment_planning',
+      'trial_matching',
+      'complete_care_plan',
+    ],
+  },
+  pharma: {
+    // Pharma persona: Brenus / partner BD, RAG chat, CEACAM5 dossier
+    pages: [
+      '/pharma/dashboard',
+      '/pharma/onboarding',
+      '/pharma/rag-chat',
+      '/pharma/ceacam5',
+      '/pharma/fit-gap',
+      '/profile',
+      '/home',
+    ],
+    features: [
+      'brenus_rag',
+      'ceacam5_dossier',
+      'fit_gap_analysis',
+      'pharma_bd_view',
     ],
   },
   researcher: {
-    pages: [
-      '*', // All pages (includes /orchestrator, /universal-complete-care, /universal-trial-intelligence)
-    ],
-    features: [
-      '*', // All features (includes all MOAT capabilities)
-    ],
+    pages: ['*'], // All pages
+    features: ['*'], // All features
   },
 };
 
-// Map database roles to personas
+// -----------------------------------------------------------------------------
+// Role → persona mapping (5 roles supported now)
+// -----------------------------------------------------------------------------
 const ROLE_TO_PERSONA = {
   patient: 'patient',
   clinician: 'oncologist',
   oncologist: 'oncologist',
+  hospital: 'hospital',
+  pharma: 'pharma',
   researcher: 'researcher',
-  admin: 'researcher', // Admins get researcher access
+  admin: 'researcher',
   enterprise: 'researcher',
 };
 
 export const PersonaProvider = ({ children }) => {
-  const { profile, user } = useAuth();
+  const { profile, user, loading, profileLoading } = useAuth();
 
-  // Determine persona from profile
   const persona = useMemo(() => {
-    if (!profile && !user) {
-      return null;
-    }
-
-    // Check profile persona field first
-    if (profile?.persona) {
-      return profile.persona;
-    }
-
-    // Fall back to role mapping
-    const role = profile?.role || user?.role || 'researcher';
-    return ROLE_TO_PERSONA[role] || 'researcher';
+    if (!profile && !user) return null;
+    // Priority: profile.role → user.role → user.metadata.role
+    const role =
+      (profile?.role || user?.role || user?.metadata?.role || '').toLowerCase();
+    return ROLE_TO_PERSONA[role] || 'patient';
   }, [profile, user]);
 
-  // Check if persona has access to a page
+  const personaLoading = Boolean(loading || profileLoading);
+
+  // ---- Access helpers -------------------------------------------------------
   const hasPageAccess = (pagePath) => {
     if (!persona) return false;
-
     const access = PERSONA_ACCESS[persona];
     if (!access) return false;
 
-    // Researcher has access to all pages
     if (access.pages.includes('*')) return true;
-
-    // Check exact match
     if (access.pages.includes(pagePath)) return true;
-
-    // Check prefix match (e.g., '/medical-records' matches '/medical-records/:id')
     return access.pages.some((allowedPage) => {
       if (allowedPage.endsWith('/*')) {
         const prefix = allowedPage.slice(0, -2);
@@ -154,62 +194,45 @@ export const PersonaProvider = ({ children }) => {
     });
   };
 
-  // Check if persona has access to a feature
   const hasFeatureAccess = (featureName) => {
     if (!persona) return false;
-
     const access = PERSONA_ACCESS[persona];
     if (!access) return false;
-
-    // Researcher has access to all features
     if (access.features.includes('*')) return true;
-
     return access.features.includes(featureName);
   };
 
-  // Get all accessible pages for current persona
   const getAccessiblePages = () => {
     if (!persona) return [];
-
     const access = PERSONA_ACCESS[persona];
     if (!access) return [];
-
-    if (access.pages.includes('*')) {
-      return ['*']; // All pages
-    }
-
+    if (access.pages.includes('*')) return ['*'];
     return access.pages;
   };
 
-  // Get all accessible features for current persona
   const getAccessibleFeatures = () => {
     if (!persona) return [];
-
     const access = PERSONA_ACCESS[persona];
     if (!access) return [];
-
-    if (access.features.includes('*')) {
-      return ['*']; // All features
-    }
-
+    if (access.features.includes('*')) return ['*'];
     return access.features;
   };
 
   const value = {
     persona,
+    personaLoading,
     hasPageAccess,
     hasFeatureAccess,
     getAccessiblePages,
     getAccessibleFeatures,
     isPatient: persona === 'patient',
     isOncologist: persona === 'oncologist',
+    isHospital: persona === 'hospital',
+    isPharma: persona === 'pharma',
     isResearcher: persona === 'researcher',
   };
 
-  return (
-    <PersonaContext.Provider value={value}>
-      {children}
-    </PersonaContext.Provider>
-  );
+  return <PersonaContext.Provider value={value}>{children}</PersonaContext.Provider>;
 };
 
+export default PersonaContext;

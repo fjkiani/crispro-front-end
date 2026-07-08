@@ -57,7 +57,7 @@ import { API_ROOT } from '../lib/apiConfig';
  * - Uses persona context for consistency
  */
 export default function PatientOnboarding() {
-  const { user, session } = useAuth();
+  const { user, session, getToken } = useAuth();
   const { loadPatientContext } = usePatient();
   const { persona, isPatient, isOncologist } = usePersona();
   const navigate = useNavigate();
@@ -99,13 +99,21 @@ export default function PatientOnboarding() {
     setLoading(true);
     setError(null);
 
-    if (!session?.access_token) {
-      setError('Not authenticated. Please log in first.');
-      setLoading(false);
-      return;
-    }
-
     try {
+      // Get Clerk token (async — replaces old session.access_token pattern)
+      let authToken = null;
+      if (typeof getToken === 'function') {
+        try { authToken = await getToken(); } catch (_) { authToken = null; }
+      }
+      if (!authToken && session?.access_token) {
+        // Fallback to legacy Supabase token during migration
+        authToken = session.access_token;
+      }
+      if (!authToken) {
+        setError('Not authenticated. Please log in first.');
+        setLoading(false);
+        return;
+      }
       // Build request body with optional biomarkers
       const requestBody = {
         full_name: formData.full_name,
@@ -123,10 +131,10 @@ export default function PatientOnboarding() {
         ...(formData.platinum_response && ['ovarian_cancer_hgs', 'ovarian_cancer_lgs', 'breast_cancer'].includes(formData.disease) && { platinum_response: formData.platinum_response })
       };
 
-      const response = await fetch(`${API_ROOT}/api/patient/profile`, {
-        method: 'PUT',
+      const response = await fetch(`${API_ROOT}/api/onboarding/patient`, {
+        method: 'POST',
         headers: {
-          'Authorization': `Bearer ${session.access_token}`,
+          'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(requestBody)
@@ -330,18 +338,11 @@ export default function PatientOnboarding() {
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                select
                 label="Disease Type"
-                value={formData.disease}
-                onChange={handleChange('disease')}
-                required
-              >
-                <MenuItem value="ovarian_cancer_hgs">Ovarian Cancer (HGS)</MenuItem>
-                <MenuItem value="ovarian_cancer_lgs">Ovarian Cancer (LGS)</MenuItem>
-                <MenuItem value="breast_cancer">Breast Cancer</MenuItem>
-                <MenuItem value="lung_cancer">Lung Cancer</MenuItem>
-                <MenuItem value="other">Other</MenuItem>
-              </TextField>
+                value="Ovarian Cancer (HGS)"
+                InputProps={{ readOnly: true }}
+                helperText="Locked to Ovarian HGS for this deployment (Ayesha program). Contact support for other diseases."
+              />
             </Grid>
 
             <Grid item xs={12} md={6}>

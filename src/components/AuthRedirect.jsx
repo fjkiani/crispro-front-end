@@ -1,12 +1,22 @@
 /**
- * AuthRedirect - Redirects to /login if not authenticated, or appropriate page if authenticated
- * 
+ * AuthRedirect - Redirect to /login if not authenticated, or to the persona
+ * landing page if authenticated. Extended for the 5-persona matrix
+ * (patient, oncologist, hospital, pharma, researcher).
+ *
  * Usage: Use as the element for the root route ("/")
  */
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { usePersona } from '../context/PersonaContext';
+
+const PERSONA_LANDING = {
+  patient: '/ayesha-trials',
+  oncologist: '/home',
+  hospital: '/hospital/tumor-board',
+  pharma: '/pharma/dashboard',
+  researcher: '/home',
+};
 
 const AuthRedirect = () => {
   const { authenticated, loading, profileLoading, profile } = useAuth();
@@ -25,21 +35,14 @@ const AuthRedirect = () => {
     );
   }
 
-  // If not authenticated, redirect to login
   if (!authenticated) {
     console.log('🔐 Not authenticated - redirecting to /login');
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  // If authenticated as patient (Ayesha), redirect to trials page
-  if (persona === 'patient' || profile?.role === 'patient') {
-    console.log('✅ Patient authenticated - redirecting to /ayesha-trials');
-    return <Navigate to="/ayesha-trials" replace />;
-  }
-
-  // Otherwise, redirect to home
-  console.log('✅ Authenticated - redirecting to /home');
-  return <Navigate to="/home" replace />;
+  const landing = PERSONA_LANDING[persona] || PERSONA_LANDING[profile?.role] || '/home';
+  console.log(`✅ Authenticated (persona=${persona || profile?.role || 'unknown'}) → ${landing}`);
+  return <Navigate to={landing} replace />;
 };
 
 export default AuthRedirect;
