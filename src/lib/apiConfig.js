@@ -19,12 +19,12 @@
 const LOCAL_BACKEND = 'http://localhost:8000';
 const LOCAL_WS = 'ws://localhost:8000';
 
-// Production backend — Railway deployment.
-// This constant is the authoritative fallback when VITE_API_ROOT is unset,
-// missing the https:// prefix, or still pointing at the old Render backend.
-// Update this when the Railway service URL changes.
-const PRODUCTION_BACKEND = 'https://crispro-backend-v2-production.up.railway.app';
-const PRODUCTION_WS = 'https://crispro-backend-v2-production.up.railway.app';
+// Production backend — Render deployment (crispro-backend-v2.onrender.com).
+// Railway project b8b59448-403c-4b89-96f2-eede807ac867 was the original
+// target but the generated domain returns 404 as of 2026-07-08. Update
+// PRODUCTION_BACKEND back to the Railway URL once it is confirmed live.
+const PRODUCTION_BACKEND = 'https://crispro-backend-v2.onrender.com';
+const PRODUCTION_WS = 'https://crispro-backend-v2.onrender.com';
 
 const _rawApi = (import.meta.env.VITE_API_ROOT || '').trim();
 const _rawWs = (import.meta.env.VITE_WS_ROOT || '').trim();
@@ -49,9 +49,9 @@ function isLoopbackUrl(url) {
   }
 }
 
-/** True when URL points at the old Render backend (no longer the active backend). */
-function isStaleRenderBackend(url) {
-  return url.includes('crispro-backend-v2.onrender.com');
+/** True when URL points at a known-dead backend (currently the Railway URL — see .env.production). */
+function isStaleBackend(url) {
+  return url.includes('crispro-backend-v2-production.up.railway.app');
 }
 
 const explicitApi = normaliseUrl(_rawApi);
@@ -65,12 +65,12 @@ export const API_ROOT = import.meta.env.DEV
   ? !explicitApi || isLoopbackUrl(explicitApi)
     ? ''
     : explicitApi
-  : explicitApi && !isLoopbackUrl(explicitApi) && !isStaleRenderBackend(explicitApi)
+  : explicitApi && !isLoopbackUrl(explicitApi) && !isStaleBackend(explicitApi)
     ? explicitApi
     : PRODUCTION_BACKEND;
 
 export const WS_ROOT =
-  explicitWs && !isLoopbackUrl(explicitWs) && !isStaleRenderBackend(explicitWs)
+  explicitWs && !isLoopbackUrl(explicitWs) && !isStaleBackend(explicitWs)
     ? explicitWs
     : import.meta.env.DEV
       ? LOCAL_WS
