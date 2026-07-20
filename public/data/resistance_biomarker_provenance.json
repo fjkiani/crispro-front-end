@@ -32,7 +32,7 @@
       "independent_of_TCGA": true
     },
     "ctdna_reference": {
-      "study": "Leandersson 2026 (HGSOC)",
+      "study": "Paracchini 2026 (HGSOC)",
       "n": 167,
       "reproduced": true,
       "source": "crispro publications/09-ctdna",
@@ -928,7 +928,7 @@
     "RES-OV-P0-006_ctdna": {
       "status": "CLOSED \u2014 WIRED_PROGNOSTIC_ONLY_V1",
       "contract": "surfaces ctDNA prognostic tier to clinician; structurally excluded from resistance probability & drug routing (detected=False,confidence=0.0 filtered by engine.py:102 + aggregation.py:62-63)",
-      "reference": "Leandersson 2026 reproduced n=167"
+      "reference": "Paracchini 2026 reproduced n=167"
     },
     "RES-OV-P0-009_kelim_signal6": {
       "status": "CLOSED \u2014 reads kelim_obj.k",

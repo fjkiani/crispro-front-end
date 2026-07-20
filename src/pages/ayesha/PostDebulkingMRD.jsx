@@ -6,7 +6,7 @@
  * Shows:
  *  1. Patient's current MRD status (panel proxy or sWGS if available)
  *  2. What tests she needs + why (ordered by clinical leverage)
- *  3. Population context from Leandersson/MITO16a publication data
+ *  3. Population context from Paracchini/MITO16a publication data
  *  4. Kill chain integration status — how MRD connects to resistance detection
  *  5. Honest "what we have vs what we need" inventory
  */
@@ -177,7 +177,7 @@ const API_BASE = API_ROOT;
 // Fallback data if API is unavailable
 const FALLBACK_COHORT = {
     n_patients: 167,
-    source: 'Leandersson et al. (MITO16a)',
+    source: 'Paracchini et al. (MITO16a)',
     group_survival: {
         group_0: { count: 124, median_pfs_months: 21.9, median_os_months: 29.5 },
         group_1: { count: 27, median_pfs_months: 16.3, median_os_months: 27.5 },
@@ -221,7 +221,7 @@ const PostDebulkingMRD = () => {
     };
     const totalPatients = cohortSummary?.n_patients || 167;
     const cutoffs = cohortSummary?.cutoffs || { tf_pct: 15.08, pf: 0.1659 };
-    const source = cohortSummary?.source || 'Leandersson et al. (MITO16a)';
+    const source = cohortSummary?.source || 'Paracchini et al. (MITO16a)';
 
     return (
         <Box sx={{ minHeight: '100vh', bgcolor: DARK_BG, color: TEXT_BRIGHT, p: { xs: 2, md: 4 } }}>
