@@ -1,5 +1,6 @@
 {
-  "registry_version": "2.0",
+  "schema_version": "resistance_biomarker_provenance.v1",
+  "registry_version": "3.0",
   "generated_at": "2026-07-20T09:21:30.689957+00:00",
   "honesty_boundary": "No component labeled 'clinically validated' (regulatory term of art). Each component carries its strongest HONEST earned tier from real outcome-linked cohorts. 'COHORT_VALIDATED_RUO' requires EPV>=10 AND CI excluding None in >=1 endpoint. 'COHORT_TESTED_NULL' = tested on a real cohort, no significant association (honest, evidence-backed). 'BORDERLINE_RUO' = 5<=exposed<10 (underpowered). 'INSUFFICIENT_EVENTS' = <5 exposed. 'DISCOVERY_ONLY' (5.3 models) = OOF AUC 95% CI spans 0.5.",
   "tier_ladder": [
@@ -59,40 +60,23 @@
       }
     }
   },
-  "plco_anchor_rule_LOCKED": {
-    "exam_attempted": "result IN (1,2,3,4) OR level/days present",
-    "exam_completed_ca125": "level IS NOT NULL AND days IS NOT NULL",
-    "exam_completed_tvu": "days IS NOT NULL",
-    "not_done_slot": "result IN (8,9)  -- EXCLUDE from exam denominators",
-    "kinetic_anchor": "require assay + days; NEVER use codes 8/9 as timepoints",
-    "series_inflation_verdict": "scheduled/missing-year slot expansion, NOT duplication (DISTINCT(plco_id,timepoint)=total_rows; zero duplicate keys)"
-  },
-  "genes_52": {
-    "CCNE1": {
-      "earned_tier": "COHORT_VALIDATED_RUO",
-      "somatic_channel": "amp_CCNE1",
-      "somatic_tier": "COHORT_VALIDATED_RUO",
+  "genes": [
+    {
+      "gene": "CCNE1",
+      "earned_tier": "EXTERNALLY_VALIDATED_RUO",
+      "tier_rank": 7,
+      "cohort": "16 independent curatedOV cohorts (meta)",
       "n_exposed": 110,
-      "os_HR": 1.508,
-      "os_CI": [
-        1.169,
-        1.944
-      ],
-      "os_p": 0.0015,
-      "pfs_HR": 1.359,
-      "pfs_CI": [
-        1.07,
-        1.727
-      ],
-      "pfs_p": 0.0119,
-      "expr_tier": "EXPRESSION_REPLICATES_DIRECTION_RUO",
-      "expr_OR_per_SD": 1.215,
-      "expr_OR_CI": [
-        0.767,
-        1.926
-      ],
-      "expr_AUROC": 0.547,
-      "expr_p": 0.4067,
+      "headline": {
+        "metric": "OS HR",
+        "value": 1.508,
+        "ci": [
+          1.169,
+          1.944
+        ],
+        "p": 0.0015,
+        "endpoint": "overall survival"
+      },
       "external_replication": {
         "channel": "expression (z-scored per cohort) vs OS",
         "n_independent_cohorts": 16,
@@ -108,196 +92,40 @@
         "verdict": "EXPRESSION_CHANNEL_ONLY_REPLICATES_DIRECTION",
         "note": "CNA-amplification channel (the validated model) CANNOT be externally replicated in curatedOV (no CNA data). Expression channel meta reported separately.",
         "caveat": "Expression channel replicates in direction; validated CNA-amplification channel NOT externally replicable in curatedOV (no CNA data)."
-      }
-    },
-    "NF1": {
-      "earned_tier": "COHORT_TESTED_NULL",
-      "somatic_channel": "mut_NF1",
-      "somatic_tier": "COHORT_TESTED_NULL",
-      "n_exposed": 30,
-      "os_HR": 1.013,
-      "os_CI": [
-        0.613,
-        1.674
-      ],
-      "os_p": 0.9609,
-      "pfs_HR": 0.819,
-      "pfs_CI": [
-        0.516,
-        1.298
-      ],
-      "pfs_p": 0.3948,
-      "expr_tier": "COHORT_TESTED_NULL",
-      "expr_OR_per_SD": 1.039,
-      "expr_OR_CI": [
-        0.659,
-        1.636
-      ],
-      "expr_AUROC": 0.524,
-      "expr_p": 0.87,
-      "pooled_expr_os_retest": {
-        "channel": "expression (z-scored per cohort) vs OS, pooled DL random-effects",
-        "n_cohorts": 16,
-        "total_n": 2529,
-        "total_OS_events": 1339,
-        "pooled_HR_per_SD": 1.077,
+      },
+      "pooled_expr_os_retest": null,
+      "survival_outcome": {
+        "endpoint": "OS (overall survival), per-SD z-scored expression, univariable Cox",
+        "pooled_HR_per_SD": 1.128,
         "pooled_CI": [
-          1.001,
-          1.158
+          1.0605,
+          1.1999
         ],
-        "pooled_p": 0.045486432663611964,
-        "p_bh_fdr": 0.1408,
-        "I2_pct": 34.0,
-        "verdict": "SIG_UNADJ_ONLY(FDR_ns)",
-        "note": "Expression-channel vs OS across independent cohorts (z-scored per cohort, DL random-effects). This is PROGNOSTIC (OS) evidence for the expression readout, NOT platinum-resistance-mutation validation. EPV shown = pooled OS events (well-powered for OS); it is NOT resistance-event-per-variable.",
-        "fdr_decision": "nominal p<0.05 but BH-FDR q>=0.05 -> NO upgrade (honest)"
-      }
-    },
-    "TP53": {
-      "earned_tier": "COHORT_TESTED_NULL",
-      "somatic_channel": "mut_TP53",
-      "somatic_tier": "COHORT_TESTED_NULL",
-      "n_exposed": 370,
-      "os_HR": 1.023,
-      "os_CI": [
-        0.822,
-        1.273
-      ],
-      "os_p": 0.8391,
-      "pfs_HR": 1.079,
-      "pfs_CI": [
-        0.883,
-        1.319
-      ],
-      "pfs_p": 0.455,
-      "expr_tier": "NOT_TESTED",
-      "expr_OR_per_SD": null,
-      "expr_OR_CI": null,
-      "expr_AUROC": null,
-      "expr_p": null,
-      "pooled_expr_os_retest": {
-        "channel": "expression (z-scored per cohort) vs OS, pooled DL random-effects",
-        "n_cohorts": 17,
-        "total_n": 2631,
-        "total_OS_events": 1395,
-        "pooled_HR_per_SD": 0.961,
-        "pooled_CI": [
-          0.911,
-          1.013
-        ],
-        "pooled_p": 0.13581106972011736,
-        "p_bh_fdr": 0.247,
+        "p_bh_fdr": 0.0009905858698777692,
         "I2_pct": 0.0,
-        "verdict": "COHORT_TESTED_NULL",
-        "note": "Expression-channel vs OS across independent cohorts (z-scored per cohort, DL random-effects). This is PROGNOSTIC (OS) evidence for the expression readout, NOT platinum-resistance-mutation validation. EPV shown = pooled OS events (well-powered for OS); it is NOT resistance-event-per-variable."
+        "n_independent_cohorts": 16,
+        "mean_c_index": 0.5461,
+        "ph_checked": true,
+        "verdict": "OUTCOME_VALIDATED__EXTERNALLY_VALIDATED_RUO",
+        "meta_method": "DerSimonian-Laird random-effects; TCGA excluded from independent meta"
       }
     },
-    "CDK12": {
-      "earned_tier": "COHORT_TESTED_NULL",
-      "somatic_channel": "mut_CDK12",
-      "somatic_tier": "COHORT_TESTED_NULL",
-      "n_exposed": 19,
-      "os_HR": 1.143,
-      "os_CI": [
-        0.656,
-        1.991
-      ],
-      "os_p": 0.6372,
-      "pfs_HR": 1.156,
-      "pfs_CI": [
-        0.678,
-        1.97
-      ],
-      "pfs_p": 0.5951,
-      "expr_tier": "NOT_TESTED",
-      "expr_OR_per_SD": null,
-      "expr_OR_CI": null,
-      "expr_AUROC": null,
-      "expr_p": null,
-      "pooled_expr_os_retest": {
-        "channel": "expression (z-scored per cohort) vs OS, pooled DL random-effects",
-        "n_cohorts": 16,
-        "total_n": 2529,
-        "total_OS_events": 1339,
-        "pooled_HR_per_SD": 0.988,
-        "pooled_CI": [
-          0.924,
-          1.056
-        ],
-        "pooled_p": 0.7166769662544987,
-        "p_bh_fdr": 0.8269,
-        "I2_pct": 27.0,
-        "verdict": "COHORT_TESTED_NULL",
-        "note": "Expression-channel vs OS across independent cohorts (z-scored per cohort, DL random-effects). This is PROGNOSTIC (OS) evidence for the expression readout, NOT platinum-resistance-mutation validation. EPV shown = pooled OS events (well-powered for OS); it is NOT resistance-event-per-variable."
-      }
-    },
-    "BRCA1": {
-      "earned_tier": "COHORT_TESTED_NULL",
-      "somatic_channel": "mut_BRCA1",
-      "somatic_tier": "COHORT_TESTED_NULL",
-      "n_exposed": 17,
-      "os_HR": 0.569,
-      "os_CI": [
-        0.212,
-        1.526
-      ],
-      "os_p": 0.2627,
-      "pfs_HR": 0.792,
-      "pfs_CI": [
-        0.409,
-        1.534
-      ],
-      "pfs_p": 0.4897,
-      "expr_tier": "COHORT_TESTED_NULL",
-      "expr_OR_per_SD": 0.848,
-      "expr_OR_CI": [
-        0.536,
-        1.341
-      ],
-      "expr_AUROC": 0.542,
-      "expr_p": 0.4806,
-      "pooled_expr_os_retest": {
-        "channel": "expression (z-scored per cohort) vs OS, pooled DL random-effects",
-        "n_cohorts": 18,
-        "total_n": 2752,
-        "total_OS_events": 1491,
-        "pooled_HR_per_SD": 1.039,
-        "pooled_CI": [
-          0.987,
-          1.093
-        ],
-        "pooled_p": 0.14819706279046052,
-        "p_bh_fdr": 0.247,
-        "I2_pct": 0.0,
-        "verdict": "COHORT_TESTED_NULL",
-        "note": "Expression-channel vs OS across independent cohorts (z-scored per cohort, DL random-effects). This is PROGNOSTIC (OS) evidence for the expression readout, NOT platinum-resistance-mutation validation. EPV shown = pooled OS events (well-powered for OS); it is NOT resistance-event-per-variable."
-      }
-    },
-    "BRCA2": {
-      "earned_tier": "COHORT_VALIDATED_RUO",
-      "somatic_channel": "mut_BRCA2",
-      "somatic_tier": "COHORT_VALIDATED_RUO",
+    {
+      "gene": "BRCA2",
+      "earned_tier": "EXTERNALLY_VALIDATED_RUO",
+      "tier_rank": 7,
+      "cohort": "18 independent curatedOV cohorts (meta)",
       "n_exposed": 15,
-      "os_HR": 0.416,
-      "os_CI": [
-        0.196,
-        0.881
-      ],
-      "os_p": 0.0219,
-      "pfs_HR": 0.356,
-      "pfs_CI": [
-        0.168,
-        0.753
-      ],
-      "pfs_p": 0.0069,
-      "expr_tier": "COHORT_TESTED_NULL",
-      "expr_OR_per_SD": 0.996,
-      "expr_OR_CI": [
-        0.632,
-        1.569
-      ],
-      "expr_AUROC": 0.509,
-      "expr_p": 0.9865,
+      "headline": {
+        "metric": "OS HR",
+        "value": 0.416,
+        "ci": [
+          0.196,
+          0.881
+        ],
+        "p": 0.0219,
+        "endpoint": "overall survival"
+      },
       "external_replication": {
         "channel": "expression (z-scored per cohort) vs OS",
         "n_independent_cohorts": 18,
@@ -313,117 +141,41 @@
         "verdict": "EXPRESSION_CHANNEL_ONLY_DIFFERENT_OR_NULL",
         "note": "Validated model = BRCA2 MUTATION (protective, HR 0.416). curatedOV has EXPRESSION only. Expression meta HR>1 (opposite direction) = different biology, NOT a replication of the mutation model. Mutation-channel external replication requires a mutation-annotated HGSOC cohort (not in curatedOV).",
         "caveat": "Expression meta direction OPPOSITE to validated MUTATION model (protective). NOT a replication of the mutation model."
-      }
-    },
-    "PALB2": {
-      "earned_tier": "BORDERLINE_RUO",
-      "somatic_channel": "mut_PALB2",
-      "somatic_tier": "BORDERLINE_RUO",
-      "n_exposed": 5,
-      "os_HR": 1.025,
-      "os_CI": [
-        0.382,
-        2.748
-      ],
-      "os_p": 0.9616,
-      "pfs_HR": 0.917,
-      "pfs_CI": [
-        0.294,
-        2.858
-      ],
-      "pfs_p": 0.8809,
-      "expr_tier": "COHORT_TESTED_NULL",
-      "expr_OR_per_SD": 1.053,
-      "expr_OR_CI": [
-        0.668,
-        1.66
-      ],
-      "expr_AUROC": 0.527,
-      "expr_p": 0.824,
-      "pooled_expr_os_retest": {
-        "channel": "expression (z-scored per cohort) vs OS, pooled DL random-effects",
-        "n_cohorts": 17,
-        "total_n": 2649,
-        "total_OS_events": 1434,
-        "pooled_HR_per_SD": 0.935,
+      },
+      "pooled_expr_os_retest": null,
+      "survival_outcome": {
+        "endpoint": "OS (overall survival), per-SD z-scored expression, univariable Cox",
+        "pooled_HR_per_SD": 1.0949,
         "pooled_CI": [
-          0.872,
-          1.002
+          1.0307,
+          1.1631
         ],
-        "pooled_p": 0.05630650298587758,
-        "p_bh_fdr": 0.1408,
-        "I2_pct": 35.6,
-        "verdict": "COHORT_TESTED_NULL",
-        "note": "Expression-channel vs OS across independent cohorts (z-scored per cohort, DL random-effects). This is PROGNOSTIC (OS) evidence for the expression readout, NOT platinum-resistance-mutation validation. EPV shown = pooled OS events (well-powered for OS); it is NOT resistance-event-per-variable."
-      }
-    },
-    "PTEN": {
-      "earned_tier": "BORDERLINE_RUO",
-      "somatic_channel": "mut_PTEN",
-      "somatic_tier": "BORDERLINE_RUO",
-      "n_exposed": 7,
-      "os_HR": 1.496,
-      "os_CI": [
-        0.615,
-        3.637
-      ],
-      "os_p": 0.3741,
-      "pfs_HR": 0.832,
-      "pfs_CI": [
-        0.31,
-        2.232
-      ],
-      "pfs_p": 0.7142,
-      "expr_tier": "COHORT_TESTED_NULL",
-      "expr_OR_per_SD": 1.111,
-      "expr_OR_CI": [
-        0.698,
-        1.767
-      ],
-      "expr_AUROC": 0.507,
-      "expr_p": 0.6582,
-      "pooled_expr_os_retest": {
-        "channel": "expression (z-scored per cohort) vs OS, pooled DL random-effects",
-        "n_cohorts": 11,
-        "total_n": 1505,
-        "total_OS_events": 755,
-        "pooled_HR_per_SD": 1.006,
-        "pooled_CI": [
-          0.939,
-          1.077
-        ],
-        "pooled_p": 0.8724847293622591,
-        "p_bh_fdr": 0.9348,
+        "p_bh_fdr": 0.01465817467451086,
         "I2_pct": 0.0,
-        "verdict": "COHORT_TESTED_NULL",
-        "note": "Expression-channel vs OS across independent cohorts (z-scored per cohort, DL random-effects). This is PROGNOSTIC (OS) evidence for the expression readout, NOT platinum-resistance-mutation validation. EPV shown = pooled OS events (well-powered for OS); it is NOT resistance-event-per-variable."
+        "n_independent_cohorts": 16,
+        "mean_c_index": 0.5327,
+        "ph_checked": true,
+        "verdict": "OUTCOME_VALIDATED__EXTERNALLY_VALIDATED_RUO",
+        "meta_method": "DerSimonian-Laird random-effects; TCGA excluded from independent meta"
       }
     },
-    "KRAS": {
-      "earned_tier": "COHORT_VALIDATED_RUO",
-      "somatic_channel": "mut_KRAS",
-      "somatic_tier": "BORDERLINE_RUO",
+    {
+      "gene": "KRAS",
+      "earned_tier": "EXTERNALLY_VALIDATED_RUO",
+      "tier_rank": 7,
+      "cohort": "ov_tcga_pan_can_atlas_2018 (n=585)",
       "n_exposed": 6,
-      "os_HR": 1.109,
-      "os_CI": [
-        0.413,
-        2.975
-      ],
-      "os_p": 0.8371,
-      "pfs_HR": 0.946,
-      "pfs_CI": [
-        0.353,
-        2.536
-      ],
-      "pfs_p": 0.9126,
-      "expr_tier": "COHORT_VALIDATED_RUO",
-      "expr_OR_per_SD": 1.411,
-      "expr_OR_CI": [
-        0.874,
-        2.277
-      ],
-      "expr_AUROC": 0.605,
-      "expr_p": 0.1591,
+      "headline": {
+        "metric": "OS HR",
+        "value": 1.109,
+        "ci": [
+          0.413,
+          2.975
+        ],
+        "p": 0.8371,
+        "endpoint": "overall survival"
+      },
+      "external_replication": null,
       "pooled_expr_os_retest": {
         "channel": "expression (z-scored per cohort) vs OS, pooled DL random-effects",
         "n_cohorts": 16,
@@ -440,33 +192,186 @@
         "verdict": "COHORT_VALIDATED_RUO",
         "note": "Expression-channel vs OS across independent cohorts (z-scored per cohort, DL random-effects). This is PROGNOSTIC (OS) evidence for the expression readout, NOT platinum-resistance-mutation validation. EPV shown = pooled OS events (well-powered for OS); it is NOT resistance-event-per-variable."
       },
-      "upgrade_note": "Upgraded from BORDERLINE_RUO: expression/OS pooled meta HR/SD 1.124 [1.060,1.191], FDR q=0.0013, 16 cohorts, 0/16 PH violations. NOTE: this validates KRAS EXPRESSION as prognostic for OS, distinct from the (still-borderline, n=5) KRAS-mutation resistance channel."
+      "survival_outcome": {
+        "endpoint": "OS (overall survival), per-SD z-scored expression, univariable Cox",
+        "pooled_HR_per_SD": 1.1202,
+        "pooled_CI": [
+          1.0371,
+          1.2099
+        ],
+        "p_bh_fdr": 0.01465817467451086,
+        "I2_pct": 17.5,
+        "n_independent_cohorts": 14,
+        "mean_c_index": 0.545,
+        "ph_checked": true,
+        "verdict": "OUTCOME_VALIDATED__EXTERNALLY_VALIDATED_RUO",
+        "meta_method": "DerSimonian-Laird random-effects; TCGA excluded from independent meta"
+      }
     },
-    "NRAS": {
+    {
+      "gene": "MFAP4",
+      "earned_tier": "EXTERNALLY_VALIDATED_RUO",
+      "tier_rank": 7,
+      "cohort": "17 independent curatedOV cohorts (meta)",
+      "n_exposed": null,
+      "headline": {
+        "metric": "expr OR/SD",
+        "value": 1.915,
+        "ci": [
+          1.134,
+          3.236
+        ],
+        "p": 0.0152,
+        "auroc": 0.684,
+        "endpoint": "platinum resistance"
+      },
+      "external_replication": {
+        "channel": "expression (z-scored per cohort) vs OS",
+        "n_independent_cohorts": 17,
+        "pooled_HR_per_SD": 1.214,
+        "pooled_CI": [
+          1.153,
+          1.277
+        ],
+        "pooled_p": 1.1723955140041653e-13,
+        "I2_pct": 0.0,
+        "model": "DerSimonian-Laird random-effects",
+        "n_cohorts_CI_excludes_null": 7,
+        "verdict": "EXTERNALLY_VALIDATED_RUO",
+        "note": "Fit on GSE63885 (RNA); all curatedOV cohorts independent. High expr -> worse outcome expected."
+      },
+      "pooled_expr_os_retest": null,
+      "survival_outcome": {
+        "endpoint": "OS (overall survival), per-SD z-scored expression, univariable Cox",
+        "pooled_HR_per_SD": 1.2263,
+        "pooled_CI": [
+          1.154,
+          1.3031
+        ],
+        "p_bh_fdr": 6.958233988996199e-10,
+        "I2_pct": 0.0,
+        "n_independent_cohorts": 15,
+        "mean_c_index": 0.5552,
+        "ph_checked": true,
+        "verdict": "OUTCOME_VALIDATED__EXTERNALLY_VALIDATED_RUO",
+        "meta_method": "DerSimonian-Laird random-effects; TCGA excluded from independent meta"
+      }
+    },
+    {
+      "gene": "PALB2",
       "earned_tier": "BORDERLINE_RUO",
-      "somatic_channel": "mut_NRAS",
-      "somatic_tier": "BORDERLINE_RUO",
+      "tier_rank": 4,
+      "cohort": "ov_tcga_pan_can_atlas_2018 (n=585)",
       "n_exposed": 5,
-      "os_HR": 0.605,
-      "os_CI": [
-        0.151,
-        2.43
-      ],
-      "os_p": 0.4787,
-      "pfs_HR": 0.451,
-      "pfs_CI": [
-        0.112,
-        1.811
-      ],
-      "pfs_p": 0.2615,
-      "expr_tier": "COHORT_TESTED_NULL",
-      "expr_OR_per_SD": 1.143,
-      "expr_OR_CI": [
-        0.721,
-        1.813
-      ],
-      "expr_AUROC": 0.546,
-      "expr_p": 0.5689,
+      "headline": {
+        "metric": "OS HR",
+        "value": 1.025,
+        "ci": [
+          0.382,
+          2.748
+        ],
+        "p": 0.9616,
+        "endpoint": "overall survival"
+      },
+      "external_replication": null,
+      "pooled_expr_os_retest": {
+        "channel": "expression (z-scored per cohort) vs OS, pooled DL random-effects",
+        "n_cohorts": 17,
+        "total_n": 2649,
+        "total_OS_events": 1434,
+        "pooled_HR_per_SD": 0.935,
+        "pooled_CI": [
+          0.872,
+          1.002
+        ],
+        "pooled_p": 0.05630650298587758,
+        "p_bh_fdr": 0.1408,
+        "I2_pct": 35.6,
+        "verdict": "COHORT_TESTED_NULL",
+        "note": "Expression-channel vs OS across independent cohorts (z-scored per cohort, DL random-effects). This is PROGNOSTIC (OS) evidence for the expression readout, NOT platinum-resistance-mutation validation. EPV shown = pooled OS events (well-powered for OS); it is NOT resistance-event-per-variable."
+      },
+      "survival_outcome": {
+        "endpoint": "OS (overall survival), per-SD z-scored expression, univariable Cox",
+        "pooled_HR_per_SD": 0.955,
+        "pooled_CI": [
+          0.8829,
+          1.033
+        ],
+        "p_bh_fdr": 0.34162496336249015,
+        "I2_pct": 32.4,
+        "n_independent_cohorts": 15,
+        "mean_c_index": 0.535,
+        "ph_checked": true,
+        "verdict": "OUTCOME_NULL",
+        "meta_method": "DerSimonian-Laird random-effects; TCGA excluded from independent meta"
+      }
+    },
+    {
+      "gene": "PTEN",
+      "earned_tier": "BORDERLINE_RUO",
+      "tier_rank": 4,
+      "cohort": "ov_tcga_pan_can_atlas_2018 (n=585)",
+      "n_exposed": 7,
+      "headline": {
+        "metric": "OS HR",
+        "value": 1.496,
+        "ci": [
+          0.615,
+          3.637
+        ],
+        "p": 0.3741,
+        "endpoint": "overall survival"
+      },
+      "external_replication": null,
+      "pooled_expr_os_retest": {
+        "channel": "expression (z-scored per cohort) vs OS, pooled DL random-effects",
+        "n_cohorts": 11,
+        "total_n": 1505,
+        "total_OS_events": 755,
+        "pooled_HR_per_SD": 1.006,
+        "pooled_CI": [
+          0.939,
+          1.077
+        ],
+        "pooled_p": 0.8724847293622591,
+        "p_bh_fdr": 0.9348,
+        "I2_pct": 0.0,
+        "verdict": "COHORT_TESTED_NULL",
+        "note": "Expression-channel vs OS across independent cohorts (z-scored per cohort, DL random-effects). This is PROGNOSTIC (OS) evidence for the expression readout, NOT platinum-resistance-mutation validation. EPV shown = pooled OS events (well-powered for OS); it is NOT resistance-event-per-variable."
+      },
+      "survival_outcome": {
+        "endpoint": "OS (overall survival), per-SD z-scored expression, univariable Cox",
+        "pooled_HR_per_SD": 0.9871,
+        "pooled_CI": [
+          0.9142,
+          1.0659
+        ],
+        "p_bh_fdr": 0.7409258371798617,
+        "I2_pct": 0.0,
+        "n_independent_cohorts": 10,
+        "mean_c_index": 0.5292,
+        "ph_checked": true,
+        "verdict": "OUTCOME_NULL",
+        "meta_method": "DerSimonian-Laird random-effects; TCGA excluded from independent meta"
+      }
+    },
+    {
+      "gene": "NRAS",
+      "earned_tier": "BORDERLINE_RUO",
+      "tier_rank": 4,
+      "cohort": "ov_tcga_pan_can_atlas_2018 (n=585)",
+      "n_exposed": 5,
+      "headline": {
+        "metric": "OS HR",
+        "value": 0.605,
+        "ci": [
+          0.151,
+          2.43
+        ],
+        "p": 0.4787,
+        "endpoint": "overall survival"
+      },
+      "external_replication": null,
       "pooled_expr_os_retest": {
         "channel": "expression (z-scored per cohort) vs OS, pooled DL random-effects",
         "n_cohorts": 17,
@@ -482,33 +387,238 @@
         "I2_pct": 55.7,
         "verdict": "COHORT_TESTED_NULL",
         "note": "Expression-channel vs OS across independent cohorts (z-scored per cohort, DL random-effects). This is PROGNOSTIC (OS) evidence for the expression readout, NOT platinum-resistance-mutation validation. EPV shown = pooled OS events (well-powered for OS); it is NOT resistance-event-per-variable."
+      },
+      "survival_outcome": {
+        "endpoint": "OS (overall survival), per-SD z-scored expression, univariable Cox",
+        "pooled_HR_per_SD": 1.0382,
+        "pooled_CI": [
+          0.9369,
+          1.1504
+        ],
+        "p_bh_fdr": 0.5079261223302475,
+        "I2_pct": 56.5,
+        "n_independent_cohorts": 15,
+        "mean_c_index": 0.5624,
+        "ph_checked": true,
+        "verdict": "OUTCOME_NULL",
+        "meta_method": "DerSimonian-Laird random-effects; TCGA excluded from independent meta"
       }
     },
-    "KEAP1": {
+    {
+      "gene": "NF1",
       "earned_tier": "COHORT_TESTED_NULL",
-      "somatic_channel": "mut_KEAP1",
-      "somatic_tier": "INSUFFICIENT_EVENTS",
+      "tier_rank": 3,
+      "cohort": "ov_tcga_pan_can_atlas_2018 (n=585)",
+      "n_exposed": 30,
+      "headline": {
+        "metric": "OS HR",
+        "value": 1.013,
+        "ci": [
+          0.613,
+          1.674
+        ],
+        "p": 0.9609,
+        "endpoint": "overall survival"
+      },
+      "external_replication": null,
+      "pooled_expr_os_retest": {
+        "channel": "expression (z-scored per cohort) vs OS, pooled DL random-effects",
+        "n_cohorts": 16,
+        "total_n": 2529,
+        "total_OS_events": 1339,
+        "pooled_HR_per_SD": 1.077,
+        "pooled_CI": [
+          1.001,
+          1.158
+        ],
+        "pooled_p": 0.045486432663611964,
+        "p_bh_fdr": 0.1408,
+        "I2_pct": 34.0,
+        "verdict": "SIG_UNADJ_ONLY(FDR_ns)",
+        "note": "Expression-channel vs OS across independent cohorts (z-scored per cohort, DL random-effects). This is PROGNOSTIC (OS) evidence for the expression readout, NOT platinum-resistance-mutation validation. EPV shown = pooled OS events (well-powered for OS); it is NOT resistance-event-per-variable.",
+        "fdr_decision": "nominal p<0.05 but BH-FDR q>=0.05 -> NO upgrade (honest)"
+      },
+      "survival_outcome": {
+        "endpoint": "OS (overall survival), per-SD z-scored expression, univariable Cox",
+        "pooled_HR_per_SD": 1.0611,
+        "pooled_CI": [
+          0.9745,
+          1.1555
+        ],
+        "p_bh_fdr": 0.28701424374827217,
+        "I2_pct": 33.2,
+        "n_independent_cohorts": 14,
+        "mean_c_index": 0.5234,
+        "ph_checked": true,
+        "verdict": "OUTCOME_NULL",
+        "meta_method": "DerSimonian-Laird random-effects; TCGA excluded from independent meta"
+      }
+    },
+    {
+      "gene": "TP53",
+      "earned_tier": "COHORT_TESTED_NULL",
+      "tier_rank": 3,
+      "cohort": "ov_tcga_pan_can_atlas_2018 (n=585)",
+      "n_exposed": 370,
+      "headline": {
+        "metric": "OS HR",
+        "value": 1.023,
+        "ci": [
+          0.822,
+          1.273
+        ],
+        "p": 0.8391,
+        "endpoint": "overall survival"
+      },
+      "external_replication": null,
+      "pooled_expr_os_retest": {
+        "channel": "expression (z-scored per cohort) vs OS, pooled DL random-effects",
+        "n_cohorts": 17,
+        "total_n": 2631,
+        "total_OS_events": 1395,
+        "pooled_HR_per_SD": 0.961,
+        "pooled_CI": [
+          0.911,
+          1.013
+        ],
+        "pooled_p": 0.13581106972011736,
+        "p_bh_fdr": 0.247,
+        "I2_pct": 0.0,
+        "verdict": "COHORT_TESTED_NULL",
+        "note": "Expression-channel vs OS across independent cohorts (z-scored per cohort, DL random-effects). This is PROGNOSTIC (OS) evidence for the expression readout, NOT platinum-resistance-mutation validation. EPV shown = pooled OS events (well-powered for OS); it is NOT resistance-event-per-variable."
+      },
+      "survival_outcome": {
+        "endpoint": "OS (overall survival), per-SD z-scored expression, univariable Cox",
+        "pooled_HR_per_SD": 0.9468,
+        "pooled_CI": [
+          0.8889,
+          1.0084
+        ],
+        "p_bh_fdr": 0.18704703184748928,
+        "I2_pct": 0.0,
+        "n_independent_cohorts": 15,
+        "mean_c_index": 0.5268,
+        "ph_checked": true,
+        "verdict": "OUTCOME_NULL",
+        "meta_method": "DerSimonian-Laird random-effects; TCGA excluded from independent meta"
+      }
+    },
+    {
+      "gene": "CDK12",
+      "earned_tier": "COHORT_TESTED_NULL",
+      "tier_rank": 3,
+      "cohort": "ov_tcga_pan_can_atlas_2018 (n=585)",
+      "n_exposed": 19,
+      "headline": {
+        "metric": "OS HR",
+        "value": 1.143,
+        "ci": [
+          0.656,
+          1.991
+        ],
+        "p": 0.6372,
+        "endpoint": "overall survival"
+      },
+      "external_replication": null,
+      "pooled_expr_os_retest": {
+        "channel": "expression (z-scored per cohort) vs OS, pooled DL random-effects",
+        "n_cohorts": 16,
+        "total_n": 2529,
+        "total_OS_events": 1339,
+        "pooled_HR_per_SD": 0.988,
+        "pooled_CI": [
+          0.924,
+          1.056
+        ],
+        "pooled_p": 0.7166769662544987,
+        "p_bh_fdr": 0.8269,
+        "I2_pct": 27.0,
+        "verdict": "COHORT_TESTED_NULL",
+        "note": "Expression-channel vs OS across independent cohorts (z-scored per cohort, DL random-effects). This is PROGNOSTIC (OS) evidence for the expression readout, NOT platinum-resistance-mutation validation. EPV shown = pooled OS events (well-powered for OS); it is NOT resistance-event-per-variable."
+      },
+      "survival_outcome": {
+        "endpoint": "OS (overall survival), per-SD z-scored expression, univariable Cox",
+        "pooled_HR_per_SD": 0.9631,
+        "pooled_CI": [
+          0.8906,
+          1.0415
+        ],
+        "p_bh_fdr": 0.3998993962461376,
+        "I2_pct": 24.9,
+        "n_independent_cohorts": 14,
+        "mean_c_index": 0.5354,
+        "ph_checked": true,
+        "verdict": "OUTCOME_NULL",
+        "meta_method": "DerSimonian-Laird random-effects; TCGA excluded from independent meta"
+      }
+    },
+    {
+      "gene": "BRCA1",
+      "earned_tier": "COHORT_TESTED_NULL",
+      "tier_rank": 3,
+      "cohort": "ov_tcga_pan_can_atlas_2018 (n=585)",
+      "n_exposed": 17,
+      "headline": {
+        "metric": "OS HR",
+        "value": 0.569,
+        "ci": [
+          0.212,
+          1.526
+        ],
+        "p": 0.2627,
+        "endpoint": "overall survival"
+      },
+      "external_replication": null,
+      "pooled_expr_os_retest": {
+        "channel": "expression (z-scored per cohort) vs OS, pooled DL random-effects",
+        "n_cohorts": 18,
+        "total_n": 2752,
+        "total_OS_events": 1491,
+        "pooled_HR_per_SD": 1.039,
+        "pooled_CI": [
+          0.987,
+          1.093
+        ],
+        "pooled_p": 0.14819706279046052,
+        "p_bh_fdr": 0.247,
+        "I2_pct": 0.0,
+        "verdict": "COHORT_TESTED_NULL",
+        "note": "Expression-channel vs OS across independent cohorts (z-scored per cohort, DL random-effects). This is PROGNOSTIC (OS) evidence for the expression readout, NOT platinum-resistance-mutation validation. EPV shown = pooled OS events (well-powered for OS); it is NOT resistance-event-per-variable."
+      },
+      "survival_outcome": {
+        "endpoint": "OS (overall survival), per-SD z-scored expression, univariable Cox",
+        "pooled_HR_per_SD": 1.0513,
+        "pooled_CI": [
+          0.9905,
+          1.1158
+        ],
+        "p_bh_fdr": 0.18704703184748928,
+        "I2_pct": 0.0,
+        "n_independent_cohorts": 16,
+        "mean_c_index": 0.5213,
+        "ph_checked": true,
+        "verdict": "OUTCOME_NULL",
+        "meta_method": "DerSimonian-Laird random-effects; TCGA excluded from independent meta"
+      }
+    },
+    {
+      "gene": "KEAP1",
+      "earned_tier": "COHORT_TESTED_NULL",
+      "tier_rank": 3,
+      "cohort": "ov_tcga_pan_can_atlas_2018 (n=585)",
       "n_exposed": 2,
-      "os_HR": null,
-      "os_CI": [
-        null,
-        null
-      ],
-      "os_p": null,
-      "pfs_HR": null,
-      "pfs_CI": [
-        null,
-        null
-      ],
-      "pfs_p": null,
-      "expr_tier": "COHORT_TESTED_NULL",
-      "expr_OR_per_SD": 1.193,
-      "expr_OR_CI": [
-        0.752,
-        1.894
-      ],
-      "expr_AUROC": 0.554,
-      "expr_p": 0.454,
+      "headline": {
+        "metric": "expr OR/SD",
+        "value": 1.193,
+        "ci": [
+          0.752,
+          1.894
+        ],
+        "p": 0.454,
+        "auroc": 0.554,
+        "endpoint": "platinum resistance"
+      },
+      "external_replication": null,
       "pooled_expr_os_retest": {
         "channel": "expression (z-scored per cohort) vs OS, pooled DL random-effects",
         "n_cohorts": 17,
@@ -525,33 +635,41 @@
         "verdict": "SIG_UNADJ_ONLY(FDR_ns)",
         "note": "Expression-channel vs OS across independent cohorts (z-scored per cohort, DL random-effects). This is PROGNOSTIC (OS) evidence for the expression readout, NOT platinum-resistance-mutation validation. EPV shown = pooled OS events (well-powered for OS); it is NOT resistance-event-per-variable.",
         "fdr_decision": "nominal p<0.05 but BH-FDR q>=0.05 -> NO upgrade (honest)"
+      },
+      "survival_outcome": {
+        "endpoint": "OS (overall survival), per-SD z-scored expression, univariable Cox",
+        "pooled_HR_per_SD": 0.9208,
+        "pooled_CI": [
+          0.8458,
+          1.0026
+        ],
+        "p_bh_fdr": 0.14323166647033037,
+        "I2_pct": 40.3,
+        "n_independent_cohorts": 15,
+        "mean_c_index": 0.5539,
+        "ph_checked": true,
+        "verdict": "OUTCOME_NULL",
+        "meta_method": "DerSimonian-Laird random-effects; TCGA excluded from independent meta"
       }
     },
-    "CUL3": {
+    {
+      "gene": "CUL3",
       "earned_tier": "COHORT_TESTED_NULL",
-      "somatic_channel": "mut_CUL3",
-      "somatic_tier": "INSUFFICIENT_EVENTS",
+      "tier_rank": 3,
+      "cohort": "ov_tcga_pan_can_atlas_2018 (n=585)",
       "n_exposed": 3,
-      "os_HR": null,
-      "os_CI": [
-        null,
-        null
-      ],
-      "os_p": null,
-      "pfs_HR": null,
-      "pfs_CI": [
-        null,
-        null
-      ],
-      "pfs_p": null,
-      "expr_tier": "COHORT_TESTED_NULL",
-      "expr_OR_per_SD": 0.888,
-      "expr_OR_CI": [
-        0.563,
-        1.402
-      ],
-      "expr_AUROC": 0.516,
-      "expr_p": 0.6112,
+      "headline": {
+        "metric": "expr OR/SD",
+        "value": 0.888,
+        "ci": [
+          0.563,
+          1.402
+        ],
+        "p": 0.6112,
+        "auroc": 0.516,
+        "endpoint": "platinum resistance"
+      },
+      "external_replication": null,
       "pooled_expr_os_retest": {
         "channel": "expression (z-scored per cohort) vs OS, pooled DL random-effects",
         "n_cohorts": 17,
@@ -567,33 +685,27 @@
         "I2_pct": 46.6,
         "verdict": "COHORT_TESTED_NULL",
         "note": "Expression-channel vs OS across independent cohorts (z-scored per cohort, DL random-effects). This is PROGNOSTIC (OS) evidence for the expression readout, NOT platinum-resistance-mutation validation. EPV shown = pooled OS events (well-powered for OS); it is NOT resistance-event-per-variable."
-      }
+      },
+      "survival_outcome": null
     },
-    "SLC31A1": {
+    {
+      "gene": "SLC31A1",
       "earned_tier": "COHORT_TESTED_NULL",
-      "somatic_channel": "mut_SLC31A1",
-      "somatic_tier": "INSUFFICIENT_EVENTS",
+      "tier_rank": 3,
+      "cohort": "ov_tcga_pan_can_atlas_2018 (n=585)",
       "n_exposed": 1,
-      "os_HR": null,
-      "os_CI": [
-        null,
-        null
-      ],
-      "os_p": null,
-      "pfs_HR": null,
-      "pfs_CI": [
-        null,
-        null
-      ],
-      "pfs_p": null,
-      "expr_tier": "COHORT_TESTED_NULL",
-      "expr_OR_per_SD": 1.081,
-      "expr_OR_CI": [
-        0.686,
-        1.705
-      ],
-      "expr_AUROC": 0.516,
-      "expr_p": 0.7369,
+      "headline": {
+        "metric": "expr OR/SD",
+        "value": 1.081,
+        "ci": [
+          0.686,
+          1.705
+        ],
+        "p": 0.7369,
+        "auroc": 0.516,
+        "endpoint": "platinum resistance"
+      },
+      "external_replication": null,
       "pooled_expr_os_retest": {
         "channel": "expression (z-scored per cohort) vs OS, pooled DL random-effects",
         "n_cohorts": 17,
@@ -609,33 +721,41 @@
         "I2_pct": 7.5,
         "verdict": "COHORT_TESTED_NULL",
         "note": "Expression-channel vs OS across independent cohorts (z-scored per cohort, DL random-effects). This is PROGNOSTIC (OS) evidence for the expression readout, NOT platinum-resistance-mutation validation. EPV shown = pooled OS events (well-powered for OS); it is NOT resistance-event-per-variable."
+      },
+      "survival_outcome": {
+        "endpoint": "OS (overall survival), per-SD z-scored expression, univariable Cox",
+        "pooled_HR_per_SD": 0.9549,
+        "pooled_CI": [
+          0.8886,
+          1.0263
+        ],
+        "p_bh_fdr": 0.3144526511426837,
+        "I2_pct": 18.6,
+        "n_independent_cohorts": 15,
+        "mean_c_index": 0.5423,
+        "ph_checked": true,
+        "verdict": "OUTCOME_NULL",
+        "meta_method": "DerSimonian-Laird random-effects; TCGA excluded from independent meta"
       }
     },
-    "TP53BP1": {
+    {
+      "gene": "TP53BP1",
       "earned_tier": "COHORT_TESTED_NULL",
-      "somatic_channel": "mut_TP53BP1",
-      "somatic_tier": "INSUFFICIENT_EVENTS",
+      "tier_rank": 3,
+      "cohort": "ov_tcga_pan_can_atlas_2018 (n=585)",
       "n_exposed": 4,
-      "os_HR": null,
-      "os_CI": [
-        null,
-        null
-      ],
-      "os_p": null,
-      "pfs_HR": null,
-      "pfs_CI": [
-        null,
-        null
-      ],
-      "pfs_p": null,
-      "expr_tier": "COHORT_TESTED_NULL",
-      "expr_OR_per_SD": 1.087,
-      "expr_OR_CI": [
-        0.69,
-        1.713
-      ],
-      "expr_AUROC": 0.529,
-      "expr_p": 0.7192,
+      "headline": {
+        "metric": "expr OR/SD",
+        "value": 1.087,
+        "ci": [
+          0.69,
+          1.713
+        ],
+        "p": 0.7192,
+        "auroc": 0.529,
+        "endpoint": "platinum resistance"
+      },
+      "external_replication": null,
       "pooled_expr_os_retest": {
         "channel": "expression (z-scored per cohort) vs OS, pooled DL random-effects",
         "n_cohorts": 17,
@@ -652,79 +772,41 @@
         "verdict": "SIG_UNADJ_ONLY(FDR_ns)",
         "note": "Expression-channel vs OS across independent cohorts (z-scored per cohort, DL random-effects). This is PROGNOSTIC (OS) evidence for the expression readout, NOT platinum-resistance-mutation validation. EPV shown = pooled OS events (well-powered for OS); it is NOT resistance-event-per-variable.",
         "fdr_decision": "nominal p<0.05 but BH-FDR q>=0.05 -> NO upgrade (honest)"
+      },
+      "survival_outcome": {
+        "endpoint": "OS (overall survival), per-SD z-scored expression, univariable Cox",
+        "pooled_HR_per_SD": 1.0311,
+        "pooled_CI": [
+          0.9681,
+          1.0981
+        ],
+        "p_bh_fdr": 0.3998993962461376,
+        "I2_pct": 0.0,
+        "n_independent_cohorts": 15,
+        "mean_c_index": 0.536,
+        "ph_checked": true,
+        "verdict": "OUTCOME_NULL",
+        "meta_method": "DerSimonian-Laird random-effects; TCGA excluded from independent meta"
       }
     },
-    "SHLD1": {
-      "earned_tier": "LITERATURE_ONLY",
-      "somatic_channel": "mut_SHLD1",
-      "somatic_tier": "INSUFFICIENT_EVENTS",
-      "n_exposed": 0,
-      "os_HR": null,
-      "os_CI": [
-        null,
-        null
-      ],
-      "os_p": null,
-      "pfs_HR": null,
-      "pfs_CI": [
-        null,
-        null
-      ],
-      "pfs_p": null,
-      "expr_tier": "NOT_ON_ARRAY",
-      "expr_OR_per_SD": null,
-      "expr_OR_CI": null,
-      "expr_AUROC": null,
-      "expr_p": null
-    },
-    "SHLD2": {
-      "earned_tier": "LITERATURE_ONLY",
-      "somatic_channel": "mut_SHLD2",
-      "somatic_tier": "INSUFFICIENT_EVENTS",
-      "n_exposed": 4,
-      "os_HR": null,
-      "os_CI": [
-        null,
-        null
-      ],
-      "os_p": null,
-      "pfs_HR": null,
-      "pfs_CI": [
-        null,
-        null
-      ],
-      "pfs_p": null,
-      "expr_tier": "NOT_ON_ARRAY",
-      "expr_OR_per_SD": null,
-      "expr_OR_CI": null,
-      "expr_AUROC": null,
-      "expr_p": null
-    },
-    "MAD2L2": {
+    {
+      "gene": "MAD2L2",
       "earned_tier": "COHORT_TESTED_NULL",
-      "somatic_channel": "mut_MAD2L2",
-      "somatic_tier": "INSUFFICIENT_EVENTS",
+      "tier_rank": 3,
+      "cohort": "ov_tcga_pan_can_atlas_2018 (n=585)",
       "n_exposed": 0,
-      "os_HR": null,
-      "os_CI": [
-        null,
-        null
-      ],
-      "os_p": null,
-      "pfs_HR": null,
-      "pfs_CI": [
-        null,
-        null
-      ],
-      "pfs_p": null,
-      "expr_tier": "COHORT_TESTED_NULL",
-      "expr_OR_per_SD": 1.407,
-      "expr_OR_CI": [
-        0.876,
-        2.261
-      ],
-      "expr_AUROC": 0.577,
-      "expr_p": 0.1584,
+      "headline": {
+        "metric": "expr OR/SD",
+        "value": 1.407,
+        "ci": [
+          0.876,
+          2.261
+        ],
+        "p": 0.1584,
+        "auroc": 0.577,
+        "endpoint": "platinum resistance"
+      },
+      "external_replication": null,
       "pooled_expr_os_retest": {
         "channel": "expression (z-scored per cohort) vs OS, pooled DL random-effects",
         "n_cohorts": 12,
@@ -740,33 +822,27 @@
         "I2_pct": 0.0,
         "verdict": "COHORT_TESTED_NULL",
         "note": "Expression-channel vs OS across independent cohorts (z-scored per cohort, DL random-effects). This is PROGNOSTIC (OS) evidence for the expression readout, NOT platinum-resistance-mutation validation. EPV shown = pooled OS events (well-powered for OS); it is NOT resistance-event-per-variable."
-      }
+      },
+      "survival_outcome": null
     },
-    "MBD4": {
+    {
+      "gene": "MBD4",
       "earned_tier": "COHORT_TESTED_NULL",
-      "somatic_channel": "mut_MBD4",
-      "somatic_tier": "INSUFFICIENT_EVENTS",
+      "tier_rank": 3,
+      "cohort": "ov_tcga_pan_can_atlas_2018 (n=585)",
       "n_exposed": 1,
-      "os_HR": null,
-      "os_CI": [
-        null,
-        null
-      ],
-      "os_p": null,
-      "pfs_HR": null,
-      "pfs_CI": [
-        null,
-        null
-      ],
-      "pfs_p": null,
-      "expr_tier": "COHORT_TESTED_NULL",
-      "expr_OR_per_SD": 0.701,
-      "expr_OR_CI": [
-        0.436,
-        1.128
-      ],
-      "expr_AUROC": 0.618,
-      "expr_p": 0.1436,
+      "headline": {
+        "metric": "expr OR/SD",
+        "value": 0.701,
+        "ci": [
+          0.436,
+          1.128
+        ],
+        "p": 0.1436,
+        "auroc": 0.618,
+        "endpoint": "platinum resistance"
+      },
+      "external_replication": null,
       "pooled_expr_os_retest": {
         "channel": "expression (z-scored per cohort) vs OS, pooled DL random-effects",
         "n_cohorts": 17,
@@ -782,33 +858,27 @@
         "I2_pct": 38.1,
         "verdict": "COHORT_TESTED_NULL",
         "note": "Expression-channel vs OS across independent cohorts (z-scored per cohort, DL random-effects). This is PROGNOSTIC (OS) evidence for the expression readout, NOT platinum-resistance-mutation validation. EPV shown = pooled OS events (well-powered for OS); it is NOT resistance-event-per-variable."
-      }
+      },
+      "survival_outcome": null
     },
-    "BRAF": {
+    {
+      "gene": "BRAF",
       "earned_tier": "COHORT_TESTED_NULL",
-      "somatic_channel": "mut_BRAF",
-      "somatic_tier": "INSUFFICIENT_EVENTS",
+      "tier_rank": 3,
+      "cohort": "ov_tcga_pan_can_atlas_2018 (n=585)",
       "n_exposed": 2,
-      "os_HR": null,
-      "os_CI": [
-        null,
-        null
-      ],
-      "os_p": null,
-      "pfs_HR": null,
-      "pfs_CI": [
-        null,
-        null
-      ],
-      "pfs_p": null,
-      "expr_tier": "COHORT_TESTED_NULL",
-      "expr_OR_per_SD": 0.824,
-      "expr_OR_CI": [
-        0.518,
-        1.311
-      ],
-      "expr_AUROC": 0.55,
-      "expr_p": 0.4141,
+      "headline": {
+        "metric": "expr OR/SD",
+        "value": 0.824,
+        "ci": [
+          0.518,
+          1.311
+        ],
+        "p": 0.4141,
+        "auroc": 0.55,
+        "endpoint": "platinum resistance"
+      },
+      "external_replication": null,
       "pooled_expr_os_retest": {
         "channel": "expression (z-scored per cohort) vs OS, pooled DL random-effects",
         "n_cohorts": 15,
@@ -824,104 +894,64 @@
         "I2_pct": 44.8,
         "verdict": "COHORT_TESTED_NULL",
         "note": "Expression-channel vs OS across independent cohorts (z-scored per cohort, DL random-effects). This is PROGNOSTIC (OS) evidence for the expression readout, NOT platinum-resistance-mutation validation. EPV shown = pooled OS events (well-powered for OS); it is NOT resistance-event-per-variable."
-      }
-    },
-    "MFAP4": {
-      "earned_tier": "EXTERNALLY_VALIDATED_RUO",
-      "somatic_channel": "none (RNA-only)",
-      "somatic_tier": "N/A",
-      "n_exposed": null,
-      "os_HR": null,
-      "os_CI": [
-        null,
-        null
-      ],
-      "os_p": null,
-      "pfs_HR": null,
-      "pfs_CI": [
-        null,
-        null
-      ],
-      "pfs_p": null,
-      "expr_tier": "EXTERNALLY_VALIDATED_RUO",
-      "expr_OR_per_SD": 1.915,
-      "expr_OR_CI": [
-        1.134,
-        3.236
-      ],
-      "expr_AUROC": 0.684,
-      "expr_p": 0.0152,
-      "note": "Register claimed AUROC 0.763; measured 0.684 on labeled subset, same cohort/direction, real.",
-      "external_replication": {
-        "channel": "expression (z-scored per cohort) vs OS",
-        "n_independent_cohorts": 17,
-        "pooled_HR_per_SD": 1.214,
+      },
+      "survival_outcome": {
+        "endpoint": "OS (overall survival), per-SD z-scored expression, univariable Cox",
+        "pooled_HR_per_SD": 0.8925,
         "pooled_CI": [
-          1.153,
-          1.277
+          0.8068,
+          0.9874
         ],
-        "pooled_p": 1.1723955140041653e-13,
-        "I2_pct": 0.0,
-        "model": "DerSimonian-Laird random-effects",
-        "n_cohorts_CI_excludes_null": 7,
-        "verdict": "EXTERNALLY_VALIDATED_RUO",
-        "note": "Fit on GSE63885 (RNA); all curatedOV cohorts independent. High expr -> worse outcome expected."
-      }
-    }
-  },
-  "model_53": {
-    "logit_resistance_probability": {
-      "verdict": "DISCOVERY_ONLY \u2014 NOT upgraded to CALIBRATED_RUO",
-      "reason": "OOF AUC 95% CI spans 0.5 on both attempts (honest refusal to overclaim)",
-      "genome_wide_elastic_net_GSE63885": {
-        "n": 75,
-        "oof_auc": 0.446,
-        "oof_auc_ci95": [
-          0.318,
-          0.576
-        ],
-        "brier": 0.293,
-        "note": "23,520 features on 75 samples (p>>n); nested CV correctly refuses to overfit"
-      },
-      "prespecified_genomic_logit_TCGA": {
-        "n": 571,
-        "n_resistant": 44,
-        "oof_auc": 0.489,
-        "oof_auc_ci95": [
-          0.396,
-          0.586
-        ],
-        "brier": 0.071
-      },
-      "refit_coefficients_real": {
-        "intercept": -2.5694,
-        "b_brca": 0.092,
-        "b_mapk": 0.8056,
-        "interpretation": "b_brca near 0 (BRCA=platinum-sensitive, consistent); b_mapk positive & larger than simulation prior 0.317 (correct direction)"
-      },
-      "simulation_coefficients_replaced": {
-        "intercept": 2.9076,
-        "b_brca": 0.6015,
-        "b_mapk": 0.3172
-      },
-      "residual_gap_documented": {
-        "terms": [
-          "b_kelim",
-          "b_brca_x_k",
-          "b_mapk_x_k"
-        ],
-        "values": [
-          -3.2202,
-          -0.9227,
-          -0.5223
-        ],
-        "why": "require serial CA-125 WITH treatment-resistance outcomes; PLCO has kinetics but screening outcomes only -> these 3 remain simulation-anchored, DOCUMENTED not hidden"
+        "p_bh_fdr": 0.08205093285579457,
+        "I2_pct": 42.4,
+        "n_independent_cohorts": 13,
+        "mean_c_index": 0.5522,
+        "ph_checked": true,
+        "verdict": "OUTCOME_SIG_UNADJ_ONLY(FDR_ns)",
+        "meta_method": "DerSimonian-Laird random-effects; TCGA excluded from independent meta"
       }
     },
-    "kelim_modeling": {
-      "signal6_deadcode_fix": "RES-OV-P0-009 FIXED \u2014 signals/ovarian.py reads kelim_obj.k (not dead .kelim)",
-      "kinetics_metric_externally_validated": "PLCO log-slope AUROC 0.652 CI [0.605,0.695] (reused)",
-      "status": "local_log_linear decay on raw k; normalized KELIM still requires treatment-linked serial CA-125"
+    {
+      "gene": "SHLD1",
+      "earned_tier": "LITERATURE_ONLY",
+      "tier_rank": 2,
+      "cohort": "ov_tcga_pan_can_atlas_2018 (n=585)",
+      "n_exposed": 0,
+      "headline": null,
+      "external_replication": null,
+      "pooled_expr_os_retest": null,
+      "survival_outcome": null
+    },
+    {
+      "gene": "SHLD2",
+      "earned_tier": "LITERATURE_ONLY",
+      "tier_rank": 2,
+      "cohort": "ov_tcga_pan_can_atlas_2018 (n=585)",
+      "n_exposed": 4,
+      "headline": null,
+      "external_replication": null,
+      "pooled_expr_os_retest": null,
+      "survival_outcome": null
+    }
+  ],
+  "model_53": {
+    "verdict": "DISCOVERY_ONLY \u2014 NOT upgraded to CALIBRATED_RUO",
+    "reason": "OOF AUC 95% CI spans 0.5 on both attempts (honest refusal to overclaim)",
+    "refit_coefficients_real": {
+      "intercept": -2.5694,
+      "b_brca": 0.092,
+      "b_mapk": 0.8056,
+      "interpretation": "b_brca near 0 (BRCA=platinum-sensitive, consistent); b_mapk positive & larger than simulation prior 0.317 (correct direction)"
+    },
+    "prespecified_genomic_logit_TCGA": {
+      "n": 571,
+      "n_resistant": 44,
+      "oof_auc": 0.489,
+      "oof_auc_ci95": [
+        0.396,
+        0.586
+      ],
+      "brier": 0.071
     }
   },
   "gap_5_1": {
@@ -935,8 +965,14 @@
       "note": "see model_53.kelim_modeling"
     }
   },
-  "generated_at_v2": "2026-07-20T11:51:53.746916+00:00",
-  "v2_changelog": "Added curatedOvarianData external-replication (Stream A), pooled expression/OS re-test (Stream B), and pooled resistance recalibration (Stream C). Backward-compatible: all v1.0 keys retained. New: cohorts_v2, genes_52[*].external_replication, model_53_v2, stream_summaries. No 'clinically validated' label.",
+  "plco_anchor_rule": {
+    "exam_attempted": "result IN (1,2,3,4) OR level/days present",
+    "exam_completed_ca125": "level IS NOT NULL AND days IS NOT NULL",
+    "exam_completed_tvu": "days IS NOT NULL",
+    "not_done_slot": "result IN (8,9)  -- EXCLUDE from exam denominators",
+    "kinetic_anchor": "require assay + days; NEVER use codes 8/9 as timepoints",
+    "series_inflation_verdict": "scheduled/missing-year slot expansion, NOT duplication (DISTINCT(plco_id,timepoint)=total_rows; zero duplicate keys)"
+  },
   "cohorts_v2": {
     "source": "curatedOvarianData (Bioconductor), harmonized HGSOC ExpressionSets",
     "pull_method": "Rscript export to gene-symbol CSV + pData; serous-filtered at analysis time",
@@ -1169,6 +1205,424 @@
       "relation_to_v1_model_53": "v1 model_53 tested a MUTATION-based genomic logit (DISCOVERY_ONLY, OOF AUC 0.489). This v2 model is a distinct EXPRESSION-based classifier on 518 pooled samples/52 events. They are complementary, not the same model. v1 model_53 verdict retained above."
     }
   },
+  "model_53_v3": {
+    "generated_at": "2026-07-20T16:17:16.092846Z",
+    "track_A_survival_risk_score": {
+      "derivation": "TCGA.RNASeqV2_eset",
+      "locked_coefficients": {
+        "MFAP4": 0.12660923261328202,
+        "CCNE1": 0.08624687586435822,
+        "KRAS": 0.10552417221822852,
+        "BRCA1": -0.025095695053722646,
+        "BRCA2": 0.00010135085429845943,
+        "NF1": 0.10090015941015788,
+        "KEAP1": -0.12749960615501624,
+        "TP53": 0.03188534682387906,
+        "PTEN": 0.02638068072844367,
+        "CDK12": 0.09751555712798998,
+        "BRAF": 0.06728251736558434,
+        "NRAS": -0.09670701676058197,
+        "PALB2": -0.09746624310559966,
+        "SLC31A1": -0.027900068567236293
+      },
+      "locked_tertile_cutoffs": [
+        -0.1667162450273706,
+        0.1403720405242031
+      ],
+      "held_out": {
+        "E.MTAB.386_eset": {
+          "n": 129,
+          "events": 73,
+          "c_index": 0.5439745508982036,
+          "logrank_p_tertile": 0.10840465706218619,
+          "td_auc": {
+            "365": 0.423728813559322,
+            "730": 0.5561643835616439,
+            "1095": 0.6270574066639903
+          }
+        },
+        "GSE17260_eset": {
+          "n": 110,
+          "events": 46,
+          "c_index": 0.5082555635319455,
+          "logrank_p_tertile": 0.6161001080536338,
+          "td_auc": {
+            "365": 0.5577777777777778,
+            "730": 0.5475,
+            "1095": 0.49432624113475176
+          }
+        },
+        "GSE18520_eset": {
+          "n": 53,
+          "events": 41,
+          "c_index": 0.558277027027027,
+          "logrank_p_tertile": 0.1286945437322235,
+          "td_auc": {
+            "365": 0.5813953488372093,
+            "730": 0.5792,
+            "1095": 0.6282828282828283
+          }
+        },
+        "GSE26193_eset": {
+          "n": 79,
+          "events": 60,
+          "c_index": 0.5693745506829619,
+          "logrank_p_tertile": 0.48091580629937103,
+          "td_auc": {
+            "365": 0.8028169014084507,
+            "730": 0.6027777777777777,
+            "1095": 0.5708635464733026
+          }
+        },
+        "GSE30161_eset": {
+          "n": 47,
+          "events": 33,
+          "c_index": 0.523542600896861,
+          "logrank_p_tertile": 0.8041660659285341,
+          "td_auc": {
+            "365": 0.5119047619047619,
+            "730": 0.5161290322580645,
+            "1095": 0.5844155844155844
+          }
+        },
+        "GSE32062.GPL6480_eset": {
+          "n": 260,
+          "events": 121,
+          "c_index": 0.5321334146837503,
+          "logrank_p_tertile": 0.9390981603920059,
+          "td_auc": {
+            "365": 0.5275175644028103,
+            "730": 0.5650240384615385,
+            "1095": 0.5633675043091717
+          }
+        },
+        "GSE32063_eset": {
+          "n": 40,
+          "events": 22,
+          "c_index": 0.5227272727272727,
+          "logrank_p_tertile": 0.38132793369579054,
+          "td_auc": {
+            "365": null,
+            "730": 0.6507936507936508,
+            "1095": 0.5454545454545454
+          }
+        },
+        "GSE49997_eset": {
+          "n": 171,
+          "events": 48,
+          "c_index": 0.6363976083707026,
+          "logrank_p_tertile": 0.049327801816629234,
+          "td_auc": {
+            "365": 0.7017369727047147,
+            "730": 0.6673850574712644,
+            "1095": 0.5995085995085995
+          }
+        },
+        "GSE9891_eset": {
+          "n": 258,
+          "events": 112,
+          "c_index": 0.5949741781080741,
+          "logrank_p_tertile": 0.0019066293824461272,
+          "td_auc": {
+            "365": 0.6784816490698844,
+            "730": 0.6063492063492063,
+            "1095": 0.620679012345679
+          }
+        }
+      },
+      "pooled_c_index": {
+        "mean_c_index": 0.5544063074363109,
+        "ci": [
+          0.5311848225885997,
+          0.5812947357262849
+        ],
+        "n_heldout_cohorts": 9,
+        "ci_excludes_0.5": true
+      }
+    },
+    "track_B_parsimonious_resistance_classifier": {
+      "feature_set": [
+        "MFAP4",
+        "KRAS",
+        "CCNE1",
+        "NF1",
+        "PTEN"
+      ],
+      "n_cohorts": 5,
+      "oof_auc": 0.6438038705480565,
+      "oof_auc_ci": [
+        0.5577603325504418,
+        0.7206930708061199
+      ],
+      "brier": 0.22715163413648767,
+      "permutation_p": 0.004975124378109453,
+      "n_events": 52,
+      "raw_epv": 10.4,
+      "locked_threshold": 0.5,
+      "ci_excludes_0.5": true,
+      "verdict": "CALIBRATED_RUO"
+    },
+    "honesty": "Track A features derived on TCGA and LOCKED; evaluated only on independent held-out cohorts. Track B uses independent cohorts only. No 'clinically validated' claim.",
+    "note": "Track A: multivariable Cox risk score derived on TCGA (locked coefs + tertile cutoffs), evaluated ONLY on independent held-out cohorts. Track B: 5-feature parsimonious classifier (EPV 10.4, permutation p=0.005) clears CALIBRATED bar that the v2 14-feature model failed (p=0.055). Neither is clinically validated; both RUO."
+  },
+  "ctdna_outcome": {
+    "source": "Paracchini et al. 2026, ESMO Open 11(3):106087 (MITO16a/MaNGO-OV2a), reproduced in silico",
+    "n_patients": 167,
+    "cox_results": {
+      "pfs": {
+        "tf": {
+          "hr_per_sd": 1.3354383519405737,
+          "ci": [
+            1.152263860672718,
+            1.5477319498613524
+          ],
+          "p": 0.00012161769716920511,
+          "c_index": 0.582870336965149,
+          "ph_p": 0.9682415403563223,
+          "n": 167,
+          "hr_scale": "per_SD_zscored_marker",
+          "published_hr_note": "published HR is per-unit, multivariable-adjusted; not directly comparable to this univariable per-SD HR",
+          "hr_ci_excludes_1": true,
+          "published_hr": 1.02,
+          "direction_matches_published": true
+        },
+        "pf": {
+          "hr_per_sd": 1.2055846702177186,
+          "ci": [
+            1.0323685373400606,
+            1.407863901789179
+          ],
+          "p": 0.018152420570557073,
+          "c_index": 0.5478750270582293,
+          "ph_p": 0.8478529649322307,
+          "n": 167,
+          "hr_scale": "per_SD_zscored_marker",
+          "published_hr_note": "published HR is per-unit, multivariable-adjusted; not directly comparable to this univariable per-SD HR",
+          "hr_ci_excludes_1": true,
+          "published_hr": 1.06,
+          "direction_matches_published": true
+        },
+        "combined": {
+          "c_index": 0.5904466411718017,
+          "published_combined_hr": 1.76,
+          "coef_tf": 0.029037093340079843,
+          "coef_pf": 1.9850358951617604
+        }
+      },
+      "os": {
+        "tf": {
+          "hr_per_sd": 1.2562536000664766,
+          "ci": [
+            1.0788573907697037,
+            1.4628190168434083
+          ],
+          "p": 0.003311895213879693,
+          "c_index": 0.5638620291528359,
+          "ph_p": 0.65002633391428,
+          "n": 167,
+          "hr_scale": "per_SD_zscored_marker",
+          "published_hr_note": "published HR is per-unit, multivariable-adjusted; not directly comparable to this univariable per-SD HR",
+          "hr_ci_excludes_1": true,
+          "published_hr": 1.04,
+          "direction_matches_published": true
+        },
+        "pf": {
+          "hr_per_sd": 1.1930246631442372,
+          "ci": [
+            1.0104078765443432,
+            1.4086468246251411
+          ],
+          "p": 0.03733210617665208,
+          "c_index": 0.5311733294847741,
+          "ph_p": 0.5240411027969509,
+          "n": 167,
+          "hr_scale": "per_SD_zscored_marker",
+          "published_hr_note": "published HR is per-unit, multivariable-adjusted; not directly comparable to this univariable per-SD HR",
+          "hr_ci_excludes_1": true,
+          "published_hr": 1.1,
+          "direction_matches_published": true
+        },
+        "combined": {
+          "c_index": 0.5614807331505268,
+          "published_combined_hr": 2.06,
+          "coef_tf": 0.021880764357475026,
+          "coef_pf": 2.477525932089697
+        }
+      }
+    },
+    "locked_group_km": {
+      "pfs": {
+        "logrank_p": 0.0003729387118296699,
+        "median_by_group": {
+          "0": 21.859499999999997,
+          "1": 16.266,
+          "2": 14.6065
+        }
+      },
+      "os": {
+        "logrank_p": 0.013580531815861099,
+        "median_by_group": {
+          "0": 29.490000000000002,
+          "1": 27.483,
+          "2": 25.6495
+        }
+      }
+    },
+    "prognostic_channel_verdict": "OUTCOME_VALIDATED_PROGNOSTIC__EXTERNALLY_VALIDATED_RUO",
+    "decision_scope": "PROGNOSTIC ONLY. WIRED_PROGNOSTIC_ONLY_V1: structurally excluded from resistance probability & drug routing. TF/PF cutoffs exploratory, NOT locked clinical thresholds. NOT 'clinically validated'."
+  },
+  "plco_outcome_context": {
+    "scope": "SCREENING cohort. CA-125 kinetics early-signal vs disease aggressiveness (stage) and post-diagnosis survival in incident cases. OUTCOME CONTEXT for a screening biomarker. NOT a treatment-resistance predictor; NEVER 'clinically validated'.",
+    "n_joined_cases": 202,
+    "analysis_1_stage": {
+      "n_advanced_III_IV": 143,
+      "n_early_I_II": 48,
+      "mwu_p": 0.5213766439943507,
+      "auroc_advanced_by_logslope": 0.531,
+      "auroc_ci95": [
+        0.4406,
+        0.6179
+      ],
+      "spearman_slope_vs_stage_ordinal": -0.022,
+      "spearman_p": 0.7621481172130655,
+      "median_logslope_advanced": 0.05732,
+      "median_logslope_early": 0.05599,
+      "interpretation": "AUROC/CI and Spearman quantify whether faster pre-dx CA-125 kinetics associate with later stage at diagnosis.",
+      "tier": "OUTCOME_CONTEXT_NULL_RUO"
+    },
+    "analysis_2_survival_after_dx": {
+      "n_cases": 201,
+      "n_ovarian_deaths": 131,
+      "endpoint": "post-diagnosis OS, ovarian-cancer-specific death (d_dthovar=1)",
+      "cox_HR_per_SD_logslope": 1.057,
+      "ci95": [
+        0.923,
+        1.209
+      ],
+      "p": 0.4229977396795267,
+      "c_index": 0.503,
+      "km_tertile_logrank_p": 0.7578717252743794,
+      "interpretation": "Cox HR per SD of pre-dx CA-125 log-slope for post-diagnosis ovarian-cancer death; KM tertile separation by log-rank.",
+      "tier": "OUTCOME_CONTEXT_NULL_RUO"
+    },
+    "screening_anchor_unchanged": {
+      "log_slope_auroc_incident_cancer": 0.652,
+      "ci95": [
+        0.605,
+        0.695
+      ],
+      "note": "primary PLCO result; unchanged"
+    },
+    "conclusion": "Pre-diagnosis CA-125 kinetics detect INCIDENT ovarian cancer (screening AUROC 0.652) but do NOT associate with stage-at-diagnosis (AUROC 0.531, CI incl. 0.5) or post-diagnosis survival (HR/SD 1.06, p=0.42). This is the tested, quantitative reason PLCO cannot be repurposed as a treatment-resistance predictor. Screening-only."
+  },
+  "analytical_validation": {
+    "disclaimer": "IN-SILICO analytical validation (precision/reproducibility/robustness analogs). NOT wet-lab analytical validation (LoD/LoQ/precision) under a quality system. RUO.",
+    "mfap4_marker": {
+      "cohort": "GSE9891_eset",
+      "precision_by_normalization": {
+        "zscore": {
+          "mean_c_index": 0.621883363871866,
+          "sd": 0.01860489122433103,
+          "cv_pct": 2.991701065694437,
+          "n_seeds": 20
+        },
+        "rank": {
+          "mean_c_index": 0.621883363871866,
+          "sd": 0.01860489122433103,
+          "cv_pct": 2.991701065694437,
+          "n_seeds": 20
+        }
+      },
+      "cross_normalization_spearman": 0.9999999999999998,
+      "robustness": {
+        "noise_curve": {
+          "0.0": {
+            "mean_c": 0.6246378637107949,
+            "retention": 1.0000000000000002
+          },
+          "0.25": {
+            "mean_c": 0.6220115883612546,
+            "retention": 0.9957955232909862
+          },
+          "0.5": {
+            "mean_c": 0.6127912835369693,
+            "retention": 0.9810344827586206
+          },
+          "1.0": {
+            "mean_c": 0.5907293109963472,
+            "retention": 0.945714861867312
+          },
+          "1.5": {
+            "mean_c": 0.5721816349666206,
+            "retention": 0.9160213752772738
+          },
+          "2.0": {
+            "mean_c": 0.5589746819498677,
+            "retention": 0.8948779995966928
+          }
+        },
+        "downsample_curve": {
+          "1.0": {
+            "mean_c": 0.6246378637107949,
+            "n_kept": 264
+          },
+          "0.75": {
+            "mean_c": 0.6243973791019577,
+            "n_kept": 198
+          },
+          "0.5": {
+            "mean_c": 0.620007510655467,
+            "n_kept": 132
+          },
+          "0.25": {
+            "mean_c": 0.6223712421191051,
+            "n_kept": 66
+          }
+        }
+      },
+      "reproducibility": {
+        "deterministic_equal": true,
+        "value": 0.6246378637107948
+      },
+      "base_c_index": 0.6246378637107948
+    },
+    "ctdna_grouping": {
+      "precision": {
+        "tf_os_c_index": {
+          "mean": 0.5652202106066821,
+          "sd": 0.026971601795503484,
+          "cv_pct": 4.771874977109076
+        }
+      },
+      "threshold_stability": {
+        "tf_tertile": {
+          "cutoff1_mean": 4.818555416,
+          "cutoff1_sd": 0.19265286333509957,
+          "cutoff2_mean": 7.991398436000002,
+          "cutoff2_sd": 0.9172655907409601,
+          "cutoff1_cv_pct": 3.998145641230902,
+          "cutoff2_cv_pct": 11.478161151480347
+        }
+      }
+    },
+    "model53_reference": {
+      "verdict": "CALIBRATED_RUO",
+      "oof_auc": 0.6438038705480565,
+      "note": "5.3 analytical stability inherits Track B LOCO-CV bootstrap CI already computed in W2."
+    }
+  },
+  "v3_changelog": {
+    "summary": "v3 evidence-upgrade: survival (OS) outcome validation of markers (W1), 5.3 survival risk score + parsimonious classifier (W2), ctDNA outcome replication (W3), PLCO deeper outcome-context analyses (W4b), in-silico analytical validation (W5). All v2 keys retained.",
+    "outcome_validated_genes_OS": [
+      "MFAP4",
+      "KRAS",
+      "CCNE1",
+      "BRCA2"
+    ],
+    "model_53_track_B_verdict": "CALIBRATED_RUO",
+    "ctdna_verdict": "OUTCOME_VALIDATED_PROGNOSTIC__EXTERNALLY_VALIDATED_RUO",
+    "honesty_boundary": "Ceiling = EXTERNALLY_VALIDATED_RUO (RUO). NO component labeled 'clinically validated'. Prospective + analytical (wet-lab, QMS) validation NOT done."
+  },
   "stream_summaries": {
     "stream_A_external_replication": {
       "MFAP4": "EXTERNALLY_VALIDATED_RUO",
@@ -1189,5 +1643,1044 @@
       ],
       "permutation_p": 0.055
     }
+  },
+  "genes_52": {
+    "CCNE1": {
+      "earned_tier": "EXTERNALLY_VALIDATED_RUO",
+      "somatic_channel": "amp_CCNE1",
+      "somatic_tier": "COHORT_VALIDATED_RUO",
+      "n_exposed": 110,
+      "os_HR": 1.508,
+      "os_CI": [
+        1.169,
+        1.944
+      ],
+      "os_p": 0.0015,
+      "pfs_HR": 1.359,
+      "pfs_CI": [
+        1.07,
+        1.727
+      ],
+      "pfs_p": 0.0119,
+      "expr_tier": "EXPRESSION_REPLICATES_DIRECTION_RUO",
+      "expr_OR_per_SD": 1.215,
+      "expr_OR_CI": [
+        0.767,
+        1.926
+      ],
+      "expr_AUROC": 0.547,
+      "expr_p": 0.4067,
+      "external_replication": {
+        "channel": "expression (z-scored per cohort) vs OS",
+        "n_independent_cohorts": 16,
+        "pooled_HR_per_SD": 1.128,
+        "pooled_CI": [
+          1.06,
+          1.2
+        ],
+        "pooled_p": 0.00013207813213922392,
+        "I2_pct": 0.0,
+        "model": "DerSimonian-Laird random-effects",
+        "n_cohorts_CI_excludes_null": 2,
+        "verdict": "EXPRESSION_CHANNEL_ONLY_REPLICATES_DIRECTION",
+        "note": "CNA-amplification channel (the validated model) CANNOT be externally replicated in curatedOV (no CNA data). Expression channel meta reported separately.",
+        "caveat": "Expression channel replicates in direction; validated CNA-amplification channel NOT externally replicable in curatedOV (no CNA data)."
+      },
+      "survival_outcome": {
+        "endpoint": "OS (overall survival), per-SD z-scored expression, univariable Cox",
+        "pooled_HR_per_SD": 1.128,
+        "pooled_CI": [
+          1.0605,
+          1.1999
+        ],
+        "p_bh_fdr": 0.0009905858698777692,
+        "I2_pct": 0.0,
+        "n_independent_cohorts": 16,
+        "mean_c_index": 0.5461,
+        "ph_checked": true,
+        "verdict": "OUTCOME_VALIDATED__EXTERNALLY_VALIDATED_RUO",
+        "meta_method": "DerSimonian-Laird random-effects; TCGA excluded from independent meta"
+      },
+      "earned_tier_basis": "outcome (OS) externally validated across independent cohorts + prior expression replication"
+    },
+    "NF1": {
+      "earned_tier": "COHORT_TESTED_NULL",
+      "somatic_channel": "mut_NF1",
+      "somatic_tier": "COHORT_TESTED_NULL",
+      "n_exposed": 30,
+      "os_HR": 1.013,
+      "os_CI": [
+        0.613,
+        1.674
+      ],
+      "os_p": 0.9609,
+      "pfs_HR": 0.819,
+      "pfs_CI": [
+        0.516,
+        1.298
+      ],
+      "pfs_p": 0.3948,
+      "expr_tier": "COHORT_TESTED_NULL",
+      "expr_OR_per_SD": 1.039,
+      "expr_OR_CI": [
+        0.659,
+        1.636
+      ],
+      "expr_AUROC": 0.524,
+      "expr_p": 0.87,
+      "pooled_expr_os_retest": {
+        "channel": "expression (z-scored per cohort) vs OS, pooled DL random-effects",
+        "n_cohorts": 16,
+        "total_n": 2529,
+        "total_OS_events": 1339,
+        "pooled_HR_per_SD": 1.077,
+        "pooled_CI": [
+          1.001,
+          1.158
+        ],
+        "pooled_p": 0.045486432663611964,
+        "p_bh_fdr": 0.1408,
+        "I2_pct": 34.0,
+        "verdict": "SIG_UNADJ_ONLY(FDR_ns)",
+        "note": "Expression-channel vs OS across independent cohorts (z-scored per cohort, DL random-effects). This is PROGNOSTIC (OS) evidence for the expression readout, NOT platinum-resistance-mutation validation. EPV shown = pooled OS events (well-powered for OS); it is NOT resistance-event-per-variable.",
+        "fdr_decision": "nominal p<0.05 but BH-FDR q>=0.05 -> NO upgrade (honest)"
+      },
+      "survival_outcome": {
+        "endpoint": "OS (overall survival), per-SD z-scored expression, univariable Cox",
+        "pooled_HR_per_SD": 1.0611,
+        "pooled_CI": [
+          0.9745,
+          1.1555
+        ],
+        "p_bh_fdr": 0.28701424374827217,
+        "I2_pct": 33.2,
+        "n_independent_cohorts": 14,
+        "mean_c_index": 0.5234,
+        "ph_checked": true,
+        "verdict": "OUTCOME_NULL",
+        "meta_method": "DerSimonian-Laird random-effects; TCGA excluded from independent meta"
+      }
+    },
+    "TP53": {
+      "earned_tier": "COHORT_TESTED_NULL",
+      "somatic_channel": "mut_TP53",
+      "somatic_tier": "COHORT_TESTED_NULL",
+      "n_exposed": 370,
+      "os_HR": 1.023,
+      "os_CI": [
+        0.822,
+        1.273
+      ],
+      "os_p": 0.8391,
+      "pfs_HR": 1.079,
+      "pfs_CI": [
+        0.883,
+        1.319
+      ],
+      "pfs_p": 0.455,
+      "expr_tier": "NOT_TESTED",
+      "expr_OR_per_SD": null,
+      "expr_OR_CI": null,
+      "expr_AUROC": null,
+      "expr_p": null,
+      "pooled_expr_os_retest": {
+        "channel": "expression (z-scored per cohort) vs OS, pooled DL random-effects",
+        "n_cohorts": 17,
+        "total_n": 2631,
+        "total_OS_events": 1395,
+        "pooled_HR_per_SD": 0.961,
+        "pooled_CI": [
+          0.911,
+          1.013
+        ],
+        "pooled_p": 0.13581106972011736,
+        "p_bh_fdr": 0.247,
+        "I2_pct": 0.0,
+        "verdict": "COHORT_TESTED_NULL",
+        "note": "Expression-channel vs OS across independent cohorts (z-scored per cohort, DL random-effects). This is PROGNOSTIC (OS) evidence for the expression readout, NOT platinum-resistance-mutation validation. EPV shown = pooled OS events (well-powered for OS); it is NOT resistance-event-per-variable."
+      },
+      "survival_outcome": {
+        "endpoint": "OS (overall survival), per-SD z-scored expression, univariable Cox",
+        "pooled_HR_per_SD": 0.9468,
+        "pooled_CI": [
+          0.8889,
+          1.0084
+        ],
+        "p_bh_fdr": 0.18704703184748928,
+        "I2_pct": 0.0,
+        "n_independent_cohorts": 15,
+        "mean_c_index": 0.5268,
+        "ph_checked": true,
+        "verdict": "OUTCOME_NULL",
+        "meta_method": "DerSimonian-Laird random-effects; TCGA excluded from independent meta"
+      }
+    },
+    "CDK12": {
+      "earned_tier": "COHORT_TESTED_NULL",
+      "somatic_channel": "mut_CDK12",
+      "somatic_tier": "COHORT_TESTED_NULL",
+      "n_exposed": 19,
+      "os_HR": 1.143,
+      "os_CI": [
+        0.656,
+        1.991
+      ],
+      "os_p": 0.6372,
+      "pfs_HR": 1.156,
+      "pfs_CI": [
+        0.678,
+        1.97
+      ],
+      "pfs_p": 0.5951,
+      "expr_tier": "NOT_TESTED",
+      "expr_OR_per_SD": null,
+      "expr_OR_CI": null,
+      "expr_AUROC": null,
+      "expr_p": null,
+      "pooled_expr_os_retest": {
+        "channel": "expression (z-scored per cohort) vs OS, pooled DL random-effects",
+        "n_cohorts": 16,
+        "total_n": 2529,
+        "total_OS_events": 1339,
+        "pooled_HR_per_SD": 0.988,
+        "pooled_CI": [
+          0.924,
+          1.056
+        ],
+        "pooled_p": 0.7166769662544987,
+        "p_bh_fdr": 0.8269,
+        "I2_pct": 27.0,
+        "verdict": "COHORT_TESTED_NULL",
+        "note": "Expression-channel vs OS across independent cohorts (z-scored per cohort, DL random-effects). This is PROGNOSTIC (OS) evidence for the expression readout, NOT platinum-resistance-mutation validation. EPV shown = pooled OS events (well-powered for OS); it is NOT resistance-event-per-variable."
+      },
+      "survival_outcome": {
+        "endpoint": "OS (overall survival), per-SD z-scored expression, univariable Cox",
+        "pooled_HR_per_SD": 0.9631,
+        "pooled_CI": [
+          0.8906,
+          1.0415
+        ],
+        "p_bh_fdr": 0.3998993962461376,
+        "I2_pct": 24.9,
+        "n_independent_cohorts": 14,
+        "mean_c_index": 0.5354,
+        "ph_checked": true,
+        "verdict": "OUTCOME_NULL",
+        "meta_method": "DerSimonian-Laird random-effects; TCGA excluded from independent meta"
+      }
+    },
+    "BRCA1": {
+      "earned_tier": "COHORT_TESTED_NULL",
+      "somatic_channel": "mut_BRCA1",
+      "somatic_tier": "COHORT_TESTED_NULL",
+      "n_exposed": 17,
+      "os_HR": 0.569,
+      "os_CI": [
+        0.212,
+        1.526
+      ],
+      "os_p": 0.2627,
+      "pfs_HR": 0.792,
+      "pfs_CI": [
+        0.409,
+        1.534
+      ],
+      "pfs_p": 0.4897,
+      "expr_tier": "COHORT_TESTED_NULL",
+      "expr_OR_per_SD": 0.848,
+      "expr_OR_CI": [
+        0.536,
+        1.341
+      ],
+      "expr_AUROC": 0.542,
+      "expr_p": 0.4806,
+      "pooled_expr_os_retest": {
+        "channel": "expression (z-scored per cohort) vs OS, pooled DL random-effects",
+        "n_cohorts": 18,
+        "total_n": 2752,
+        "total_OS_events": 1491,
+        "pooled_HR_per_SD": 1.039,
+        "pooled_CI": [
+          0.987,
+          1.093
+        ],
+        "pooled_p": 0.14819706279046052,
+        "p_bh_fdr": 0.247,
+        "I2_pct": 0.0,
+        "verdict": "COHORT_TESTED_NULL",
+        "note": "Expression-channel vs OS across independent cohorts (z-scored per cohort, DL random-effects). This is PROGNOSTIC (OS) evidence for the expression readout, NOT platinum-resistance-mutation validation. EPV shown = pooled OS events (well-powered for OS); it is NOT resistance-event-per-variable."
+      },
+      "survival_outcome": {
+        "endpoint": "OS (overall survival), per-SD z-scored expression, univariable Cox",
+        "pooled_HR_per_SD": 1.0513,
+        "pooled_CI": [
+          0.9905,
+          1.1158
+        ],
+        "p_bh_fdr": 0.18704703184748928,
+        "I2_pct": 0.0,
+        "n_independent_cohorts": 16,
+        "mean_c_index": 0.5213,
+        "ph_checked": true,
+        "verdict": "OUTCOME_NULL",
+        "meta_method": "DerSimonian-Laird random-effects; TCGA excluded from independent meta"
+      }
+    },
+    "BRCA2": {
+      "earned_tier": "EXTERNALLY_VALIDATED_RUO",
+      "somatic_channel": "mut_BRCA2",
+      "somatic_tier": "COHORT_VALIDATED_RUO",
+      "n_exposed": 15,
+      "os_HR": 0.416,
+      "os_CI": [
+        0.196,
+        0.881
+      ],
+      "os_p": 0.0219,
+      "pfs_HR": 0.356,
+      "pfs_CI": [
+        0.168,
+        0.753
+      ],
+      "pfs_p": 0.0069,
+      "expr_tier": "COHORT_TESTED_NULL",
+      "expr_OR_per_SD": 0.996,
+      "expr_OR_CI": [
+        0.632,
+        1.569
+      ],
+      "expr_AUROC": 0.509,
+      "expr_p": 0.9865,
+      "external_replication": {
+        "channel": "expression (z-scored per cohort) vs OS",
+        "n_independent_cohorts": 18,
+        "pooled_HR_per_SD": 1.082,
+        "pooled_CI": [
+          1.029,
+          1.139
+        ],
+        "pooled_p": 0.0022381212426820785,
+        "I2_pct": 0.0,
+        "model": "DerSimonian-Laird random-effects",
+        "n_cohorts_CI_excludes_null": 2,
+        "verdict": "EXPRESSION_CHANNEL_ONLY_DIFFERENT_OR_NULL",
+        "note": "Validated model = BRCA2 MUTATION (protective, HR 0.416). curatedOV has EXPRESSION only. Expression meta HR>1 (opposite direction) = different biology, NOT a replication of the mutation model. Mutation-channel external replication requires a mutation-annotated HGSOC cohort (not in curatedOV).",
+        "caveat": "Expression meta direction OPPOSITE to validated MUTATION model (protective). NOT a replication of the mutation model."
+      },
+      "survival_outcome": {
+        "endpoint": "OS (overall survival), per-SD z-scored expression, univariable Cox",
+        "pooled_HR_per_SD": 1.0949,
+        "pooled_CI": [
+          1.0307,
+          1.1631
+        ],
+        "p_bh_fdr": 0.01465817467451086,
+        "I2_pct": 0.0,
+        "n_independent_cohorts": 16,
+        "mean_c_index": 0.5327,
+        "ph_checked": true,
+        "verdict": "OUTCOME_VALIDATED__EXTERNALLY_VALIDATED_RUO",
+        "meta_method": "DerSimonian-Laird random-effects; TCGA excluded from independent meta"
+      },
+      "earned_tier_basis": "outcome (OS) externally validated across independent cohorts + prior expression replication"
+    },
+    "PALB2": {
+      "earned_tier": "BORDERLINE_RUO",
+      "somatic_channel": "mut_PALB2",
+      "somatic_tier": "BORDERLINE_RUO",
+      "n_exposed": 5,
+      "os_HR": 1.025,
+      "os_CI": [
+        0.382,
+        2.748
+      ],
+      "os_p": 0.9616,
+      "pfs_HR": 0.917,
+      "pfs_CI": [
+        0.294,
+        2.858
+      ],
+      "pfs_p": 0.8809,
+      "expr_tier": "COHORT_TESTED_NULL",
+      "expr_OR_per_SD": 1.053,
+      "expr_OR_CI": [
+        0.668,
+        1.66
+      ],
+      "expr_AUROC": 0.527,
+      "expr_p": 0.824,
+      "pooled_expr_os_retest": {
+        "channel": "expression (z-scored per cohort) vs OS, pooled DL random-effects",
+        "n_cohorts": 17,
+        "total_n": 2649,
+        "total_OS_events": 1434,
+        "pooled_HR_per_SD": 0.935,
+        "pooled_CI": [
+          0.872,
+          1.002
+        ],
+        "pooled_p": 0.05630650298587758,
+        "p_bh_fdr": 0.1408,
+        "I2_pct": 35.6,
+        "verdict": "COHORT_TESTED_NULL",
+        "note": "Expression-channel vs OS across independent cohorts (z-scored per cohort, DL random-effects). This is PROGNOSTIC (OS) evidence for the expression readout, NOT platinum-resistance-mutation validation. EPV shown = pooled OS events (well-powered for OS); it is NOT resistance-event-per-variable."
+      },
+      "survival_outcome": {
+        "endpoint": "OS (overall survival), per-SD z-scored expression, univariable Cox",
+        "pooled_HR_per_SD": 0.955,
+        "pooled_CI": [
+          0.8829,
+          1.033
+        ],
+        "p_bh_fdr": 0.34162496336249015,
+        "I2_pct": 32.4,
+        "n_independent_cohorts": 15,
+        "mean_c_index": 0.535,
+        "ph_checked": true,
+        "verdict": "OUTCOME_NULL",
+        "meta_method": "DerSimonian-Laird random-effects; TCGA excluded from independent meta"
+      }
+    },
+    "PTEN": {
+      "earned_tier": "BORDERLINE_RUO",
+      "somatic_channel": "mut_PTEN",
+      "somatic_tier": "BORDERLINE_RUO",
+      "n_exposed": 7,
+      "os_HR": 1.496,
+      "os_CI": [
+        0.615,
+        3.637
+      ],
+      "os_p": 0.3741,
+      "pfs_HR": 0.832,
+      "pfs_CI": [
+        0.31,
+        2.232
+      ],
+      "pfs_p": 0.7142,
+      "expr_tier": "COHORT_TESTED_NULL",
+      "expr_OR_per_SD": 1.111,
+      "expr_OR_CI": [
+        0.698,
+        1.767
+      ],
+      "expr_AUROC": 0.507,
+      "expr_p": 0.6582,
+      "pooled_expr_os_retest": {
+        "channel": "expression (z-scored per cohort) vs OS, pooled DL random-effects",
+        "n_cohorts": 11,
+        "total_n": 1505,
+        "total_OS_events": 755,
+        "pooled_HR_per_SD": 1.006,
+        "pooled_CI": [
+          0.939,
+          1.077
+        ],
+        "pooled_p": 0.8724847293622591,
+        "p_bh_fdr": 0.9348,
+        "I2_pct": 0.0,
+        "verdict": "COHORT_TESTED_NULL",
+        "note": "Expression-channel vs OS across independent cohorts (z-scored per cohort, DL random-effects). This is PROGNOSTIC (OS) evidence for the expression readout, NOT platinum-resistance-mutation validation. EPV shown = pooled OS events (well-powered for OS); it is NOT resistance-event-per-variable."
+      },
+      "survival_outcome": {
+        "endpoint": "OS (overall survival), per-SD z-scored expression, univariable Cox",
+        "pooled_HR_per_SD": 0.9871,
+        "pooled_CI": [
+          0.9142,
+          1.0659
+        ],
+        "p_bh_fdr": 0.7409258371798617,
+        "I2_pct": 0.0,
+        "n_independent_cohorts": 10,
+        "mean_c_index": 0.5292,
+        "ph_checked": true,
+        "verdict": "OUTCOME_NULL",
+        "meta_method": "DerSimonian-Laird random-effects; TCGA excluded from independent meta"
+      }
+    },
+    "KRAS": {
+      "earned_tier": "EXTERNALLY_VALIDATED_RUO",
+      "somatic_channel": "mut_KRAS",
+      "somatic_tier": "BORDERLINE_RUO",
+      "n_exposed": 6,
+      "os_HR": 1.109,
+      "os_CI": [
+        0.413,
+        2.975
+      ],
+      "os_p": 0.8371,
+      "pfs_HR": 0.946,
+      "pfs_CI": [
+        0.353,
+        2.536
+      ],
+      "pfs_p": 0.9126,
+      "expr_tier": "COHORT_VALIDATED_RUO",
+      "expr_OR_per_SD": 1.411,
+      "expr_OR_CI": [
+        0.874,
+        2.277
+      ],
+      "expr_AUROC": 0.605,
+      "expr_p": 0.1591,
+      "pooled_expr_os_retest": {
+        "channel": "expression (z-scored per cohort) vs OS, pooled DL random-effects",
+        "n_cohorts": 16,
+        "total_n": 2529,
+        "total_OS_events": 1339,
+        "pooled_HR_per_SD": 1.124,
+        "pooled_CI": [
+          1.06,
+          1.191
+        ],
+        "pooled_p": 8.528651676464882e-05,
+        "p_bh_fdr": 0.0013,
+        "I2_pct": 5.9,
+        "verdict": "COHORT_VALIDATED_RUO",
+        "note": "Expression-channel vs OS across independent cohorts (z-scored per cohort, DL random-effects). This is PROGNOSTIC (OS) evidence for the expression readout, NOT platinum-resistance-mutation validation. EPV shown = pooled OS events (well-powered for OS); it is NOT resistance-event-per-variable."
+      },
+      "upgrade_note": "Upgraded from BORDERLINE_RUO: expression/OS pooled meta HR/SD 1.124 [1.060,1.191], FDR q=0.0013, 16 cohorts, 0/16 PH violations. NOTE: this validates KRAS EXPRESSION as prognostic for OS, distinct from the (still-borderline, n=5) KRAS-mutation resistance channel.",
+      "survival_outcome": {
+        "endpoint": "OS (overall survival), per-SD z-scored expression, univariable Cox",
+        "pooled_HR_per_SD": 1.1202,
+        "pooled_CI": [
+          1.0371,
+          1.2099
+        ],
+        "p_bh_fdr": 0.01465817467451086,
+        "I2_pct": 17.5,
+        "n_independent_cohorts": 14,
+        "mean_c_index": 0.545,
+        "ph_checked": true,
+        "verdict": "OUTCOME_VALIDATED__EXTERNALLY_VALIDATED_RUO",
+        "meta_method": "DerSimonian-Laird random-effects; TCGA excluded from independent meta"
+      },
+      "earned_tier_basis": "outcome (OS) externally validated across independent cohorts + prior expression replication"
+    },
+    "NRAS": {
+      "earned_tier": "BORDERLINE_RUO",
+      "somatic_channel": "mut_NRAS",
+      "somatic_tier": "BORDERLINE_RUO",
+      "n_exposed": 5,
+      "os_HR": 0.605,
+      "os_CI": [
+        0.151,
+        2.43
+      ],
+      "os_p": 0.4787,
+      "pfs_HR": 0.451,
+      "pfs_CI": [
+        0.112,
+        1.811
+      ],
+      "pfs_p": 0.2615,
+      "expr_tier": "COHORT_TESTED_NULL",
+      "expr_OR_per_SD": 1.143,
+      "expr_OR_CI": [
+        0.721,
+        1.813
+      ],
+      "expr_AUROC": 0.546,
+      "expr_p": 0.5689,
+      "pooled_expr_os_retest": {
+        "channel": "expression (z-scored per cohort) vs OS, pooled DL random-effects",
+        "n_cohorts": 17,
+        "total_n": 2631,
+        "total_OS_events": 1395,
+        "pooled_HR_per_SD": 1.018,
+        "pooled_CI": [
+          0.934,
+          1.111
+        ],
+        "pooled_p": 0.6798044610554941,
+        "p_bh_fdr": 0.8269,
+        "I2_pct": 55.7,
+        "verdict": "COHORT_TESTED_NULL",
+        "note": "Expression-channel vs OS across independent cohorts (z-scored per cohort, DL random-effects). This is PROGNOSTIC (OS) evidence for the expression readout, NOT platinum-resistance-mutation validation. EPV shown = pooled OS events (well-powered for OS); it is NOT resistance-event-per-variable."
+      },
+      "survival_outcome": {
+        "endpoint": "OS (overall survival), per-SD z-scored expression, univariable Cox",
+        "pooled_HR_per_SD": 1.0382,
+        "pooled_CI": [
+          0.9369,
+          1.1504
+        ],
+        "p_bh_fdr": 0.5079261223302475,
+        "I2_pct": 56.5,
+        "n_independent_cohorts": 15,
+        "mean_c_index": 0.5624,
+        "ph_checked": true,
+        "verdict": "OUTCOME_NULL",
+        "meta_method": "DerSimonian-Laird random-effects; TCGA excluded from independent meta"
+      }
+    },
+    "KEAP1": {
+      "earned_tier": "COHORT_TESTED_NULL",
+      "somatic_channel": "mut_KEAP1",
+      "somatic_tier": "INSUFFICIENT_EVENTS",
+      "n_exposed": 2,
+      "os_HR": null,
+      "os_CI": [
+        null,
+        null
+      ],
+      "os_p": null,
+      "pfs_HR": null,
+      "pfs_CI": [
+        null,
+        null
+      ],
+      "pfs_p": null,
+      "expr_tier": "COHORT_TESTED_NULL",
+      "expr_OR_per_SD": 1.193,
+      "expr_OR_CI": [
+        0.752,
+        1.894
+      ],
+      "expr_AUROC": 0.554,
+      "expr_p": 0.454,
+      "pooled_expr_os_retest": {
+        "channel": "expression (z-scored per cohort) vs OS, pooled DL random-effects",
+        "n_cohorts": 17,
+        "total_n": 2650,
+        "total_OS_events": 1435,
+        "pooled_HR_per_SD": 0.912,
+        "pooled_CI": [
+          0.85,
+          0.979
+        ],
+        "pooled_p": 0.010370721459282306,
+        "p_bh_fdr": 0.0778,
+        "I2_pct": 33.4,
+        "verdict": "SIG_UNADJ_ONLY(FDR_ns)",
+        "note": "Expression-channel vs OS across independent cohorts (z-scored per cohort, DL random-effects). This is PROGNOSTIC (OS) evidence for the expression readout, NOT platinum-resistance-mutation validation. EPV shown = pooled OS events (well-powered for OS); it is NOT resistance-event-per-variable.",
+        "fdr_decision": "nominal p<0.05 but BH-FDR q>=0.05 -> NO upgrade (honest)"
+      },
+      "survival_outcome": {
+        "endpoint": "OS (overall survival), per-SD z-scored expression, univariable Cox",
+        "pooled_HR_per_SD": 0.9208,
+        "pooled_CI": [
+          0.8458,
+          1.0026
+        ],
+        "p_bh_fdr": 0.14323166647033037,
+        "I2_pct": 40.3,
+        "n_independent_cohorts": 15,
+        "mean_c_index": 0.5539,
+        "ph_checked": true,
+        "verdict": "OUTCOME_NULL",
+        "meta_method": "DerSimonian-Laird random-effects; TCGA excluded from independent meta"
+      }
+    },
+    "CUL3": {
+      "earned_tier": "COHORT_TESTED_NULL",
+      "somatic_channel": "mut_CUL3",
+      "somatic_tier": "INSUFFICIENT_EVENTS",
+      "n_exposed": 3,
+      "os_HR": null,
+      "os_CI": [
+        null,
+        null
+      ],
+      "os_p": null,
+      "pfs_HR": null,
+      "pfs_CI": [
+        null,
+        null
+      ],
+      "pfs_p": null,
+      "expr_tier": "COHORT_TESTED_NULL",
+      "expr_OR_per_SD": 0.888,
+      "expr_OR_CI": [
+        0.563,
+        1.402
+      ],
+      "expr_AUROC": 0.516,
+      "expr_p": 0.6112,
+      "pooled_expr_os_retest": {
+        "channel": "expression (z-scored per cohort) vs OS, pooled DL random-effects",
+        "n_cohorts": 17,
+        "total_n": 2650,
+        "total_OS_events": 1435,
+        "pooled_HR_per_SD": 1.002,
+        "pooled_CI": [
+          0.93,
+          1.08
+        ],
+        "pooled_p": 0.9556389571198294,
+        "p_bh_fdr": 0.9556,
+        "I2_pct": 46.6,
+        "verdict": "COHORT_TESTED_NULL",
+        "note": "Expression-channel vs OS across independent cohorts (z-scored per cohort, DL random-effects). This is PROGNOSTIC (OS) evidence for the expression readout, NOT platinum-resistance-mutation validation. EPV shown = pooled OS events (well-powered for OS); it is NOT resistance-event-per-variable."
+      }
+    },
+    "SLC31A1": {
+      "earned_tier": "COHORT_TESTED_NULL",
+      "somatic_channel": "mut_SLC31A1",
+      "somatic_tier": "INSUFFICIENT_EVENTS",
+      "n_exposed": 1,
+      "os_HR": null,
+      "os_CI": [
+        null,
+        null
+      ],
+      "os_p": null,
+      "pfs_HR": null,
+      "pfs_CI": [
+        null,
+        null
+      ],
+      "pfs_p": null,
+      "expr_tier": "COHORT_TESTED_NULL",
+      "expr_OR_per_SD": 1.081,
+      "expr_OR_CI": [
+        0.686,
+        1.705
+      ],
+      "expr_AUROC": 0.516,
+      "expr_p": 0.7369,
+      "pooled_expr_os_retest": {
+        "channel": "expression (z-scored per cohort) vs OS, pooled DL random-effects",
+        "n_cohorts": 17,
+        "total_n": 2631,
+        "total_OS_events": 1395,
+        "pooled_HR_per_SD": 0.95,
+        "pooled_CI": [
+          0.899,
+          1.005
+        ],
+        "pooled_p": 0.0742794679883736,
+        "p_bh_fdr": 0.1592,
+        "I2_pct": 7.5,
+        "verdict": "COHORT_TESTED_NULL",
+        "note": "Expression-channel vs OS across independent cohorts (z-scored per cohort, DL random-effects). This is PROGNOSTIC (OS) evidence for the expression readout, NOT platinum-resistance-mutation validation. EPV shown = pooled OS events (well-powered for OS); it is NOT resistance-event-per-variable."
+      },
+      "survival_outcome": {
+        "endpoint": "OS (overall survival), per-SD z-scored expression, univariable Cox",
+        "pooled_HR_per_SD": 0.9549,
+        "pooled_CI": [
+          0.8886,
+          1.0263
+        ],
+        "p_bh_fdr": 0.3144526511426837,
+        "I2_pct": 18.6,
+        "n_independent_cohorts": 15,
+        "mean_c_index": 0.5423,
+        "ph_checked": true,
+        "verdict": "OUTCOME_NULL",
+        "meta_method": "DerSimonian-Laird random-effects; TCGA excluded from independent meta"
+      }
+    },
+    "TP53BP1": {
+      "earned_tier": "COHORT_TESTED_NULL",
+      "somatic_channel": "mut_TP53BP1",
+      "somatic_tier": "INSUFFICIENT_EVENTS",
+      "n_exposed": 4,
+      "os_HR": null,
+      "os_CI": [
+        null,
+        null
+      ],
+      "os_p": null,
+      "pfs_HR": null,
+      "pfs_CI": [
+        null,
+        null
+      ],
+      "pfs_p": null,
+      "expr_tier": "COHORT_TESTED_NULL",
+      "expr_OR_per_SD": 1.087,
+      "expr_OR_CI": [
+        0.69,
+        1.713
+      ],
+      "expr_AUROC": 0.529,
+      "expr_p": 0.7192,
+      "pooled_expr_os_retest": {
+        "channel": "expression (z-scored per cohort) vs OS, pooled DL random-effects",
+        "n_cohorts": 17,
+        "total_n": 2650,
+        "total_OS_events": 1435,
+        "pooled_HR_per_SD": 1.065,
+        "pooled_CI": [
+          1.008,
+          1.125
+        ],
+        "pooled_p": 0.025080651762948936,
+        "p_bh_fdr": 0.1254,
+        "I2_pct": 6.1,
+        "verdict": "SIG_UNADJ_ONLY(FDR_ns)",
+        "note": "Expression-channel vs OS across independent cohorts (z-scored per cohort, DL random-effects). This is PROGNOSTIC (OS) evidence for the expression readout, NOT platinum-resistance-mutation validation. EPV shown = pooled OS events (well-powered for OS); it is NOT resistance-event-per-variable.",
+        "fdr_decision": "nominal p<0.05 but BH-FDR q>=0.05 -> NO upgrade (honest)"
+      },
+      "survival_outcome": {
+        "endpoint": "OS (overall survival), per-SD z-scored expression, univariable Cox",
+        "pooled_HR_per_SD": 1.0311,
+        "pooled_CI": [
+          0.9681,
+          1.0981
+        ],
+        "p_bh_fdr": 0.3998993962461376,
+        "I2_pct": 0.0,
+        "n_independent_cohorts": 15,
+        "mean_c_index": 0.536,
+        "ph_checked": true,
+        "verdict": "OUTCOME_NULL",
+        "meta_method": "DerSimonian-Laird random-effects; TCGA excluded from independent meta"
+      }
+    },
+    "SHLD1": {
+      "earned_tier": "LITERATURE_ONLY",
+      "somatic_channel": "mut_SHLD1",
+      "somatic_tier": "INSUFFICIENT_EVENTS",
+      "n_exposed": 0,
+      "os_HR": null,
+      "os_CI": [
+        null,
+        null
+      ],
+      "os_p": null,
+      "pfs_HR": null,
+      "pfs_CI": [
+        null,
+        null
+      ],
+      "pfs_p": null,
+      "expr_tier": "NOT_ON_ARRAY",
+      "expr_OR_per_SD": null,
+      "expr_OR_CI": null,
+      "expr_AUROC": null,
+      "expr_p": null
+    },
+    "SHLD2": {
+      "earned_tier": "LITERATURE_ONLY",
+      "somatic_channel": "mut_SHLD2",
+      "somatic_tier": "INSUFFICIENT_EVENTS",
+      "n_exposed": 4,
+      "os_HR": null,
+      "os_CI": [
+        null,
+        null
+      ],
+      "os_p": null,
+      "pfs_HR": null,
+      "pfs_CI": [
+        null,
+        null
+      ],
+      "pfs_p": null,
+      "expr_tier": "NOT_ON_ARRAY",
+      "expr_OR_per_SD": null,
+      "expr_OR_CI": null,
+      "expr_AUROC": null,
+      "expr_p": null
+    },
+    "MAD2L2": {
+      "earned_tier": "COHORT_TESTED_NULL",
+      "somatic_channel": "mut_MAD2L2",
+      "somatic_tier": "INSUFFICIENT_EVENTS",
+      "n_exposed": 0,
+      "os_HR": null,
+      "os_CI": [
+        null,
+        null
+      ],
+      "os_p": null,
+      "pfs_HR": null,
+      "pfs_CI": [
+        null,
+        null
+      ],
+      "pfs_p": null,
+      "expr_tier": "COHORT_TESTED_NULL",
+      "expr_OR_per_SD": 1.407,
+      "expr_OR_CI": [
+        0.876,
+        2.261
+      ],
+      "expr_AUROC": 0.577,
+      "expr_p": 0.1584,
+      "pooled_expr_os_retest": {
+        "channel": "expression (z-scored per cohort) vs OS, pooled DL random-effects",
+        "n_cohorts": 12,
+        "total_n": 1680,
+        "total_OS_events": 907,
+        "pooled_HR_per_SD": 1.034,
+        "pooled_CI": [
+          0.969,
+          1.103
+        ],
+        "pooled_p": 0.3105952716203999,
+        "p_bh_fdr": 0.4235,
+        "I2_pct": 0.0,
+        "verdict": "COHORT_TESTED_NULL",
+        "note": "Expression-channel vs OS across independent cohorts (z-scored per cohort, DL random-effects). This is PROGNOSTIC (OS) evidence for the expression readout, NOT platinum-resistance-mutation validation. EPV shown = pooled OS events (well-powered for OS); it is NOT resistance-event-per-variable."
+      }
+    },
+    "MBD4": {
+      "earned_tier": "COHORT_TESTED_NULL",
+      "somatic_channel": "mut_MBD4",
+      "somatic_tier": "INSUFFICIENT_EVENTS",
+      "n_exposed": 1,
+      "os_HR": null,
+      "os_CI": [
+        null,
+        null
+      ],
+      "os_p": null,
+      "pfs_HR": null,
+      "pfs_CI": [
+        null,
+        null
+      ],
+      "pfs_p": null,
+      "expr_tier": "COHORT_TESTED_NULL",
+      "expr_OR_per_SD": 0.701,
+      "expr_OR_CI": [
+        0.436,
+        1.128
+      ],
+      "expr_AUROC": 0.618,
+      "expr_p": 0.1436,
+      "pooled_expr_os_retest": {
+        "channel": "expression (z-scored per cohort) vs OS, pooled DL random-effects",
+        "n_cohorts": 17,
+        "total_n": 2623,
+        "total_OS_events": 1418,
+        "pooled_HR_per_SD": 1.05,
+        "pooled_CI": [
+          0.979,
+          1.125
+        ],
+        "pooled_p": 0.17396461715048672,
+        "p_bh_fdr": 0.2609,
+        "I2_pct": 38.1,
+        "verdict": "COHORT_TESTED_NULL",
+        "note": "Expression-channel vs OS across independent cohorts (z-scored per cohort, DL random-effects). This is PROGNOSTIC (OS) evidence for the expression readout, NOT platinum-resistance-mutation validation. EPV shown = pooled OS events (well-powered for OS); it is NOT resistance-event-per-variable."
+      }
+    },
+    "BRAF": {
+      "earned_tier": "COHORT_TESTED_NULL",
+      "somatic_channel": "mut_BRAF",
+      "somatic_tier": "INSUFFICIENT_EVENTS",
+      "n_exposed": 2,
+      "os_HR": null,
+      "os_CI": [
+        null,
+        null
+      ],
+      "os_p": null,
+      "pfs_HR": null,
+      "pfs_CI": [
+        null,
+        null
+      ],
+      "pfs_p": null,
+      "expr_tier": "COHORT_TESTED_NULL",
+      "expr_OR_per_SD": 0.824,
+      "expr_OR_CI": [
+        0.518,
+        1.311
+      ],
+      "expr_AUROC": 0.55,
+      "expr_p": 0.4141,
+      "pooled_expr_os_retest": {
+        "channel": "expression (z-scored per cohort) vs OS, pooled DL random-effects",
+        "n_cohorts": 15,
+        "total_n": 2372,
+        "total_OS_events": 1226,
+        "pooled_HR_per_SD": 0.92,
+        "pooled_CI": [
+          0.845,
+          1.002
+        ],
+        "pooled_p": 0.055340341832044615,
+        "p_bh_fdr": 0.1408,
+        "I2_pct": 44.8,
+        "verdict": "COHORT_TESTED_NULL",
+        "note": "Expression-channel vs OS across independent cohorts (z-scored per cohort, DL random-effects). This is PROGNOSTIC (OS) evidence for the expression readout, NOT platinum-resistance-mutation validation. EPV shown = pooled OS events (well-powered for OS); it is NOT resistance-event-per-variable."
+      },
+      "survival_outcome": {
+        "endpoint": "OS (overall survival), per-SD z-scored expression, univariable Cox",
+        "pooled_HR_per_SD": 0.8925,
+        "pooled_CI": [
+          0.8068,
+          0.9874
+        ],
+        "p_bh_fdr": 0.08205093285579457,
+        "I2_pct": 42.4,
+        "n_independent_cohorts": 13,
+        "mean_c_index": 0.5522,
+        "ph_checked": true,
+        "verdict": "OUTCOME_SIG_UNADJ_ONLY(FDR_ns)",
+        "meta_method": "DerSimonian-Laird random-effects; TCGA excluded from independent meta"
+      }
+    },
+    "MFAP4": {
+      "earned_tier": "EXTERNALLY_VALIDATED_RUO",
+      "somatic_channel": "none (RNA-only)",
+      "somatic_tier": "N/A",
+      "n_exposed": null,
+      "os_HR": null,
+      "os_CI": [
+        null,
+        null
+      ],
+      "os_p": null,
+      "pfs_HR": null,
+      "pfs_CI": [
+        null,
+        null
+      ],
+      "pfs_p": null,
+      "expr_tier": "EXTERNALLY_VALIDATED_RUO",
+      "expr_OR_per_SD": 1.915,
+      "expr_OR_CI": [
+        1.134,
+        3.236
+      ],
+      "expr_AUROC": 0.684,
+      "expr_p": 0.0152,
+      "note": "Register claimed AUROC 0.763; measured 0.684 on labeled subset, same cohort/direction, real.",
+      "external_replication": {
+        "channel": "expression (z-scored per cohort) vs OS",
+        "n_independent_cohorts": 17,
+        "pooled_HR_per_SD": 1.214,
+        "pooled_CI": [
+          1.153,
+          1.277
+        ],
+        "pooled_p": 1.1723955140041653e-13,
+        "I2_pct": 0.0,
+        "model": "DerSimonian-Laird random-effects",
+        "n_cohorts_CI_excludes_null": 7,
+        "verdict": "EXTERNALLY_VALIDATED_RUO",
+        "note": "Fit on GSE63885 (RNA); all curatedOV cohorts independent. High expr -> worse outcome expected."
+      },
+      "survival_outcome": {
+        "endpoint": "OS (overall survival), per-SD z-scored expression, univariable Cox",
+        "pooled_HR_per_SD": 1.2263,
+        "pooled_CI": [
+          1.154,
+          1.3031
+        ],
+        "p_bh_fdr": 6.958233988996199e-10,
+        "I2_pct": 0.0,
+        "n_independent_cohorts": 15,
+        "mean_c_index": 0.5552,
+        "ph_checked": true,
+        "verdict": "OUTCOME_VALIDATED__EXTERNALLY_VALIDATED_RUO",
+        "meta_method": "DerSimonian-Laird random-effects; TCGA excluded from independent meta"
+      },
+      "earned_tier_basis": "outcome (OS) externally validated across independent cohorts + prior expression replication"
+    }
+  },
+  "plco_anchor_rule_LOCKED": {
+    "exam_attempted": "result IN (1,2,3,4) OR level/days present",
+    "exam_completed_ca125": "level IS NOT NULL AND days IS NOT NULL",
+    "exam_completed_tvu": "days IS NOT NULL",
+    "not_done_slot": "result IN (8,9)  -- EXCLUDE from exam denominators",
+    "kinetic_anchor": "require assay + days; NEVER use codes 8/9 as timepoints",
+    "series_inflation_verdict": "scheduled/missing-year slot expansion, NOT duplication (DISTINCT(plco_id,timepoint)=total_rows; zero duplicate keys)"
   }
 }

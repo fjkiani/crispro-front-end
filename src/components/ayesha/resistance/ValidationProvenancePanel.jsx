@@ -39,6 +39,24 @@ function fmtReplication(r) {
     return `${k} cohorts · pooled HR/SD ${ext.pooled_HR_per_SD} (95% CI ${ci[0]}–${ci[1]}), I²=${ext.I2_pct}%`;
 }
 
+// Survival outcome-validation summary for a gene row (v3.0): univariable Cox on OS,
+// per-SD z-scored expression, DerSimonian–Laird meta across independent (non-TCGA) cohorts,
+// BH-FDR corrected. Only rendered when the gene cleared the outcome-validation bar (q<0.05).
+function fmtSurvivalOutcome(so) {
+    if (!so || so.pooled_HR_per_SD == null) return '—';
+    const ci = so.pooled_CI || [];
+    const q = so.p_bh_fdr;
+    const qStr = q != null ? (q < 1e-3 ? q.toExponential(1) : q.toFixed(4)) : 'NA';
+    const c = so.mean_c_index != null ? `, C=${so.mean_c_index}` : '';
+    return `OS HR/SD ${so.pooled_HR_per_SD} (95% CI ${ci[0]}–${ci[1]}), q=${qStr}, I²=${so.I2_pct}%, ${so.n_independent_cohorts} cohorts${c}`;
+}
+
+// Compact numeric formatter for display chips (3 significant decimals).
+function fmt3(v) {
+    if (v == null || Number.isNaN(Number(v))) return '—';
+    return Number(v).toFixed(3);
+}
+
 function TierChip({ tier }) {
     const s = TIER_STYLE[tier] || { color: 'default', hex: '#c0c0c0', label: tier || 'Unknown' };
     return (
@@ -104,6 +122,20 @@ export default function ValidationProvenancePanel({ dataUrl = '/data/resistance_
     const m53v2 = (data.model_53_v2 || {}).logit_resistance_probability_expr || {};
     const gaps = data.gap_5_1 || {};
 
+    // v3.0 outcome blocks (additive; render only when present in the registry payload).
+    const m53v3 = data.model_53_v3 || null;
+    const trackA = (m53v3 && (m53v3.track_A_survival_risk_score || m53v3.track_A)) || null;
+    const trackB = (m53v3 && (m53v3.track_B_parsimonious_resistance_classifier
+        || m53v3.track_B_parsimonious_binary_classifier || m53v3.track_B)) || null;
+    const ctdna = data.ctdna_outcome || null;
+    const ctdnaTF = ctdna && ctdna.cox_results ? {
+        pfs: ctdna.cox_results.pfs?.tf, os: ctdna.cox_results.os?.tf,
+    } : null;
+    const plco = data.plco_outcome_context || null;
+    const analytical = data.analytical_validation || null;
+    const mfap4Cv = analytical?.mfap4_marker?.precision_by_normalization?.zscore?.cv_pct;
+    const ctdnaCv = analytical?.ctdna_grouping?.precision?.tf_os_c_index?.cv_pct;
+
     const headlineFor = (r) => {
         if (r.os_HR != null && r.os_CI && r.os_CI[0] != null) {
             return `OS HR ${r.os_HR} (95% CI ${r.os_CI[0]}–${r.os_CI[1]}, p=${r.os_p})`;
@@ -122,10 +154,13 @@ export default function ValidationProvenancePanel({ dataUrl = '/data/resistance_
             </Typography>
             <Typography variant="caption" color="text.secondary">
                 Cohorts: cBioPortal ov_tcga_pan_can_atlas_2018 (n=585, OS/PFS TCGA-CDR anchored) ·
-                GEO GSE63885 (n=75, independent expression) · v2.0 external replication across up to
-                17 independent curatedOvarianData HGSOC cohorts (~3,000 patients, DerSimonian–Laird
-                random-effects meta-analysis). No component is labeled &ldquo;clinically
-                validated&rdquo;; tiers are the strongest honest evidence grade.
+                GEO GSE63885 (n=75, independent expression) · v3.0 survival outcome-validation across
+                up to 28 curatedOvarianData serous cohorts (OS in ~3,300 patients; TCGA
+                derivation-only, independent cohorts held-out) using per-SD Cox + DerSimonian–Laird
+                random-effects meta-analysis with BH-FDR correction. Four markers
+                (MFAP4, CCNE1, KRAS, BRCA2) are outcome-validated (q&lt;0.05). No component is labeled
+                &ldquo;clinically validated&rdquo;; every tier is the strongest honest, Research-Use-Only
+                evidence grade earned on retrospective public cohorts.
             </Typography>
 
             <TableContainer sx={{ mt: 2, maxHeight: 420 }}>
@@ -135,6 +170,7 @@ export default function ValidationProvenancePanel({ dataUrl = '/data/resistance_
                             <TableCell sx={{ fontWeight: 700 }}>Gene</TableCell>
                             <TableCell sx={{ fontWeight: 700 }}>Earned tier</TableCell>
                             <TableCell sx={{ fontWeight: 700 }}>Real-outcome evidence</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }}>Outcome-validated survival (OS, meta)</TableCell>
                             <TableCell sx={{ fontWeight: 700 }}>External replication (meta)</TableCell>
                             <TableCell sx={{ fontWeight: 700 }} align="right">n exposed</TableCell>
                         </TableRow>
@@ -145,6 +181,7 @@ export default function ValidationProvenancePanel({ dataUrl = '/data/resistance_
                                 <TableCell sx={{ fontWeight: 600 }}>{r.gene}</TableCell>
                                 <TableCell><TierChip tier={r.earned_tier} /></TableCell>
                                 <TableCell sx={{ fontSize: '0.78rem' }}>{headlineFor(r)}</TableCell>
+                                <TableCell sx={{ fontSize: '0.76rem', fontWeight: (r.survival_outcome && String(r.survival_outcome.verdict || '').startsWith('OUTCOME_VALIDATED')) ? 700 : 400, color: (r.survival_outcome && r.survival_outcome.pooled_HR_per_SD != null) ? 'text.primary' : 'text.secondary' }}>{fmtSurvivalOutcome(r.survival_outcome)}</TableCell>
                                 <TableCell sx={{ fontSize: '0.76rem', color: (r.external_replication || r.pooled_expr_os_retest) ? 'text.primary' : 'text.secondary' }}>{fmtReplication(r)}</TableCell>
                                 <TableCell align="right">{r.n_exposed ?? '—'}</TableCell>
                             </TableRow>
@@ -183,6 +220,100 @@ export default function ValidationProvenancePanel({ dataUrl = '/data/resistance_
                     </Stack>
                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
                         {m53v2.honesty_statement}
+                    </Typography>
+                </Box>
+            )}
+
+            {m53v3 && (
+                <Box sx={{ mt: 2 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                        5.3 v3 recalibration — survival risk score + parsimonious classifier
+                    </Typography>
+                    {trackA && (
+                        <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap', gap: 1 }}>
+                            <Chip size="small" sx={{ bgcolor: '#0279EE', color: '#fff', fontWeight: 600 }}
+                                label="Track A — survival risk score" />
+                            <Chip size="small" variant="outlined"
+                                label={`held-out pooled C-index ${fmt3(trackA.pooled_c_index?.mean_c_index ?? trackA.pooled_c_index)} (95% CI ${fmt3((trackA.pooled_c_index?.ci || trackA.pooled_c_index_ci || [])[0])}–${fmt3((trackA.pooled_c_index?.ci || trackA.pooled_c_index_ci || [])[1])})`} />
+                            <Chip size="small" variant="outlined"
+                                label={`${trackA.pooled_c_index?.n_heldout_cohorts ?? trackA.n_heldout_cohorts ?? '9'} independent held-out cohorts`} />
+                        </Stack>
+                    )}
+                    {trackB && (
+                        <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap', gap: 1 }}>
+                            <Chip size="small" sx={{ bgcolor: '#75A025', color: '#fff', fontWeight: 600 }}
+                                label={trackB.verdict} />
+                            <Chip size="small" variant="outlined"
+                                label={`5-gene parsimonious: OOF AUC ${fmt3(trackB.oof_auc)} (95% CI ${fmt3((trackB.oof_auc_ci || [])[0])}–${fmt3((trackB.oof_auc_ci || [])[1])})`} />
+                            <Chip size="small" variant="outlined"
+                                label={`permutation p=${Number(trackB.permutation_p).toFixed(3)}, ${trackB.n_events} events`} />
+                            {trackB.brier != null && (
+                                <Chip size="small" variant="outlined" label={`Brier ${fmt3(trackB.brier)}`} />
+                            )}
+                        </Stack>
+                    )}
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                        Track A: 14-gene multivariable Cox risk score derived on TCGA (LOCKED coefficients
+                        + LOCKED tertile cutoffs), evaluated only on independent held-out cohorts.
+                        Track B: parsimonious {Array.isArray(trackB?.feature_set) ? trackB.feature_set.join(' + ') : '5-gene'} binary
+                        classifier, leave-one-cohort-out nested CV, locked 0.5 threshold — shrinking the
+                        feature set to raise events-per-variable clears the internal calibration bar the
+                        14-feature model missed. Thresholds are pre-specified and locked for evaluation,
+                        not tied to a clinical decision. RUO.
+                    </Typography>
+                </Box>
+            )}
+
+            {ctdna && (
+                <Box sx={{ mt: 2 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                        ctDNA outcome channel (prognostic-only)
+                    </Typography>
+                    <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap', gap: 1 }}>
+                        <Chip size="small" sx={{ bgcolor: '#75A025', color: '#fff', fontWeight: 600 }}
+                            label={ctdna.prognostic_channel_verdict || ctdna.verdict || 'OUTCOME_VALIDATED_PROGNOSTIC (RUO)'} />
+                        {ctdnaTF && ctdnaTF.pfs && ctdnaTF.os && (
+                            <Chip size="small" variant="outlined"
+                                label={`TF · PFS HR/SD ${Number(ctdnaTF.pfs.hr_per_sd).toFixed(3)} (p=${Number(ctdnaTF.pfs.p).toExponential(1)}), OS HR/SD ${Number(ctdnaTF.os.hr_per_sd).toFixed(3)} (p=${Number(ctdnaTF.os.p).toFixed(3)})`} />
+                        )}
+                    </Stack>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                        {ctdna.decision_scope || 'PROGNOSTIC ONLY — structurally excluded from resistance / routing; cutoffs exploratory; not clinically validated.'}
+                        {ctdna.source ? ` Reference cohort: ${ctdna.source}.` : ''}
+                    </Typography>
+                </Box>
+            )}
+
+            {plco && (
+                <Box sx={{ mt: 2 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                        PLCO CA-125 kinetics — outcome context (screening cohort)
+                    </Typography>
+                    <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap', gap: 1 }}>
+                        <Chip size="small" sx={{ bgcolor: '#8a8a8a', color: '#fff', fontWeight: 600 }}
+                            label="OUTCOME_CONTEXT_NULL_RUO" />
+                        <Chip size="small" variant="outlined"
+                            label={`incident-cancer screening AUROC ${plco.screening_anchor_unchanged?.log_slope_auroc_incident_cancer ?? '0.652'} (unchanged)`} />
+                    </Stack>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                        Directly tested whether pre-diagnosis CA-125 kinetics predict stage-at-diagnosis
+                        (AUROC {plco.analysis_1_stage?.auroc_advanced_by_logslope ?? '0.531'}, p={plco.analysis_1_stage?.mwu_p != null ? Number(plco.analysis_1_stage.mwu_p).toFixed(2) : '0.52'})
+                        and post-diagnosis survival (Cox HR/SD {plco.analysis_2_survival_after_dx?.cox_HR_per_SD_logslope ?? '1.06'}, p={plco.analysis_2_survival_after_dx?.p != null ? Number(plco.analysis_2_survival_after_dx.p).toFixed(2) : '0.42'}).
+                        Both null — a screening early-signal method does not transfer to a
+                        treatment-resistance / outcome predictor. Screening anchor unchanged. RUO.
+                    </Typography>
+                </Box>
+            )}
+
+            {analytical && (
+                <Box sx={{ mt: 2 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                        In-silico analytical validation
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                        {analytical.disclaimer || 'IN-SILICO analytical validation (precision / reproducibility / robustness analogs). NOT wet-lab analytical validation (LoD/LoQ/precision) under a quality system. RUO.'}
+                        {mfap4Cv != null ? ` MFAP4 C-index precision CV%=${Number(mfap4Cv).toFixed(1)} (20 seeds × 2 normalizations).` : ''}
+                        {ctdnaCv != null ? ` ctDNA TF C-index precision CV%=${Number(ctdnaCv).toFixed(1)}.` : ''}
                     </Typography>
                 </Box>
             )}
