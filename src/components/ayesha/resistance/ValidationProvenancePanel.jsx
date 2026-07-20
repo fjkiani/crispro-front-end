@@ -21,12 +21,23 @@ const TIER_STYLE = {
     EXTERNALLY_VALIDATED_RUO: { color: 'success', hex: '#75A025', label: 'Externally validated (RUO)' },
     COHORT_VALIDATED_RUO: { color: 'success', hex: '#0279EE', label: 'Cohort validated (RUO)' },
     CALIBRATED_RUO: { color: 'info', hex: '#0279EE', label: 'Calibrated (RUO)' },
+    CALIBRATED_RUO_BORDERLINE: { color: 'warning', hex: '#FF9400', label: 'Calibrated — borderline (CI passes, permutation n.s.)' },
+    EXPRESSION_REPLICATES_DIRECTION_RUO: { color: 'info', hex: '#0279EE', label: 'Expression channel replicates direction (RUO)' },
     BORDERLINE_RUO: { color: 'warning', hex: '#FF9400', label: 'Borderline (underpowered)' },
     COHORT_TESTED_NULL: { color: 'default', hex: '#8a8a8a', label: 'Tested — no association' },
     LITERATURE_ONLY: { color: 'default', hex: '#b0b0b0', label: 'Literature only' },
     DISCOVERY_ONLY: { color: 'warning', hex: '#FF9400', label: 'Discovery only' },
     INSUFFICIENT_EVENTS: { color: 'default', hex: '#c0c0c0', label: 'Insufficient events' },
 };
+
+// Compact meta-analytic replication summary for a gene row (v2.0).
+function fmtReplication(r) {
+    const ext = r.external_replication || r.pooled_expr_os_retest;
+    if (!ext || ext.pooled_HR_per_SD == null) return '—';
+    const k = ext.n_independent_cohorts ?? ext.n_cohorts;
+    const ci = ext.pooled_CI || [];
+    return `${k} cohorts · pooled HR/SD ${ext.pooled_HR_per_SD} (95% CI ${ci[0]}–${ci[1]}), I²=${ext.I2_pct}%`;
+}
 
 function TierChip({ tier }) {
     const s = TIER_STYLE[tier] || { color: 'default', hex: '#c0c0c0', label: tier || 'Unknown' };
@@ -81,6 +92,7 @@ export default function ValidationProvenancePanel({ dataUrl = '/data/resistance_
     // Build display rows from genes_52 (registry) — sorted strongest-first.
     const RANK = {
         EXTERNALLY_VALIDATED_RUO: 7, COHORT_VALIDATED_RUO: 6, CALIBRATED_RUO: 5,
+        CALIBRATED_RUO_BORDERLINE: 5, EXPRESSION_REPLICATES_DIRECTION_RUO: 5,
         BORDERLINE_RUO: 4, COHORT_TESTED_NULL: 3, LITERATURE_ONLY: 2, DISCOVERY_ONLY: 1,
         INSUFFICIENT_EVENTS: 0,
     };
@@ -89,6 +101,7 @@ export default function ValidationProvenancePanel({ dataUrl = '/data/resistance_
         .sort((a, b) => (RANK[b.earned_tier] || 0) - (RANK[a.earned_tier] || 0));
 
     const m53 = (data.model_53 || {}).logit_resistance_probability || {};
+    const m53v2 = (data.model_53_v2 || {}).logit_resistance_probability_expr || {};
     const gaps = data.gap_5_1 || {};
 
     const headlineFor = (r) => {
@@ -109,8 +122,10 @@ export default function ValidationProvenancePanel({ dataUrl = '/data/resistance_
             </Typography>
             <Typography variant="caption" color="text.secondary">
                 Cohorts: cBioPortal ov_tcga_pan_can_atlas_2018 (n=585, OS/PFS TCGA-CDR anchored) ·
-                GEO GSE63885 (n=75, independent expression). No component is labeled
-                &ldquo;clinically validated&rdquo;; tiers are the strongest honest evidence grade.
+                GEO GSE63885 (n=75, independent expression) · v2.0 external replication across up to
+                17 independent curatedOvarianData HGSOC cohorts (~3,000 patients, DerSimonian–Laird
+                random-effects meta-analysis). No component is labeled &ldquo;clinically
+                validated&rdquo;; tiers are the strongest honest evidence grade.
             </Typography>
 
             <TableContainer sx={{ mt: 2, maxHeight: 420 }}>
@@ -120,6 +135,7 @@ export default function ValidationProvenancePanel({ dataUrl = '/data/resistance_
                             <TableCell sx={{ fontWeight: 700 }}>Gene</TableCell>
                             <TableCell sx={{ fontWeight: 700 }}>Earned tier</TableCell>
                             <TableCell sx={{ fontWeight: 700 }}>Real-outcome evidence</TableCell>
+                            <TableCell sx={{ fontWeight: 700 }}>External replication (meta)</TableCell>
                             <TableCell sx={{ fontWeight: 700 }} align="right">n exposed</TableCell>
                         </TableRow>
                     </TableHead>
@@ -129,6 +145,7 @@ export default function ValidationProvenancePanel({ dataUrl = '/data/resistance_
                                 <TableCell sx={{ fontWeight: 600 }}>{r.gene}</TableCell>
                                 <TableCell><TierChip tier={r.earned_tier} /></TableCell>
                                 <TableCell sx={{ fontSize: '0.78rem' }}>{headlineFor(r)}</TableCell>
+                                <TableCell sx={{ fontSize: '0.76rem', color: (r.external_replication || r.pooled_expr_os_retest) ? 'text.primary' : 'text.secondary' }}>{fmtReplication(r)}</TableCell>
                                 <TableCell align="right">{r.n_exposed ?? '—'}</TableCell>
                             </TableRow>
                         ))}
@@ -154,6 +171,21 @@ export default function ValidationProvenancePanel({ dataUrl = '/data/resistance_
                 {m53.refit_coefficients_real &&
                     ` Real refit (recorded, not shipped as validated): b_brca ${m53.refit_coefficients_real.b_brca}, b_mapk ${m53.refit_coefficients_real.b_mapk}.`}
             </Typography>
+            {m53v2.oof_auc != null && (
+                <Box sx={{ mt: 1.5 }}>
+                    <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
+                        <Chip size="small" sx={{ bgcolor: '#FF9400', color: '#fff', fontWeight: 600 }}
+                            label={m53v2.verdict} />
+                        <Chip size="small" variant="outlined"
+                            label={`v2 pooled expr model: OOF AUC ${m53v2.oof_auc} (95% CI ${m53v2.oof_auc_ci95?.[0]}–${m53v2.oof_auc_ci95?.[1]}), n=${m53v2.n}/${m53v2.events} events`} />
+                        <Chip size="small" variant="outlined"
+                            label={`permutation p=${m53v2.permutation_p}`} />
+                    </Stack>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                        {m53v2.honesty_statement}
+                    </Typography>
+                </Box>
+            )}
 
             <Divider sx={{ my: 2 }} />
 

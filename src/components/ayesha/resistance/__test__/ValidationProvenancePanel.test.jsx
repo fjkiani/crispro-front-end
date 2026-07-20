@@ -13,18 +13,31 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import ValidationProvenancePanel from '../ValidationProvenancePanel';
 
-// Minimal fixture mirroring the real registry shape (subset of genes_52 + model_53 + gap_5_1).
+// Minimal fixture mirroring the real registry v2.0 shape (subset of genes_52 + model_53 +
+// model_53_v2 + gap_5_1), including the v2 external-replication sub-block.
 const REGISTRY_FIXTURE = {
-  registry_version: '1.0',
+  registry_version: '2.0',
   genes_52: {
+    MFAP4: {
+      earned_tier: 'EXTERNALLY_VALIDATED_RUO',
+      os_HR: null, os_CI: [null, null], os_p: null, n_exposed: null,
+      expr_OR_per_SD: 1.915, expr_OR_CI: [1.134, 3.236], expr_AUROC: 0.684, expr_p: 0.0152,
+      external_replication: {
+        n_independent_cohorts: 17, pooled_HR_per_SD: 1.214, pooled_CI: [1.153, 1.277],
+        I2_pct: 0.0, verdict: 'EXTERNALLY_VALIDATED_RUO',
+      },
+    },
     CCNE1: {
       earned_tier: 'COHORT_VALIDATED_RUO',
       os_HR: 1.508, os_CI: [1.169, 1.944], os_p: 0.0015, n_exposed: 110,
     },
-    MFAP4: {
+    KRAS: {
       earned_tier: 'COHORT_VALIDATED_RUO',
-      os_HR: null, os_CI: [null, null], os_p: null, n_exposed: null,
-      expr_OR_per_SD: 1.915, expr_OR_CI: [1.134, 3.236], expr_AUROC: 0.684, expr_p: 0.0152,
+      os_HR: null, os_CI: [null, null], n_exposed: 6,
+      pooled_expr_os_retest: {
+        n_cohorts: 16, pooled_HR_per_SD: 1.124, pooled_CI: [1.060, 1.191], I2_pct: 0.0,
+        verdict: 'COHORT_VALIDATED_RUO',
+      },
     },
     TP53: {
       earned_tier: 'COHORT_TESTED_NULL',
@@ -38,6 +51,14 @@ const REGISTRY_FIXTURE = {
       reason: 'OOF AUC 95% CI spans 0.5 on both attempts (honest refusal to overclaim)',
       prespecified_genomic_logit_TCGA: { n: 571, n_resistant: 44, oof_auc: 0.489, oof_auc_ci95: [0.396, 0.586], brier: 0.071 },
       refit_coefficients_real: { intercept: -2.5694, b_brca: 0.092, b_mapk: 0.8056 },
+    },
+  },
+  model_53_v2: {
+    logit_resistance_probability_expr: {
+      verdict: 'CALIBRATED_RUO_BORDERLINE',
+      n: 518, events: 52, oof_auc: 0.597, oof_auc_ci95: [0.508, 0.684],
+      permutation_p: 0.055,
+      honesty_statement: 'Bootstrap OOF-AUC CI stably excludes 0.5 but permutation p=0.055 does NOT confirm; labeled CALIBRATED_RUO_BORDERLINE, NOT robustly calibrated. NOT clinically validated.',
     },
   },
   gap_5_1: {
@@ -84,12 +105,23 @@ describe('ValidationProvenancePanel', () => {
     expect(screen.getByText(/1\.169/)).toBeInTheDocument();
   });
 
-  it('shows the 5.3 DISCOVERY_ONLY (not calibrated) verdict, never CALIBRATED', async () => {
+  it('shows the 5.3 base model as DISCOVERY_ONLY and the v2 pooled model as honestly BORDERLINE', async () => {
     render(<ValidationProvenancePanel />);
+    // Base 5.3 genomic-logit model: DISCOVERY_ONLY, never a bare CALIBRATED success chip.
     expect(await screen.findByText(/DISCOVERY_ONLY — NOT CALIBRATED/i)).toBeInTheDocument();
     expect(screen.getByText(/OOF AUC 0\.489/)).toBeInTheDocument();
-    // Must not claim calibration succeeded.
-    expect(screen.queryByText(/CALIBRATED_RUO/)).not.toBeInTheDocument();
+    // Regulatory boundary: no chip may claim the model reached CALIBRATED_RUO *success*
+    // (i.e. the exact token "CALIBRATED_RUO" not immediately followed by "_BORDERLINE").
+    // The honest borderline token IS allowed and asserted below.
+    const calibratedSuccess = screen
+      .queryAllByText(/CALIBRATED_RUO/)
+      .filter((el) => !/CALIBRATED_RUO_BORDERLINE/.test(el.textContent));
+    expect(calibratedSuccess).toHaveLength(0);
+    // v2 pooled expression model surfaces its honest borderline verdict + permutation caveat.
+    expect(screen.getByText('CALIBRATED_RUO_BORDERLINE')).toBeInTheDocument();
+    expect(screen.getByText(/permutation p=0\.055/)).toBeInTheDocument();
+    // The honesty statement still explicitly denies clinical validation.
+    expect(screen.getByText(/NOT clinically validated/i)).toBeInTheDocument();
   });
 
   it('shows both 5.1 gap closures', async () => {
