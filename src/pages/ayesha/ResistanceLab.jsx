@@ -29,6 +29,7 @@ import { Science as ScienceIcon, Psychology as BrainIcon, Close as CloseIcon } f
 import TumorSettingsPanel from '../../components/ayesha/resistance/TumorSettingsPanel';
 import ReasoningPanel from '../../components/ayesha/resistance/ReasoningPanel';
 import OutcomePanel from '../../components/ayesha/resistance/OutcomePanel';
+import ValidationProvenancePanel from '../../components/ayesha/resistance/ValidationProvenancePanel';
 
 // Shared styles
 import { PageWrapper, HeaderPanel, LabGrid } from '../../components/ayesha/resistance/LabStyles';
@@ -262,6 +263,11 @@ const ResistanceLab = () => {
                         />
                     </Grid>
                 </LabGrid>
+
+                {/* ── Real-Outcome Evidence Grades (additive, full-width) ──── */}
+                <Box sx={{ mt: 3 }}>
+                    <ValidationProvenancePanel />
+                </Box>
             </Container>
         </PageWrapper>
     );

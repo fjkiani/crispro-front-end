@@ -1,0 +1,645 @@
+{
+  "registry_version": "1.0",
+  "generated_at": "2026-07-20T09:21:30.689957+00:00",
+  "honesty_boundary": "No component labeled 'clinically validated' (regulatory term of art). Each component carries its strongest HONEST earned tier from real outcome-linked cohorts. 'COHORT_VALIDATED_RUO' requires EPV>=10 AND CI excluding null in >=1 endpoint. 'COHORT_TESTED_NULL' = tested on a real cohort, no significant association (honest, evidence-backed). 'BORDERLINE_RUO' = 5<=exposed<10 (underpowered). 'INSUFFICIENT_EVENTS' = <5 exposed. 'DISCOVERY_ONLY' (5.3 models) = OOF AUC 95% CI spans 0.5.",
+  "tier_ladder": [
+    "EXTERNALLY_VALIDATED_RUO",
+    "COHORT_VALIDATED_RUO",
+    "CALIBRATED_RUO",
+    "BORDERLINE_RUO",
+    "COHORT_TESTED_NULL",
+    "LITERATURE_ONLY",
+    "INSUFFICIENT_EVENTS",
+    "DISCOVERY_ONLY"
+  ],
+  "cohorts": {
+    "primary_somatic_cna": {
+      "study": "ov_tcga_pan_can_atlas_2018",
+      "n": 585,
+      "outcomes": "OS/PFS (TCGA-CDR anchored)",
+      "source": "cBioPortal public API",
+      "resistant_label": "progressed & PFS_MONTHS<6 (n_resistant=44/571)"
+    },
+    "independent_expression": {
+      "study": "GSE63885 (Lisowska et al.)",
+      "platform": "GPL570",
+      "n": 75,
+      "n_resistant": 34,
+      "outcomes": "platinum-resistance label",
+      "source": "GEO",
+      "independent_of_TCGA": true
+    },
+    "ctdna_reference": {
+      "study": "Leandersson 2026 (HGSOC)",
+      "n": 167,
+      "reproduced": true,
+      "source": "crispro publications/09-ctdna",
+      "note": "prognostic-only; cutoffs exploratory not locked"
+    },
+    "kinetics_screening": {
+      "study": "PLCO",
+      "source": "Supabase xfhiwodulrbbtfcqneqt",
+      "rows": {
+        "plco_patients": 78209,
+        "plco_ca125_series": 234618,
+        "plco_tvu_series": 156412,
+        "plco_covariates": 78209,
+        "plco_cancer_kinetics_MV": 78209
+      },
+      "outcomes": "screening / incident-cancer (NOT treatment resistance)",
+      "externally_validated_metric": {
+        "ca125_log_slope_AUROC": 0.652,
+        "CI": [
+          0.605,
+          0.695
+        ],
+        "velocity_AUROC": 0.654
+      }
+    }
+  },
+  "plco_anchor_rule_LOCKED": {
+    "exam_attempted": "result IN (1,2,3,4) OR level/days present",
+    "exam_completed_ca125": "level IS NOT NULL AND days IS NOT NULL",
+    "exam_completed_tvu": "days IS NOT NULL",
+    "not_done_slot": "result IN (8,9)  -- EXCLUDE from exam denominators",
+    "kinetic_anchor": "require assay + days; NEVER use codes 8/9 as timepoints",
+    "series_inflation_verdict": "scheduled/missing-year slot expansion, NOT duplication (DISTINCT(plco_id,timepoint)=total_rows; zero duplicate keys)"
+  },
+  "genes_52": {
+    "CCNE1": {
+      "earned_tier": "COHORT_VALIDATED_RUO",
+      "somatic_channel": "amp_CCNE1",
+      "somatic_tier": "COHORT_VALIDATED_RUO",
+      "n_exposed": 110,
+      "os_HR": 1.508,
+      "os_CI": [
+        1.169,
+        1.944
+      ],
+      "os_p": 0.0015,
+      "pfs_HR": 1.359,
+      "pfs_CI": [
+        1.07,
+        1.727
+      ],
+      "pfs_p": 0.0119,
+      "expr_tier": "COHORT_TESTED_NULL",
+      "expr_OR_per_SD": 1.215,
+      "expr_OR_CI": [
+        0.767,
+        1.926
+      ],
+      "expr_AUROC": 0.547,
+      "expr_p": 0.4067
+    },
+    "NF1": {
+      "earned_tier": "COHORT_TESTED_NULL",
+      "somatic_channel": "mut_NF1",
+      "somatic_tier": "COHORT_TESTED_NULL",
+      "n_exposed": 30,
+      "os_HR": 1.013,
+      "os_CI": [
+        0.613,
+        1.674
+      ],
+      "os_p": 0.9609,
+      "pfs_HR": 0.819,
+      "pfs_CI": [
+        0.516,
+        1.298
+      ],
+      "pfs_p": 0.3948,
+      "expr_tier": "COHORT_TESTED_NULL",
+      "expr_OR_per_SD": 1.039,
+      "expr_OR_CI": [
+        0.659,
+        1.636
+      ],
+      "expr_AUROC": 0.524,
+      "expr_p": 0.87
+    },
+    "TP53": {
+      "earned_tier": "COHORT_TESTED_NULL",
+      "somatic_channel": "mut_TP53",
+      "somatic_tier": "COHORT_TESTED_NULL",
+      "n_exposed": 370,
+      "os_HR": 1.023,
+      "os_CI": [
+        0.822,
+        1.273
+      ],
+      "os_p": 0.8391,
+      "pfs_HR": 1.079,
+      "pfs_CI": [
+        0.883,
+        1.319
+      ],
+      "pfs_p": 0.455,
+      "expr_tier": "NOT_TESTED",
+      "expr_OR_per_SD": null,
+      "expr_OR_CI": null,
+      "expr_AUROC": null,
+      "expr_p": null
+    },
+    "CDK12": {
+      "earned_tier": "COHORT_TESTED_NULL",
+      "somatic_channel": "mut_CDK12",
+      "somatic_tier": "COHORT_TESTED_NULL",
+      "n_exposed": 19,
+      "os_HR": 1.143,
+      "os_CI": [
+        0.656,
+        1.991
+      ],
+      "os_p": 0.6372,
+      "pfs_HR": 1.156,
+      "pfs_CI": [
+        0.678,
+        1.97
+      ],
+      "pfs_p": 0.5951,
+      "expr_tier": "NOT_TESTED",
+      "expr_OR_per_SD": null,
+      "expr_OR_CI": null,
+      "expr_AUROC": null,
+      "expr_p": null
+    },
+    "BRCA1": {
+      "earned_tier": "COHORT_TESTED_NULL",
+      "somatic_channel": "mut_BRCA1",
+      "somatic_tier": "COHORT_TESTED_NULL",
+      "n_exposed": 17,
+      "os_HR": 0.569,
+      "os_CI": [
+        0.212,
+        1.526
+      ],
+      "os_p": 0.2627,
+      "pfs_HR": 0.792,
+      "pfs_CI": [
+        0.409,
+        1.534
+      ],
+      "pfs_p": 0.4897,
+      "expr_tier": "COHORT_TESTED_NULL",
+      "expr_OR_per_SD": 0.848,
+      "expr_OR_CI": [
+        0.536,
+        1.341
+      ],
+      "expr_AUROC": 0.542,
+      "expr_p": 0.4806
+    },
+    "BRCA2": {
+      "earned_tier": "COHORT_VALIDATED_RUO",
+      "somatic_channel": "mut_BRCA2",
+      "somatic_tier": "COHORT_VALIDATED_RUO",
+      "n_exposed": 15,
+      "os_HR": 0.416,
+      "os_CI": [
+        0.196,
+        0.881
+      ],
+      "os_p": 0.0219,
+      "pfs_HR": 0.356,
+      "pfs_CI": [
+        0.168,
+        0.753
+      ],
+      "pfs_p": 0.0069,
+      "expr_tier": "COHORT_TESTED_NULL",
+      "expr_OR_per_SD": 0.996,
+      "expr_OR_CI": [
+        0.632,
+        1.569
+      ],
+      "expr_AUROC": 0.509,
+      "expr_p": 0.9865
+    },
+    "PALB2": {
+      "earned_tier": "BORDERLINE_RUO",
+      "somatic_channel": "mut_PALB2",
+      "somatic_tier": "BORDERLINE_RUO",
+      "n_exposed": 5,
+      "os_HR": 1.025,
+      "os_CI": [
+        0.382,
+        2.748
+      ],
+      "os_p": 0.9616,
+      "pfs_HR": 0.917,
+      "pfs_CI": [
+        0.294,
+        2.858
+      ],
+      "pfs_p": 0.8809,
+      "expr_tier": "COHORT_TESTED_NULL",
+      "expr_OR_per_SD": 1.053,
+      "expr_OR_CI": [
+        0.668,
+        1.66
+      ],
+      "expr_AUROC": 0.527,
+      "expr_p": 0.824
+    },
+    "PTEN": {
+      "earned_tier": "BORDERLINE_RUO",
+      "somatic_channel": "mut_PTEN",
+      "somatic_tier": "BORDERLINE_RUO",
+      "n_exposed": 7,
+      "os_HR": 1.496,
+      "os_CI": [
+        0.615,
+        3.637
+      ],
+      "os_p": 0.3741,
+      "pfs_HR": 0.832,
+      "pfs_CI": [
+        0.31,
+        2.232
+      ],
+      "pfs_p": 0.7142,
+      "expr_tier": "COHORT_TESTED_NULL",
+      "expr_OR_per_SD": 1.111,
+      "expr_OR_CI": [
+        0.698,
+        1.767
+      ],
+      "expr_AUROC": 0.507,
+      "expr_p": 0.6582
+    },
+    "KRAS": {
+      "earned_tier": "BORDERLINE_RUO",
+      "somatic_channel": "mut_KRAS",
+      "somatic_tier": "BORDERLINE_RUO",
+      "n_exposed": 6,
+      "os_HR": 1.109,
+      "os_CI": [
+        0.413,
+        2.975
+      ],
+      "os_p": 0.8371,
+      "pfs_HR": 0.946,
+      "pfs_CI": [
+        0.353,
+        2.536
+      ],
+      "pfs_p": 0.9126,
+      "expr_tier": "COHORT_TESTED_NULL",
+      "expr_OR_per_SD": 1.411,
+      "expr_OR_CI": [
+        0.874,
+        2.277
+      ],
+      "expr_AUROC": 0.605,
+      "expr_p": 0.1591
+    },
+    "NRAS": {
+      "earned_tier": "BORDERLINE_RUO",
+      "somatic_channel": "mut_NRAS",
+      "somatic_tier": "BORDERLINE_RUO",
+      "n_exposed": 5,
+      "os_HR": 0.605,
+      "os_CI": [
+        0.151,
+        2.43
+      ],
+      "os_p": 0.4787,
+      "pfs_HR": 0.451,
+      "pfs_CI": [
+        0.112,
+        1.811
+      ],
+      "pfs_p": 0.2615,
+      "expr_tier": "COHORT_TESTED_NULL",
+      "expr_OR_per_SD": 1.143,
+      "expr_OR_CI": [
+        0.721,
+        1.813
+      ],
+      "expr_AUROC": 0.546,
+      "expr_p": 0.5689
+    },
+    "KEAP1": {
+      "earned_tier": "COHORT_TESTED_NULL",
+      "somatic_channel": "mut_KEAP1",
+      "somatic_tier": "INSUFFICIENT_EVENTS",
+      "n_exposed": 2,
+      "os_HR": null,
+      "os_CI": [
+        null,
+        null
+      ],
+      "os_p": null,
+      "pfs_HR": null,
+      "pfs_CI": [
+        null,
+        null
+      ],
+      "pfs_p": null,
+      "expr_tier": "COHORT_TESTED_NULL",
+      "expr_OR_per_SD": 1.193,
+      "expr_OR_CI": [
+        0.752,
+        1.894
+      ],
+      "expr_AUROC": 0.554,
+      "expr_p": 0.454
+    },
+    "CUL3": {
+      "earned_tier": "COHORT_TESTED_NULL",
+      "somatic_channel": "mut_CUL3",
+      "somatic_tier": "INSUFFICIENT_EVENTS",
+      "n_exposed": 3,
+      "os_HR": null,
+      "os_CI": [
+        null,
+        null
+      ],
+      "os_p": null,
+      "pfs_HR": null,
+      "pfs_CI": [
+        null,
+        null
+      ],
+      "pfs_p": null,
+      "expr_tier": "COHORT_TESTED_NULL",
+      "expr_OR_per_SD": 0.888,
+      "expr_OR_CI": [
+        0.563,
+        1.402
+      ],
+      "expr_AUROC": 0.516,
+      "expr_p": 0.6112
+    },
+    "SLC31A1": {
+      "earned_tier": "COHORT_TESTED_NULL",
+      "somatic_channel": "mut_SLC31A1",
+      "somatic_tier": "INSUFFICIENT_EVENTS",
+      "n_exposed": 1,
+      "os_HR": null,
+      "os_CI": [
+        null,
+        null
+      ],
+      "os_p": null,
+      "pfs_HR": null,
+      "pfs_CI": [
+        null,
+        null
+      ],
+      "pfs_p": null,
+      "expr_tier": "COHORT_TESTED_NULL",
+      "expr_OR_per_SD": 1.081,
+      "expr_OR_CI": [
+        0.686,
+        1.705
+      ],
+      "expr_AUROC": 0.516,
+      "expr_p": 0.7369
+    },
+    "TP53BP1": {
+      "earned_tier": "COHORT_TESTED_NULL",
+      "somatic_channel": "mut_TP53BP1",
+      "somatic_tier": "INSUFFICIENT_EVENTS",
+      "n_exposed": 4,
+      "os_HR": null,
+      "os_CI": [
+        null,
+        null
+      ],
+      "os_p": null,
+      "pfs_HR": null,
+      "pfs_CI": [
+        null,
+        null
+      ],
+      "pfs_p": null,
+      "expr_tier": "COHORT_TESTED_NULL",
+      "expr_OR_per_SD": 1.087,
+      "expr_OR_CI": [
+        0.69,
+        1.713
+      ],
+      "expr_AUROC": 0.529,
+      "expr_p": 0.7192
+    },
+    "SHLD1": {
+      "earned_tier": "LITERATURE_ONLY",
+      "somatic_channel": "mut_SHLD1",
+      "somatic_tier": "INSUFFICIENT_EVENTS",
+      "n_exposed": 0,
+      "os_HR": null,
+      "os_CI": [
+        null,
+        null
+      ],
+      "os_p": null,
+      "pfs_HR": null,
+      "pfs_CI": [
+        null,
+        null
+      ],
+      "pfs_p": null,
+      "expr_tier": "NOT_ON_ARRAY",
+      "expr_OR_per_SD": null,
+      "expr_OR_CI": null,
+      "expr_AUROC": null,
+      "expr_p": null
+    },
+    "SHLD2": {
+      "earned_tier": "LITERATURE_ONLY",
+      "somatic_channel": "mut_SHLD2",
+      "somatic_tier": "INSUFFICIENT_EVENTS",
+      "n_exposed": 4,
+      "os_HR": null,
+      "os_CI": [
+        null,
+        null
+      ],
+      "os_p": null,
+      "pfs_HR": null,
+      "pfs_CI": [
+        null,
+        null
+      ],
+      "pfs_p": null,
+      "expr_tier": "NOT_ON_ARRAY",
+      "expr_OR_per_SD": null,
+      "expr_OR_CI": null,
+      "expr_AUROC": null,
+      "expr_p": null
+    },
+    "MAD2L2": {
+      "earned_tier": "COHORT_TESTED_NULL",
+      "somatic_channel": "mut_MAD2L2",
+      "somatic_tier": "INSUFFICIENT_EVENTS",
+      "n_exposed": 0,
+      "os_HR": null,
+      "os_CI": [
+        null,
+        null
+      ],
+      "os_p": null,
+      "pfs_HR": null,
+      "pfs_CI": [
+        null,
+        null
+      ],
+      "pfs_p": null,
+      "expr_tier": "COHORT_TESTED_NULL",
+      "expr_OR_per_SD": 1.407,
+      "expr_OR_CI": [
+        0.876,
+        2.261
+      ],
+      "expr_AUROC": 0.577,
+      "expr_p": 0.1584
+    },
+    "MBD4": {
+      "earned_tier": "COHORT_TESTED_NULL",
+      "somatic_channel": "mut_MBD4",
+      "somatic_tier": "INSUFFICIENT_EVENTS",
+      "n_exposed": 1,
+      "os_HR": null,
+      "os_CI": [
+        null,
+        null
+      ],
+      "os_p": null,
+      "pfs_HR": null,
+      "pfs_CI": [
+        null,
+        null
+      ],
+      "pfs_p": null,
+      "expr_tier": "COHORT_TESTED_NULL",
+      "expr_OR_per_SD": 0.701,
+      "expr_OR_CI": [
+        0.436,
+        1.128
+      ],
+      "expr_AUROC": 0.618,
+      "expr_p": 0.1436
+    },
+    "BRAF": {
+      "earned_tier": "COHORT_TESTED_NULL",
+      "somatic_channel": "mut_BRAF",
+      "somatic_tier": "INSUFFICIENT_EVENTS",
+      "n_exposed": 2,
+      "os_HR": null,
+      "os_CI": [
+        null,
+        null
+      ],
+      "os_p": null,
+      "pfs_HR": null,
+      "pfs_CI": [
+        null,
+        null
+      ],
+      "pfs_p": null,
+      "expr_tier": "COHORT_TESTED_NULL",
+      "expr_OR_per_SD": 0.824,
+      "expr_OR_CI": [
+        0.518,
+        1.311
+      ],
+      "expr_AUROC": 0.55,
+      "expr_p": 0.4141
+    },
+    "MFAP4": {
+      "earned_tier": "COHORT_VALIDATED_RUO",
+      "somatic_channel": "none (RNA-only)",
+      "somatic_tier": "N/A",
+      "n_exposed": null,
+      "os_HR": null,
+      "os_CI": [
+        null,
+        null
+      ],
+      "os_p": null,
+      "pfs_HR": null,
+      "pfs_CI": [
+        null,
+        null
+      ],
+      "pfs_p": null,
+      "expr_tier": "COHORT_VALIDATED_RUO",
+      "expr_OR_per_SD": 1.915,
+      "expr_OR_CI": [
+        1.134,
+        3.236
+      ],
+      "expr_AUROC": 0.684,
+      "expr_p": 0.0152,
+      "note": "Register claimed AUROC 0.763; measured 0.684 on labeled subset, same cohort/direction, real."
+    }
+  },
+  "model_53": {
+    "logit_resistance_probability": {
+      "verdict": "DISCOVERY_ONLY \u2014 NOT upgraded to CALIBRATED_RUO",
+      "reason": "OOF AUC 95% CI spans 0.5 on both attempts (honest refusal to overclaim)",
+      "genome_wide_elastic_net_GSE63885": {
+        "n": 75,
+        "oof_auc": 0.446,
+        "oof_auc_ci95": [
+          0.318,
+          0.576
+        ],
+        "brier": 0.293,
+        "note": "23,520 features on 75 samples (p>>n); nested CV correctly refuses to overfit"
+      },
+      "prespecified_genomic_logit_TCGA": {
+        "n": 571,
+        "n_resistant": 44,
+        "oof_auc": 0.489,
+        "oof_auc_ci95": [
+          0.396,
+          0.586
+        ],
+        "brier": 0.071
+      },
+      "refit_coefficients_real": {
+        "intercept": -2.5694,
+        "b_brca": 0.092,
+        "b_mapk": 0.8056,
+        "interpretation": "b_brca near 0 (BRCA=platinum-sensitive, consistent); b_mapk positive & larger than simulation prior 0.317 (correct direction)"
+      },
+      "simulation_coefficients_replaced": {
+        "intercept": 2.9076,
+        "b_brca": 0.6015,
+        "b_mapk": 0.3172
+      },
+      "residual_gap_documented": {
+        "terms": [
+          "b_kelim",
+          "b_brca_x_k",
+          "b_mapk_x_k"
+        ],
+        "values": [
+          -3.2202,
+          -0.9227,
+          -0.5223
+        ],
+        "why": "require serial CA-125 WITH treatment-resistance outcomes; PLCO has kinetics but screening outcomes only -> these 3 remain simulation-anchored, DOCUMENTED not hidden"
+      }
+    },
+    "kelim_modeling": {
+      "signal6_deadcode_fix": "RES-OV-P0-009 FIXED \u2014 signals/ovarian.py reads kelim_obj.k (not dead .kelim)",
+      "kinetics_metric_externally_validated": "PLCO log-slope AUROC 0.652 CI [0.605,0.695] (reused)",
+      "status": "local_log_linear decay on raw k; normalized KELIM still requires treatment-linked serial CA-125"
+    }
+  },
+  "gap_5_1": {
+    "RES-OV-P0-006_ctdna": {
+      "status": "CLOSED \u2014 WIRED_PROGNOSTIC_ONLY_V1",
+      "contract": "surfaces ctDNA prognostic tier to clinician; structurally excluded from resistance probability & drug routing (detected=False,confidence=0.0 filtered by engine.py:102 + aggregation.py:62-63)",
+      "reference": "Leandersson 2026 reproduced n=167"
+    },
+    "RES-OV-P0-009_kelim_signal6": {
+      "status": "CLOSED \u2014 reads kelim_obj.k",
+      "note": "see model_53.kelim_modeling"
+    }
+  }
+}
